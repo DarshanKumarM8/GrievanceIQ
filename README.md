@@ -1,128 +1,78 @@
 # GrievanceIQ
 
-> **File Smarter. Get Heard. Hold Them Accountable.**
-
-India's citizen-facing grievance intelligence platform. Built as a civic tech web application that helps citizens navigate CPGRAMS more effectively, and gives journalists/NGOs a public accountability dashboard.
-
-## Live URLs
-
-- **Production**: *(deployment pending)*
-- **Sandbox Preview**: Active during development
+> The government built a complaint inbox. GrievanceIQ builds the intelligence layer between citizens and that inbox — so filing a complaint actually means something.
 
 ## Project Overview
-
 - **Name**: GrievanceIQ
-- **Type**: Responsive Web Application
-- **Target**: India — Citizens, Journalists, NGOs, Researchers
-- **Stage**: College Mini Project (7-week build)
+- **Goal**: AI-powered citizen grievance intelligence platform for India's CPGRAMS system
+- **Target Users**: Indian citizens filing complaints + journalists/researchers using public dashboard
+- **Tech Stack**: Hono (TypeScript) + Tailwind CSS + Cloudflare D1 + Google Gemini API
+- **Status**: Week 2 complete — AI Intelligence Core active
 
-## Completed Features (Week 1)
+## URLs
+- **Live Preview**: https://3000-ijj8l21qjw9nnoh5yjcir-2b54fc91.sandbox.novita.ai
+- **GitHub**: https://github.com/DarshanKumarM8/GrievanceIQ
+
+## Features (Implemented)
 
 ### Citizen Complaint Intelligence Tool
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Multilingual Complaint Intake | Done | Single text box, 5 languages (EN, HI, TA, TE, BN), auto language detection |
-| Smart Department Router | Done | AI identifies correct ministry from 92 options with confidence % |
-| Complaint Quality Scorer | Done | Scores 1-10 with visual gauge, shows before/after improvement |
-| AI Complaint Builder | Done | Side-by-side editor: original vs AI-improved, fully editable |
-| Document Checklist Generator | Done | Context-aware list of documents to attach based on complaint type |
-| Complaint Tracker | Done | Enter CPGRAMS ID, visual timeline, day 15/25 reminders |
-| RTI Auto-Drafter | Done | One-click legally formatted RTI application, PDF download via jsPDF |
-| Outcome Feedback | Done | 3-tap feedback (resolved/partial/fake closed) powering fake closure data |
+- **Smart Department Router** — AI identifies correct ministry from 92 CPGRAMS options
+- **Quality Scorer** — Rates complaint 1-10 with specific improvement suggestions
+- **AI Complaint Builder** — Side-by-side editor showing original vs improved draft
+- **Document Checklist** — Department-specific documents needed for filing
+- **Multilingual Intake** — Hindi, Tamil, Telugu, Bengali, English support
+- **Complaint Tracker** — Enter CPGRAMS ID, get timeline with Day 15/25 reminders
+- **RTI Auto-Drafter** — One-click legally formatted RTI application with PDF download
+- **Outcome Feedback** — Report if complaint was truly resolved or fake-closed
 
 ### Public Accountability Dashboard
-| Feature | Status | Description |
-|---------|--------|-------------|
-| India Grievance Map | Done | Interactive Leaflet.js map, all 36 states/UTs, 4 metrics toggle |
-| Department Scorecard | Done | 30 ministries ranked, official vs citizen rate, fake closure flags |
-| Systemic Issue Radar | Done | 8 trending issues with spike detection, severity, affected states |
-| Social Signals Feed | Done | Twitter/News monitoring cards with trending direction |
-| Dashboard Stats | Done | Aggregate overview: total complaints, pending, fake closure %, alerts |
+- **India Grievance Map** — Interactive map with 36 states, switchable metrics
+- **Department Scorecard** — 30 ministries ranked by resolution rate, fake closure rate
+- **Systemic Issue Radar** — 8 trending complaint patterns with spike detection
+- **Social Monitoring Feed** — Simulated Twitter/news signal tracking
 
-### Pages Built
-| Page | Route | Description |
-|------|-------|-------------|
-| Homepage | `/` | Hero + complaint intake + stats + trending preview + CTA |
-| Complaint Builder | `/complaint` | Full AI analysis flow with department routing, scoring, rewriting |
-| Tracker | `/tracker` | CPGRAMS tracking, timeline, feedback, RTI escalation |
-| RTI Drafter | `/rti` | RTI form, live preview, PDF download, filing instructions |
-| Dashboard | `/dashboard` | Map + scorecard + trending + social signals |
-| How It Works | `/how-it-works` | Step-by-step guide for citizens and journalists |
-| About | `/about` | Mission, competitive landscape, tech stack, disclaimer |
+### AI Architecture
+- **Primary**: Google Gemini 2.0 Flash API (structured JSON output)
+- **Fallback**: Gemini 2.0 Flash Lite → Mock Keyword Classifier v2 (17 categories)
+- **Transparency**: Every response shows whether Gemini or Mock was used
 
-## API Endpoints
+## Pages (7)
+| Page | URL | Description |
+|------|-----|-------------|
+| Home | `/` | Hero with complaint input, stats, trending preview |
+| Complaint Builder | `/complaint` | AI analysis with department routing + rewriting |
+| Tracker | `/tracker` | CPGRAMS ID tracking with timeline |
+| RTI Drafter | `/rti` | Auto-generate RTI application |
+| Dashboard | `/dashboard` | India map, scorecard, trending, social |
+| How It Works | `/how-it-works` | 4-step process explanation |
+| About | `/about` | Mission, team, scope |
 
+## API Endpoints (14)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/stats` | Aggregate dashboard statistics |
+| GET | `/api/health` | System health with AI status |
+| GET | `/api/stats` | Dashboard aggregate statistics |
 | GET | `/api/ministries` | Department scorecards (sortable) |
-| GET | `/api/ministries/:code` | Single ministry details |
-| GET | `/api/states` | State-level grievance data (for map) |
-| GET | `/api/states/:code` | Single state details |
-| GET | `/api/trending` | Trending issues (?flagged=true for critical) |
+| GET | `/api/ministries/:code` | Single ministry detail |
+| GET | `/api/states` | All 36 state grievance stats |
+| GET | `/api/states/:code` | Single state detail |
+| GET | `/api/trending` | Systemic issues (flagged filter) |
 | GET | `/api/social` | Social monitoring signals |
-| POST | `/api/complaints/analyze` | Submit complaint for AI analysis |
-| POST | `/api/complaints/track` | Track by CPGRAMS ID |
-| POST | `/api/feedback` | Submit citizen outcome feedback |
-| POST | `/api/rti/generate` | Generate RTI application |
+| POST | `/api/complaints/analyze` | **AI-powered** complaint analysis |
+| POST | `/api/complaints/track` | Track CPGRAMS complaint |
+| GET | `/api/complaints/recent` | List recent complaints |
+| GET | `/api/complaints/:id` | Get complaint by ID |
+| POST | `/api/feedback` | Submit outcome feedback |
+| POST | `/api/rti/generate` | **AI-powered** RTI generation |
 
 ## Database Schema (7 tables)
-
-- **users** — Citizen profiles
-- **complaints** — Core complaint records with AI analysis
-- **complaint_feedback** — Citizen-reported outcomes (powers fake closure detection)
-- **ministry_stats** — Monthly performance data per ministry (30 seeded)
-- **trending_issues** — Weekly complaint clusters (8 seeded)
-- **social_signals** — Twitter/news monitoring (8 seeded)
-- **state_grievance_stats** — State-level data for India map (36 states/UTs seeded)
-
-## Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Backend | Hono (TypeScript) | Edge-first web framework |
-| Database | Cloudflare D1 (SQLite) | Structured data with SQL |
-| Frontend | Tailwind CSS (CDN) | Utility-first responsive styling |
-| Maps | Leaflet.js | Interactive India choropleth |
-| Charts | Chart.js | Data visualization |
-| Icons | Font Awesome 6 | UI icons |
-| Fonts | Inter (Google Fonts) | Clean professional typography |
-| PDF | jsPDF | Client-side RTI PDF generation |
-| Deployment | Cloudflare Pages | Global edge deployment |
-| Dev Server | Wrangler | Local development with D1 |
-
-## Seed Data
-
-- **30 ministries** with realistic CPGRAMS statistics (complaints, resolution rates, fake closure rates)
-- **36 states & UTs** with grievance volumes, top issues, department rankings
-- **8 trending issues** based on real Indian complaint patterns (PM-KISAN, IRCTC, EPFO, etc.)
-- **8 social signals** from Twitter/News sources
-- **3 sample complaints** with AI analysis results
-- **2 feedback entries** demonstrating fake closure detection
-
-## Features Not Yet Implemented
-
-- [ ] Real AI API integration (Gemini/Claude) — currently using smart keyword-based mock
-- [ ] District-level drill-down on India map
-- [ ] GeoJSON state boundaries (currently using circle markers)
-- [ ] User authentication / login system
-- [ ] Email reminder system (Day 15/25 notifications)
-- [ ] Weekly automated email reports for journalists
-- [ ] PDF export for dashboard data
-- [ ] Hindi/regional language UI (i18n)
-- [ ] Real-time data pipelines (Twitter API, CPGRAMS scraping)
-- [ ] BERTopic / TF-IDF clustering pipeline
-- [ ] Rate limiting and input sanitization
-
-## Recommended Next Steps (Week 2+)
-
-1. **Week 2**: Integrate Gemini API for real AI analysis (department routing, scoring, rewriting)
-2. **Week 3**: Add India GeoJSON boundaries for proper choropleth map
-3. **Week 4**: Complaint tracker with real status polling, email reminders
-4. **Week 5**: Dashboard enhancements — Chart.js charts, PDF export, district drill-down
-5. **Week 6**: Data seeding from real CPGRAMS CSVs, performance optimization
-6. **Week 7**: Final testing, deployment, documentation
+- `users` — Citizen profiles (consent-based)
+- `complaints` — Analyzed complaints with AI routing and scoring
+- `complaint_feedback` — Citizen outcome reports (fake closure detection)
+- `ministry_stats` — 30 ministries with resolution/fake closure metrics
+- `state_grievance_stats` — 36 states with complaint volumes
+- `trending_issues` — Systemic complaint patterns
+- `social_signals` — Twitter/news monitoring data
 
 ## Development
 
@@ -130,54 +80,32 @@ India's citizen-facing grievance intelligence platform. Built as a civic tech we
 # Install dependencies
 npm install
 
-# Apply database migrations
-npm run db:migrate:local
+# Set up local database
+npm run db:migrate:local && npm run db:seed
 
-# Seed database
-npm run db:seed
+# Start development server
+npm run build && npm run preview
 
-# Build
-npm run build
-
-# Start dev server
-npm run preview
-
-# Reset database
-npm run db:reset
+# Or with PM2
+pm2 start ecosystem.config.cjs
 ```
 
-## Project Structure
-
+## Environment Variables
 ```
-webapp/
-├── src/
-│   ├── index.tsx          # Main Hono app with all routes
-│   ├── routes/
-│   │   └── api.ts         # All API endpoints + mock AI functions
-│   └── pages/
-│       ├── layout.ts      # Shared HTML layout (nav, footer, styles)
-│       ├── home.ts        # Homepage
-│       ├── complaint.ts   # Smart Complaint Builder
-│       ├── tracker.ts     # Complaint Tracker
-│       ├── rti.ts         # RTI Auto-Drafter
-│       ├── dashboard.ts   # Public Accountability Dashboard
-│       ├── how-it-works.ts # How It Works guide
-│       └── about.ts       # About page
-├── migrations/
-│   └── 0001_initial_schema.sql  # Full database schema (7 tables)
-├── seed.sql               # Realistic CPGRAMS data
-├── ecosystem.config.cjs   # PM2 configuration
-├── wrangler.jsonc         # Cloudflare D1 configuration
-├── vite.config.ts         # Vite build configuration
-├── package.json           # Dependencies and scripts
-├── tsconfig.json          # TypeScript configuration
-└── README.md              # This file
+GEMINI_API_KEY=your_gemini_api_key  # In .dev.vars (local) or wrangler secret (production)
 ```
 
-## Disclaimer
+## Weekly Progress
+- **Week 1**: Foundation — 7 pages, 12 APIs, 7 DB tables, 36 states, 30 ministries
+- **Week 2**: AI Intelligence Core — Gemini integration, 17-category mock, AI transparency
+- **Week 3**: (Planned) Complaint Builder wizard, tracking system, Hindi UI
+- **Week 4**: (Planned) Enhanced dashboard, GeoJSON choropleth map
+- **Week 5**: (Planned) Data pipeline, real CPGRAMS statistics
+- **Week 6**: (Planned) Performance, accessibility, mobile optimization
+- **Week 7**: (Planned) Final testing, deployment, documentation
 
-GrievanceIQ is an educational and civic technology tool. All AI-generated outputs are comprehension and writing assistance tools only. They do not constitute legal advice. GrievanceIQ does not file complaints on behalf of users, does not access CPGRAMS accounts, and does not guarantee any specific outcome.
+## License
+Open source civic technology project.
 
 ---
-
-Built with care for India's citizens.
+*Last Updated: March 13, 2026 — Week 2*

@@ -11,6 +11,7 @@ import { rtiPage } from './pages/rti'
 
 type Bindings = {
   DB: D1Database
+  GEMINI_API_KEY?: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
