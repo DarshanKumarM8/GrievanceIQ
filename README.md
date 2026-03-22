@@ -1,78 +1,84 @@
 # GrievanceIQ
 
-> The government built a complaint inbox. GrievanceIQ builds the intelligence layer between citizens and that inbox — so filing a complaint actually means something.
+**File Smarter. Get Heard. Hold Them Accountable.**
+
+AI-powered citizen grievance intelligence platform for India's CPGRAMS system. Helps citizens file stronger complaints, track resolution progress, and escalate with RTI applications when ignored.
 
 ## Project Overview
 - **Name**: GrievanceIQ
-- **Goal**: AI-powered citizen grievance intelligence platform for India's CPGRAMS system
-- **Target Users**: Indian citizens filing complaints + journalists/researchers using public dashboard
-- **Tech Stack**: Hono (TypeScript) + Tailwind CSS + Cloudflare D1 + Google Gemini API
-- **Status**: Week 2 complete — AI Intelligence Core active
+- **Goal**: Intelligence layer between citizens and India's grievance system
+- **Target Users**: Citizens, journalists, NGOs, researchers
+- **Tech Stack**: Hono (TypeScript), Tailwind CSS (CDN), Cloudflare D1 SQLite, Google Gemini AI
+- **Status**: Week 3 completed, AI core active
 
 ## URLs
 - **Live Preview**: https://3000-ijj8l21qjw9nnoh5yjcir-2b54fc91.sandbox.novita.ai
 - **GitHub**: https://github.com/DarshanKumarM8/GrievanceIQ
 
-## Features (Implemented)
+## Features
 
-### Citizen Complaint Intelligence Tool
-- **Smart Department Router** — AI identifies correct ministry from 92 CPGRAMS options
-- **Quality Scorer** — Rates complaint 1-10 with specific improvement suggestions
-- **AI Complaint Builder** — Side-by-side editor showing original vs improved draft
-- **Document Checklist** — Department-specific documents needed for filing
-- **Multilingual Intake** — Hindi, Tamil, Telugu, Bengali, English support
-- **Complaint Tracker** — Enter CPGRAMS ID, get timeline with Day 15/25 reminders
+### Citizen Tools
+- **7-Step Smart Complaint Builder** — Write, validate, analyze, route, improve, docs, file
+- **Real-Time Validation** — 6 quality checks as you type (dates, refs, location, amounts, scheme, word count)
+- **AI Department Router** — Identifies correct ministry from 92 options with confidence scores
+- **Quality Scorer** — Rates complaint 1-10, shows before/after improvement
+- **AI Complaint Rewriter** — Side-by-side editor with professionally improved draft
+- **Document Checklist** — Interactive checklist of required documents per complaint type
+- **Complaint Tracker** — Computed timeline with live countdown timer (Day 15/25/30)
+- **Action Recommendations** — Context-aware next steps based on complaint phase
 - **RTI Auto-Drafter** — One-click legally formatted RTI application with PDF download
-- **Outcome Feedback** — Report if complaint was truly resolved or fake-closed
+- **My Complaints** — History page with stats, filtering, and quick actions
+- **Hindi UI Toggle** — English/Hindi navigation with localStorage persistence
+- **8 Quick Templates** — Pension, PM-KISAN, Railway, Passport, Ration, Electricity, EPFO, Banking
 
-### Public Accountability Dashboard
-- **India Grievance Map** — Interactive map with 36 states, switchable metrics
-- **Department Scorecard** — 30 ministries ranked by resolution rate, fake closure rate
-- **Systemic Issue Radar** — 8 trending complaint patterns with spike detection
-- **Social Monitoring Feed** — Simulated Twitter/news signal tracking
+### Public Dashboard
+- **India GeoJSON Choropleth Map** — Interactive state boundaries with 4 metric views
+- **Chart.js Analytics** — 4 charts: ministry volume, status distribution, fake closure rates, resolution speed
+- **Department Scorecard** — 30 ministries ranked with sortable columns
+- **Systemic Issue Radar** — Trending complaint clusters with severity, spike factor, affected states
+- **Social Monitoring Feed** — Twitter/news signal tracking with spike detection
 
-### AI Architecture
-- **Primary**: Google Gemini 2.0 Flash API (structured JSON output)
-- **Fallback**: Gemini 2.0 Flash Lite → Mock Keyword Classifier v2 (17 categories)
-- **Transparency**: Every response shows whether Gemini or Mock was used
+### AI Engine
+- **Primary**: Google Gemini 2.0 Flash (with flash-lite fallback)
+- **Fallback**: Mock keyword classifier (17 categories, 92 ministries)
+- **Features**: Exponential backoff, 30s timeout, rate limit handling, JSON schema validation
+- **Transparency**: AI source badges showing model used and latency
 
-## Pages (7)
-| Page | URL | Description |
-|------|-----|-------------|
-| Home | `/` | Hero with complaint input, stats, trending preview |
-| Complaint Builder | `/complaint` | AI analysis with department routing + rewriting |
-| Tracker | `/tracker` | CPGRAMS ID tracking with timeline |
-| RTI Drafter | `/rti` | Auto-generate RTI application |
-| Dashboard | `/dashboard` | India map, scorecard, trending, social |
-| How It Works | `/how-it-works` | 4-step process explanation |
-| About | `/about` | Mission, team, scope |
+## API Endpoints (16 total)
 
-## API Endpoints (14)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | System health with AI status |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Service status, version, features list |
 | GET | `/api/stats` | Dashboard aggregate statistics |
-| GET | `/api/ministries` | Department scorecards (sortable) |
+| GET | `/api/ministries` | Ministry scorecards (sortable, filterable) |
 | GET | `/api/ministries/:code` | Single ministry detail |
-| GET | `/api/states` | All 36 state grievance stats |
+| GET | `/api/states` | State grievance stats (for map) |
 | GET | `/api/states/:code` | Single state detail |
-| GET | `/api/trending` | Systemic issues (flagged filter) |
+| GET | `/api/trending` | Systemic issue radar data |
 | GET | `/api/social` | Social monitoring signals |
-| POST | `/api/complaints/analyze` | **AI-powered** complaint analysis |
-| POST | `/api/complaints/track` | Track CPGRAMS complaint |
-| GET | `/api/complaints/recent` | List recent complaints |
-| GET | `/api/complaints/:id` | Get complaint by ID |
-| POST | `/api/feedback` | Submit outcome feedback |
-| POST | `/api/rti/generate` | **AI-powered** RTI generation |
+| POST | `/api/complaints/analyze` | AI complaint analysis |
+| POST | `/api/complaints/track` | Computed timeline with countdown |
+| GET | `/api/complaints/recent` | Recent analyzed complaints |
+| GET | `/api/complaints/all` | All complaints with status filter |
+| GET | `/api/complaints/stats` | Complaint count statistics |
+| GET | `/api/complaints/:id` | Single complaint detail |
+| POST | `/api/feedback` | Citizen outcome reporting |
+| POST | `/api/rti/generate` | AI RTI application generation |
 
-## Database Schema (7 tables)
-- `users` — Citizen profiles (consent-based)
-- `complaints` — Analyzed complaints with AI routing and scoring
-- `complaint_feedback` — Citizen outcome reports (fake closure detection)
-- `ministry_stats` — 30 ministries with resolution/fake closure metrics
-- `state_grievance_stats` — 36 states with complaint volumes
-- `trending_issues` — Systemic complaint patterns
-- `social_signals` — Twitter/news monitoring data
+## Data Architecture
+
+### Database Tables (7)
+- **users** — Email, phone, name, language preference
+- **complaints** — Full complaint lifecycle (draft → filed → resolved/fake_closed)
+- **complaint_feedback** — Citizen outcome reports, fake closure detection
+- **ministry_stats** — 30 ministries with performance metrics
+- **state_grievance_stats** — 36 states/UTs with complaint data
+- **trending_issues** — 8 systemic issue clusters
+- **social_signals** — 8 Twitter/news monitoring entries
+
+### Seed Data
+- 96 rows across 7 tables
+- 30 ministries, 36 states, 8 trending issues, 8 social signals, 3 users, 3 sample complaints
 
 ## Development
 
@@ -80,32 +86,44 @@
 # Install dependencies
 npm install
 
-# Set up local database
+# Setup database
 npm run db:migrate:local && npm run db:seed
 
-# Start development server
-npm run build && npm run preview
+# Build and preview
+npm run build
+npm run preview   # or: pm2 start ecosystem.config.cjs
 
-# Or with PM2
-pm2 start ecosystem.config.cjs
+# Environment variable (for Gemini AI)
+# Create .dev.vars file with: GEMINI_API_KEY=your_key_here
 ```
 
-## Environment Variables
-```
-GEMINI_API_KEY=your_gemini_api_key  # In .dev.vars (local) or wrangler secret (production)
-```
+## Pages (8)
+1. `/` — Home with hero, stats, problem/solution, trending preview
+2. `/complaint` — 7-step AI complaint wizard
+3. `/tracker` — Countdown timer, timeline, action recommendations
+4. `/my-complaints` — History with stats and filtering
+5. `/dashboard` — GeoJSON map, charts, scorecard, trending, social
+6. `/rti` — RTI auto-drafter with PDF download
+7. `/how-it-works` — 5-step citizen flow + researcher flow
+8. `/about` — Project info and team
 
 ## Weekly Progress
-- **Week 1**: Foundation — 7 pages, 12 APIs, 7 DB tables, 36 states, 30 ministries
-- **Week 2**: AI Intelligence Core — Gemini integration, 17-category mock, AI transparency
-- **Week 3**: (Planned) Complaint Builder wizard, tracking system, Hindi UI
-- **Week 4**: (Planned) Enhanced dashboard, GeoJSON choropleth map
-- **Week 5**: (Planned) Data pipeline, real CPGRAMS statistics
-- **Week 6**: (Planned) Performance, accessibility, mobile optimization
-- **Week 7**: (Planned) Final testing, deployment, documentation
+- **Week 1** ✅ Foundation: 7 pages, 12 APIs, 7 DB tables, 36 states, 30 ministries, mock AI
+- **Week 2** ✅ AI Core: Gemini integration, 17 categories, transparency badges, 14 APIs
+- **Week 3** ✅ UX & Completeness: 7-step wizard, computed timelines, My Complaints, Hindi UI, GeoJSON, Chart.js
+- **Week 4** 📋 Security & Auth: Login, email reminders, sanitization, rate limiting
+- **Week 5** 📋 Analytics: District drill-down, PDF export, advanced charts
+- **Week 6** 📋 Regional & Data: Tamil/Telugu/Bengali UI, CPGRAMS scraping, Twitter API
+- **Week 7** 📋 Final: 2G testing, Lighthouse optimization, deployment, documentation
+
+## Codebase
+- **Source Files**: 12 TypeScript files
+- **Total Lines**: 4,773
+- **Bundle Size**: 260 KB
+- **Dependencies**: Hono ^4.12.5
+- **CDN Libraries**: Tailwind CSS, Leaflet 1.9.4, Chart.js 4.4.0, jsPDF 2.5.1, Font Awesome 6.5.0
 
 ## License
-Open source civic technology project.
+Open source civic tech. Built for India's citizens.
 
----
-*Last Updated: March 13, 2026 — Week 2*
+**Last Updated**: March 22, 2026 (Week 3)
