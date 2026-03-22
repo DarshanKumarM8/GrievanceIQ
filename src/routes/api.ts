@@ -16,8 +16,8 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '2.0.0',
-    week: 2,
+    version: '3.0.0',
+    week: 3,
     ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGeminiKey ? 'active' : 'fallback-only',
     features: [
@@ -29,10 +29,17 @@ apiRoutes.get('/health', (c) => {
       'rti_generation',
       'complaint_tracking',
       'feedback_system',
-      'india_map',
+      'india_geojson_choropleth',
+      'chartjs_analytics',
       'department_scorecard',
       'trending_issues',
-      'social_signals'
+      'social_signals',
+      'my_complaints_history',
+      'hindi_ui_toggle',
+      '7_step_wizard',
+      'realtime_validation',
+      'day15_day25_countdown',
+      'computed_timelines'
     ]
   })
 })
@@ -233,7 +240,7 @@ apiRoutes.post('/complaints/analyze', async (c) => {
 // ============================================
 apiRoutes.post('/complaints/track', async (c) => {
   const body = await c.req.json()
-  const { cpgrams_id, complaint_id } = body
+  const { cpgrams_id, complaint_id, filing_date } = body
 
   if (!cpgrams_id) {
     return c.json({ success: false, error: 'CPGRAMS ID is required' }, 400)
@@ -247,8 +254,17 @@ apiRoutes.post('/complaints/track', async (c) => {
         .run()
     }
 
-    // Return tracking info
-    const timeline = generateMockTimeline(cpgrams_id)
+    // Check if complaint exists in DB with a filing date
+    let dbFilingDate = filing_date
+    if (!dbFilingDate) {
+      const existing = await db.prepare('SELECT filed_at FROM complaints WHERE cpgrams_id = ?').bind(cpgrams_id).first()
+      if (existing?.filed_at) {
+        dbFilingDate = existing.filed_at as string
+      }
+    }
+
+    // Return computed tracking info
+    const timeline = generateComputedTimeline(cpgrams_id, dbFilingDate)
     return c.json({ success: true, data: timeline })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
@@ -348,7 +364,65 @@ apiRoutes.get('/complaints/recent', async (c) => {
 })
 
 // ============================================
-// COMPLAINT BY ID
+// MY COMPLAINTS — List all analyzed complaints for user
+// ============================================
+apiRoutes.get('/complaints/all', async (c) => {
+  const db = c.env.DB
+  const limit = parseInt(c.req.query('limit') || '50')
+  const status = c.req.query('status') || ''
+  try {
+    let query = 'SELECT id, raw_text, language_detected, department_predicted, department_confidence, quality_score_before, quality_score_after, status, cpgrams_id, filed_at, rti_generated, created_at FROM complaints'
+    const params: any[] = []
+    
+    if (status && status !== 'all') {
+      query += ' WHERE status = ?'
+      params.push(status)
+    }
+    query += ' ORDER BY created_at DESC LIMIT ?'
+    params.push(limit)
+
+    const stmt = db.prepare(query)
+    const results = params.length === 1 
+      ? await stmt.bind(params[0]).all()
+      : await stmt.bind(...params).all()
+    
+    return c.json({ success: true, data: results.results })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// COMPLAINT STATS — Aggregate user stats
+// ============================================
+apiRoutes.get('/complaints/stats', async (c) => {
+  const db = c.env.DB
+  try {
+    const total = await db.prepare('SELECT COUNT(*) as count FROM complaints').first()
+    const filed = await db.prepare("SELECT COUNT(*) as count FROM complaints WHERE status = 'filed'").first()
+    const resolved = await db.prepare("SELECT COUNT(*) as count FROM complaints WHERE status = 'resolved'").first()
+    const pending = await db.prepare("SELECT COUNT(*) as count FROM complaints WHERE status IN ('draft', 'pending', 'filed')").first()
+    const escalated = await db.prepare("SELECT COUNT(*) as count FROM complaints WHERE rti_generated = 1").first()
+    const fakeClosed = await db.prepare("SELECT COUNT(*) as count FROM complaints WHERE status = 'fake_closed'").first()
+
+    return c.json({
+      success: true,
+      data: {
+        total: total?.count || 0,
+        filed: filed?.count || 0,
+        resolved: resolved?.count || 0,
+        pending: pending?.count || 0,
+        escalated: escalated?.count || 0,
+        fake_closed: fakeClosed?.count || 0
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// COMPLAINT BY ID (must be after /complaints/recent, /all, /stats)
 // ============================================
 apiRoutes.get('/complaints/:id', async (c) => {
   const id = c.req.param('id')
@@ -363,30 +437,171 @@ apiRoutes.get('/complaints/:id', async (c) => {
 })
 
 // ============================================
-// MOCK TIMELINE (will be replaced with real tracking)
+// COMPUTED TIMELINE — Smart timeline generation
 // ============================================
 
-function generateMockTimeline(cpgramsId: string) {
+function generateComputedTimeline(cpgramsId: string, filingDate?: string) {
   const now = new Date()
-  const filed = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000) // 20 days ago
+  
+  // If user provides filing date, use it; otherwise simulate 20 days ago
+  let filed: Date
+  if (filingDate) {
+    filed = new Date(filingDate)
+    // Validate the date
+    if (isNaN(filed.getTime())) {
+      filed = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)
+    }
+  } else {
+    filed = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)
+  }
+
+  const MS_PER_DAY = 24 * 60 * 60 * 1000
+  const daysElapsed = Math.max(0, Math.floor((now.getTime() - filed.getTime()) / MS_PER_DAY))
+  const deadline = new Date(filed.getTime() + 30 * MS_PER_DAY)
+  const day15 = new Date(filed.getTime() + 15 * MS_PER_DAY)
+  const day25 = new Date(filed.getTime() + 25 * MS_PER_DAY)
+  const daysRemaining = Math.max(0, 30 - daysElapsed)
+
+  // Determine overall status
+  let status = 'pending'
+  if (daysElapsed > 30) status = 'overdue'
+  else if (daysElapsed > 25) status = 'urgent'
+  else if (daysElapsed > 15) status = 'follow_up'
+  else status = 'on_track'
+
+  // Build dynamic timeline based on days elapsed
+  const timeline: any[] = [
+    {
+      date: filed.toISOString().split('T')[0],
+      event: 'Complaint Filed',
+      status: 'completed',
+      description: `Complaint ${cpgramsId} registered on CPGRAMS portal`,
+      is_reminder: false
+    }
+  ]
+
+  // Day 2: Forwarded
+  if (daysElapsed >= 2) {
+    timeline.push({
+      date: new Date(filed.getTime() + 2 * MS_PER_DAY).toISOString().split('T')[0],
+      event: 'Forwarded to Department',
+      status: 'completed',
+      description: 'Complaint forwarded to concerned ministry/department for action',
+      is_reminder: false
+    })
+  } else {
+    timeline.push({
+      date: new Date(filed.getTime() + 2 * MS_PER_DAY).toISOString().split('T')[0],
+      event: 'Pending Forwarding',
+      status: daysElapsed >= 1 ? 'active' : 'upcoming',
+      description: 'Complaint will be forwarded to concerned department within 48 hours',
+      is_reminder: false
+    })
+  }
+
+  // Day 5: Under Review
+  if (daysElapsed >= 5) {
+    timeline.push({
+      date: new Date(filed.getTime() + 5 * MS_PER_DAY).toISOString().split('T')[0],
+      event: 'Under Review',
+      status: 'completed',
+      description: 'Department has acknowledged and is reviewing the complaint',
+      is_reminder: false
+    })
+  } else if (daysElapsed >= 2) {
+    timeline.push({
+      date: new Date(filed.getTime() + 5 * MS_PER_DAY).toISOString().split('T')[0],
+      event: 'Awaiting Review',
+      status: 'active',
+      description: 'Waiting for department to acknowledge and begin review',
+      is_reminder: false
+    })
+  }
+
+  // Day 10: Investigation
+  if (daysElapsed >= 10) {
+    timeline.push({
+      date: new Date(filed.getTime() + 10 * MS_PER_DAY).toISOString().split('T')[0],
+      event: 'Investigation Phase',
+      status: daysElapsed < 15 ? 'active' : 'completed',
+      description: 'Department is investigating the complaint details. Officer assigned for inquiry.',
+      is_reminder: false
+    })
+  }
+
+  // Day 15: Reminder
+  const day15Status = daysElapsed >= 15 ? (daysElapsed < 20 ? 'active' : 'completed') : 'upcoming'
+  timeline.push({
+    date: day15.toISOString().split('T')[0],
+    event: 'Day 15 — First Reminder',
+    status: day15Status,
+    description: daysElapsed >= 15
+      ? 'Half the standard resolution window has passed. Follow up on CPGRAMS for status update.'
+      : `${Math.max(0, 15 - daysElapsed)} days until first reminder milestone.`,
+    is_reminder: true
+  })
+
+  // Day 20: Midpoint update
+  if (daysElapsed >= 15) {
+    const day20 = daysElapsed >= 20
+    timeline.push({
+      date: new Date(filed.getTime() + 20 * MS_PER_DAY).toISOString().split('T')[0],
+      event: 'Response Expected',
+      status: day20 ? (daysElapsed < 25 ? 'active' : 'completed') : 'active',
+      description: day20
+        ? 'Department should have provided initial response by now. Contact them directly if no update.'
+        : 'Department expected to provide initial response. Check CPGRAMS portal.',
+      is_reminder: false
+    })
+  }
+
+  // Day 25: Warning
+  const day25Status = daysElapsed >= 25 ? (daysElapsed < 30 ? 'active' : 'completed') : 'upcoming'
+  timeline.push({
+    date: day25.toISOString().split('T')[0],
+    event: 'Day 25 — Urgent Warning',
+    status: day25Status,
+    description: daysElapsed >= 25
+      ? `Only ${daysRemaining} days remain! Begin preparing RTI application immediately if unresolved.`
+      : `${Math.max(0, 25 - daysElapsed)} days until urgent warning. If unresolved, prepare RTI.`,
+    is_reminder: true
+  })
+
+  // Day 30: Deadline
+  timeline.push({
+    date: deadline.toISOString().split('T')[0],
+    event: 'Day 30 — Resolution Deadline',
+    status: daysElapsed >= 30 ? 'completed' : 'upcoming',
+    description: daysElapsed >= 30
+      ? 'Standard 30-day window has expired. File RTI application under Section 6(1) of RTI Act 2005.'
+      : 'Standard 30-day CPGRAMS resolution window expires. After this, you can file RTI for accountability.',
+    is_reminder: true
+  })
+
+  // If overdue, add escalation step
+  if (daysElapsed > 30) {
+    timeline.push({
+      date: now.toISOString().split('T')[0],
+      event: 'OVERDUE — Escalation Required',
+      status: 'active',
+      description: `Complaint is ${daysElapsed - 30} days overdue. File RTI application and/or escalate to First Appellate Authority under Section 19(1).`,
+      is_reminder: true
+    })
+  }
 
   return {
     cpgrams_id: cpgramsId,
-    status: 'pending',
-    expected_resolution_date: new Date(filed.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    days_elapsed: 20,
-    days_remaining: 10,
-    timeline: [
-      { date: filed.toISOString().split('T')[0], event: 'Complaint Filed', status: 'completed', description: `Complaint ${cpgramsId} registered on CPGRAMS portal` },
-      { date: new Date(filed.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], event: 'Forwarded to Department', status: 'completed', description: 'Complaint forwarded to concerned ministry/department for action' },
-      { date: new Date(filed.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], event: 'Under Review', status: 'completed', description: 'Department has acknowledged and is reviewing the complaint' },
-      { date: new Date(filed.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], event: 'Day 15 Reminder', status: 'active', description: 'Half of the standard 30-day resolution window has passed. Log in to CPGRAMS to check latest status.' },
-      { date: new Date(filed.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], event: 'Day 25 Reminder', status: 'upcoming', description: 'Only 5 days remaining. If still unresolved, prepare your RTI application now.' },
-      { date: new Date(filed.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], event: 'Resolution Deadline', status: 'upcoming', description: 'Standard 30-day window expires. You can now file an RTI application for accountability.' }
-    ],
+    status,
+    filed_date: filed.toISOString().split('T')[0],
+    deadline_date: deadline.toISOString().split('T')[0],
+    day15_date: day15.toISOString().split('T')[0],
+    day25_date: day25.toISOString().split('T')[0],
+    days_elapsed: daysElapsed,
+    days_remaining: daysRemaining,
+    timeline,
     reminders: {
-      day_15: { sent: true, date: new Date(filed.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-      day_25: { sent: false, date: new Date(filed.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }
+      day_15: { triggered: daysElapsed >= 15, date: day15.toISOString().split('T')[0] },
+      day_25: { triggered: daysElapsed >= 25, date: day25.toISOString().split('T')[0] }
     }
   }
 }

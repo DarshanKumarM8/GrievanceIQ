@@ -13,7 +13,7 @@ export function dashboardPage(): string {
         </div>
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-ashoka-400 pulse-dot"></span>
-          <span class="text-xs text-gray-400 font-medium">Live data • Updated Jan 2026</span>
+          <span class="text-xs text-gray-400 font-medium">Live data • Updated March 2026</span>
         </div>
       </div>
     </div>
@@ -32,14 +32,15 @@ export function dashboardPage(): string {
     </div>
   </section>
 
-  <!-- India Map -->
+  <!-- India Choropleth Map -->
   <section class="py-8 sm:py-12" id="map-section">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 bg-gradient-to-r from-navy-600 to-navy-700 flex items-center justify-between">
+        <div class="px-6 py-4 bg-gradient-to-r from-navy-600 to-navy-700 flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2">
             <i class="fas fa-map-location-dot text-white"></i>
             <h2 class="font-bold text-white">India Grievance Intelligence Map</h2>
+            <span class="text-[10px] bg-ashoka-500/30 text-ashoka-200 px-2 py-0.5 rounded-full font-medium hidden sm:inline">GeoJSON Choropleth</span>
           </div>
           <select id="mapMetric" onchange="updateMapColors()" class="text-xs bg-white/20 border border-white/30 rounded-lg px-3 py-1.5 text-white focus:outline-none">
             <option value="total_complaints">Total Complaints</option>
@@ -49,31 +50,86 @@ export function dashboardPage(): string {
           </select>
         </div>
         <div class="relative">
-          <div id="indiaMap" style="height:550px;background:#f8fafc;"></div>
+          <div id="indiaMap" style="height:580px;background:#f0f4ff;"></div>
+          <!-- Loading overlay -->
+          <div id="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 z-[1000]">
+            <div class="text-center">
+              <div class="spinner mx-auto mb-2" style="width:32px;height:32px;border-width:3px;"></div>
+              <p class="text-xs text-gray-500">Loading India GeoJSON boundaries...</p>
+            </div>
+          </div>
           <!-- Legend -->
-          <div class="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 z-[1000]">
+          <div class="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 z-[999]">
             <p class="text-xs font-semibold text-gray-600 mb-2" id="legendTitle">Complaints Volume</p>
-            <div class="flex items-center gap-1" id="legendBar">
-              <span class="w-6 h-3 rounded" style="background:#fee2e2"></span>
-              <span class="w-6 h-3 rounded" style="background:#fca5a5"></span>
-              <span class="w-6 h-3 rounded" style="background:#f87171"></span>
-              <span class="w-6 h-3 rounded" style="background:#ef4444"></span>
-              <span class="w-6 h-3 rounded" style="background:#dc2626"></span>
-              <span class="w-6 h-3 rounded" style="background:#991b1b"></span>
+            <div class="flex items-center gap-0.5" id="legendBar">
+              <span class="w-5 h-3 rounded-sm" style="background:#fef3c7"></span>
+              <span class="w-5 h-3 rounded-sm" style="background:#fcd34d"></span>
+              <span class="w-5 h-3 rounded-sm" style="background:#f97316"></span>
+              <span class="w-5 h-3 rounded-sm" style="background:#ef4444"></span>
+              <span class="w-5 h-3 rounded-sm" style="background:#dc2626"></span>
+              <span class="w-5 h-3 rounded-sm" style="background:#7f1d1d"></span>
             </div>
             <div class="flex justify-between mt-1"><span class="text-[10px] text-gray-400">Low</span><span class="text-[10px] text-gray-400">High</span></div>
           </div>
         </div>
         <!-- State info panel -->
-        <div id="stateInfo" class="hidden px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div id="stateInfo" class="hidden px-6 py-5 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200">
           <div id="stateInfoContent"></div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- Charts Section -->
+  <section class="py-8 sm:py-12 bg-gray-50" id="charts">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-chart-bar text-saffron-500 mr-2"></i>Analytics Overview</h2>
+      <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Bar Chart: Ministry Performance -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <div class="px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-building-columns mr-1.5"></i>Top 10 Ministries — Complaint Volume</h3>
+          </div>
+          <div class="p-4" style="height:340px;">
+            <canvas id="ministryBarChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Doughnut Chart: Complaint Status Distribution -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <div class="px-5 py-3 bg-gradient-to-r from-saffron-500 to-saffron-600 flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-pie mr-1.5"></i>Resolution Status Distribution</h3>
+          </div>
+          <div class="p-4 flex items-center justify-center" style="height:340px;">
+            <canvas id="statusDoughnutChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Horizontal Bar: Fake Closure Rates -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <div class="px-5 py-3 bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-mask mr-1.5"></i>Fake Closure Rate — Top Offenders</h3>
+          </div>
+          <div class="p-4" style="height:340px;">
+            <canvas id="fakeClosureChart"></canvas>
+          </div>
+        </div>
+        
+        <!-- Bar Chart: Resolution Speed -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700 flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-clock mr-1.5"></i>Average Resolution Days — Comparison</h3>
+          </div>
+          <div class="p-4" style="height:340px;">
+            <canvas id="resolutionDaysChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Department Scorecard -->
-  <section class="py-8 sm:py-12 bg-gray-50" id="scorecard">
+  <section class="py-8 sm:py-12" id="scorecard">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-between">
@@ -110,21 +166,21 @@ export function dashboardPage(): string {
   </section>
 
   <!-- Trending Issues -->
-  <section class="py-8 sm:py-12" id="trending">
+  <section class="py-8 sm:py-12 bg-gray-50" id="trending">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <span class="w-3 h-3 rounded-full bg-red-500 pulse-dot"></span>
           <h2 class="text-xl sm:text-2xl font-bold text-navy-800">Systemic Issue Radar</h2>
         </div>
-        <span class="text-xs text-gray-400">Week of Jan 6, 2026</span>
+        <span class="text-xs text-gray-400">Week of March 2026</span>
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" id="trendingGrid"></div>
     </div>
   </section>
 
   <!-- Social Signals -->
-  <section class="py-8 sm:py-12 bg-gray-50">
+  <section class="py-8 sm:py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 class="text-xl font-bold text-navy-800 mb-6"><i class="fas fa-signal mr-2 text-saffron-500"></i>Social Monitoring Feed</h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="socialGrid"></div>
@@ -133,11 +189,31 @@ export function dashboardPage(): string {
 
   <script>
     // ============================================
-    // LOAD DASHBOARD DATA
+    // DATA STORAGE
     // ============================================
     let stateData = [];
+    let ministryData = [];
     let map;
+    let geoLayer;
+    const GEOJSON_URL = 'https://cdn.jsdelivr.net/npm/geojson-india/india.json';
 
+    // GeoJSON state name → our DB state_code mapping
+    const stateNameToCode = {
+      'Andaman and Nicobar Islands': 'AN', 'Andhra Pradesh': 'AP', 'Arunachal Pradesh': 'AR',
+      'Assam': 'AS', 'Bihar': 'BR', 'Chandigarh': 'CH', 'Chhattisgarh': 'CG',
+      'Dadra and Nagar Haveli': 'DN', 'Daman and Diu': 'DN', 'Delhi': 'DL',
+      'Goa': 'GA', 'Gujarat': 'GJ', 'Haryana': 'HR', 'Himachal Pradesh': 'HP',
+      'Jammu and Kashmir': 'JK', 'Jharkhand': 'JH', 'Karnataka': 'KA', 'Kerala': 'KL',
+      'Ladakh': 'LA', 'Lakshadweep': 'LD', 'Madhya Pradesh': 'MP', 'Maharashtra': 'MH',
+      'Manipur': 'MN', 'Meghalaya': 'ML', 'Mizoram': 'MZ', 'Nagaland': 'NL',
+      'Odisha': 'OD', 'Puducherry': 'PY', 'Punjab': 'PB', 'Rajasthan': 'RJ',
+      'Sikkim': 'SK', 'Tamil Nadu': 'TN', 'Telangana': 'TG', 'Tripura': 'TR',
+      'Uttar Pradesh': 'UP', 'Uttarakhand': 'UK', 'West Bengal': 'WB'
+    };
+
+    // ============================================
+    // LOAD DASHBOARD DATA
+    // ============================================
     async function loadDashboard() {
       // Stats
       try {
@@ -153,27 +229,29 @@ export function dashboardPage(): string {
         }
       } catch(e) {}
 
-      // States
+      // States (for map)
       try {
         const res = await fetch('/api/states');
         const json = await res.json();
         if (json.success) { stateData = json.data; initMap(); }
+      } catch(e) { console.error('State data failed:', e); }
+
+      // Ministries (for charts and scorecard)
+      try {
+        const res = await fetch('/api/ministries?limit=30');
+        const json = await res.json();
+        if (json.success) { ministryData = json.data; initCharts(); }
       } catch(e) {}
 
-      // Scorecard
       loadScorecard();
-      
-      // Trending
       loadTrendingDash();
-      
-      // Social
       loadSocial();
     }
 
     // ============================================
-    // INDIA MAP
+    // INDIA MAP — GeoJSON CHOROPLETH
     // ============================================
-    function initMap() {
+    async function initMap() {
       map = L.map('indiaMap', {
         center: [22.5, 82],
         zoom: 5,
@@ -187,69 +265,112 @@ export function dashboardPage(): string {
         maxZoom: 19
       }).addTo(map);
 
-      // Draw states as circle markers (since GeoJSON boundaries are too heavy for CDN)
-      const stateCoords = {
-        'UP': [26.85, 80.91], 'MH': [19.75, 75.71], 'BR': [25.09, 85.31], 'RJ': [27.02, 74.21],
-        'TN': [11.13, 78.66], 'MP': [22.97, 78.66], 'KA': [15.32, 75.71], 'WB': [22.99, 87.75],
-        'GJ': [22.26, 71.19], 'AP': [15.91, 79.74], 'TG': [18.11, 79.02], 'KL': [10.85, 76.27],
-        'DL': [28.7, 77.1], 'OD': [20.94, 85.1], 'PB': [31.15, 75.34], 'HR': [29.06, 76.09],
-        'JH': [23.61, 85.28], 'CG': [21.27, 81.87], 'AS': [26.2, 92.94], 'UK': [30.07, 79.49],
-        'HP': [31.1, 77.17], 'JK': [33.78, 76.58], 'GA': [15.3, 74.08], 'TR': [23.94, 91.99],
-        'ML': [25.47, 91.37], 'MN': [24.66, 93.91], 'NL': [26.16, 94.56], 'AR': [28.22, 94.73],
-        'MZ': [23.16, 92.94], 'SK': [27.53, 88.51], 'PY': [11.94, 79.83], 'CH': [30.73, 76.77],
-        'AN': [11.74, 92.66], 'LA': [34.15, 77.58], 'LD': [10.57, 72.64], 'DN': [20.42, 72.83]
-      };
+      // Load GeoJSON boundaries
+      try {
+        const res = await fetch(GEOJSON_URL);
+        const geojson = await res.json();
+        
+        geoLayer = L.geoJSON(geojson, {
+          style: (feature) => getStateStyle(feature),
+          onEachFeature: (feature, layer) => {
+            const code = stateNameToCode[feature.properties.name];
+            const state = stateData.find(s => s.state_code === code);
+            
+            // Tooltip
+            const tooltipContent = state 
+              ? '<strong>' + feature.properties.name + '</strong><br>' + 
+                Number(state.total_complaints).toLocaleString() + ' complaints<br>' +
+                'Resolution: ' + state.resolution_rate + '%<br>' +
+                'Fake Closure: ' + state.fake_closure_rate + '%'
+              : '<strong>' + feature.properties.name + '</strong><br>No data';
+            
+            layer.bindTooltip(tooltipContent, {
+              direction: 'auto',
+              className: 'leaflet-tooltip-custom',
+              sticky: true
+            });
 
-      stateData.forEach(state => {
-        const coords = stateCoords[state.state_code];
-        if (!coords) return;
+            // Click handler
+            layer.on('click', () => {
+              if (state) showStateInfo(state);
+            });
 
-        const metric = document.getElementById('mapMetric').value;
-        const val = state[metric] || 0;
-        const color = getColor(val, metric);
-        const radius = Math.max(8, Math.sqrt(state.total_complaints) / 8);
+            // Hover effects
+            layer.on('mouseover', (e) => {
+              e.target.setStyle({ weight: 3, color: '#1a365d', fillOpacity: 0.9 });
+              e.target.bringToFront();
+            });
+            layer.on('mouseout', (e) => {
+              geoLayer.resetStyle(e.target);
+            });
 
-        const circle = L.circleMarker(coords, {
-          radius: radius,
-          fillColor: color,
-          color: '#fff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.85
+            // Store state data on layer
+            layer.stateCode = code;
+            layer.stateDataRef = state;
+          }
         }).addTo(map);
 
-        circle.bindTooltip(\`<strong>\${state.state_name}</strong><br>\${Number(state.total_complaints).toLocaleString()} complaints\`, {
-          direction: 'top',
-          className: 'leaflet-tooltip-custom'
-        });
-
-        circle.on('click', () => showStateInfo(state));
-        circle.stateData = state;
-      });
+        // Hide loading
+        document.getElementById('mapLoading').style.display = 'none';
+      } catch(e) {
+        console.error('GeoJSON load failed:', e);
+        document.getElementById('mapLoading').innerHTML = '<div class="text-center"><i class="fas fa-exclamation-triangle text-red-400 text-2xl mb-2"></i><p class="text-xs text-red-500">Map data unavailable. Refresh to retry.</p></div>';
+      }
     }
 
-    function getColor(val, metric) {
+    function getStateStyle(feature) {
+      const code = stateNameToCode[feature.properties.name];
+      const state = stateData.find(s => s.state_code === code);
+      const metric = document.getElementById('mapMetric').value;
+      const val = state ? (state[metric] || 0) : 0;
+      
+      return {
+        fillColor: getChoroplethColor(val, metric),
+        weight: 1.5,
+        opacity: 1,
+        color: '#94a3b8',
+        fillOpacity: 0.75
+      };
+    }
+
+    function getChoroplethColor(val, metric) {
       if (metric === 'total_complaints') {
-        return val > 50000 ? '#991b1b' : val > 30000 ? '#dc2626' : val > 20000 ? '#ef4444' : val > 10000 ? '#f87171' : val > 5000 ? '#fca5a5' : '#fee2e2';
+        return val > 50000 ? '#7f1d1d' : val > 35000 ? '#dc2626' : val > 20000 ? '#ef4444' :
+               val > 10000 ? '#f97316' : val > 5000 ? '#fcd34d' : '#fef3c7';
       } else if (metric === 'fake_closure_rate') {
-        return val > 20 ? '#991b1b' : val > 15 ? '#dc2626' : val > 12 ? '#ef4444' : val > 8 ? '#f87171' : val > 5 ? '#fca5a5' : '#fee2e2';
+        return val > 20 ? '#7f1d1d' : val > 16 ? '#dc2626' : val > 12 ? '#ef4444' :
+               val > 8 ? '#f97316' : val > 4 ? '#fcd34d' : '#fef3c7';
       } else if (metric === 'resolution_rate') {
-        return val > 80 ? '#166534' : val > 75 ? '#22c55e' : val > 70 ? '#86efac' : val > 65 ? '#fbbf24' : val > 60 ? '#f87171' : '#991b1b';
-      } else {
-        return val > 50 ? '#991b1b' : val > 40 ? '#dc2626' : val > 35 ? '#ef4444' : val > 30 ? '#f87171' : val > 25 ? '#fca5a5' : '#fee2e2';
+        return val > 82 ? '#14532d' : val > 78 ? '#22c55e' : val > 74 ? '#86efac' :
+               val > 70 ? '#fcd34d' : val > 65 ? '#f97316' : '#dc2626';
+      } else { // avg_resolution_days
+        return val > 45 ? '#7f1d1d' : val > 38 ? '#dc2626' : val > 32 ? '#ef4444' :
+               val > 26 ? '#f97316' : val > 20 ? '#fcd34d' : '#fef3c7';
       }
     }
 
     function updateMapColors() {
-      if (!map) return;
+      if (!geoLayer) return;
       const metric = document.getElementById('mapMetric').value;
-      const labels = { total_complaints: 'Complaints Volume', resolution_rate: 'Resolution Rate', fake_closure_rate: 'Fake Closure Rate', avg_resolution_days: 'Avg Days to Resolve' };
+      const labels = {
+        total_complaints: 'Complaints Volume',
+        resolution_rate: 'Resolution Rate',
+        fake_closure_rate: 'Fake Closure Rate',
+        avg_resolution_days: 'Avg Days to Resolve'
+      };
       document.getElementById('legendTitle').textContent = labels[metric];
-      
-      map.eachLayer(layer => {
-        if (layer.stateData) {
-          const val = layer.stateData[metric] || 0;
-          layer.setStyle({ fillColor: getColor(val, metric) });
+
+      // Update legend colors for resolution_rate (green scale)
+      const legendBar = document.getElementById('legendBar');
+      if (metric === 'resolution_rate') {
+        legendBar.innerHTML = '<span class="w-5 h-3 rounded-sm" style="background:#dc2626"></span><span class="w-5 h-3 rounded-sm" style="background:#f97316"></span><span class="w-5 h-3 rounded-sm" style="background:#fcd34d"></span><span class="w-5 h-3 rounded-sm" style="background:#86efac"></span><span class="w-5 h-3 rounded-sm" style="background:#22c55e"></span><span class="w-5 h-3 rounded-sm" style="background:#14532d"></span>';
+      } else {
+        legendBar.innerHTML = '<span class="w-5 h-3 rounded-sm" style="background:#fef3c7"></span><span class="w-5 h-3 rounded-sm" style="background:#fcd34d"></span><span class="w-5 h-3 rounded-sm" style="background:#f97316"></span><span class="w-5 h-3 rounded-sm" style="background:#ef4444"></span><span class="w-5 h-3 rounded-sm" style="background:#dc2626"></span><span class="w-5 h-3 rounded-sm" style="background:#7f1d1d"></span>';
+      }
+
+      geoLayer.eachLayer(layer => {
+        if (layer.feature) {
+          layer.setStyle(getStateStyle(layer.feature));
         }
       });
     }
@@ -262,8 +383,8 @@ export function dashboardPage(): string {
       document.getElementById('stateInfoContent').innerHTML = \`
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <h3 class="font-bold text-lg text-navy-700 mb-1">\${state.state_name}</h3>
-            <p class="text-sm text-gray-500">State Code: \${state.state_code}</p>
+            <h3 class="font-bold text-lg text-navy-700 mb-1"><i class="fas fa-map-pin text-saffron-500 mr-1.5"></i>\${state.state_name}</h3>
+            <p class="text-sm text-gray-500">Code: \${state.state_code} | Rank by volume</p>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div><span class="text-lg font-bold text-navy-700">\${Number(state.total_complaints).toLocaleString()}</span><br><span class="text-xs text-gray-500">Total</span></div>
@@ -272,16 +393,163 @@ export function dashboardPage(): string {
             <div><span class="text-lg font-bold text-saffron-600">\${state.avg_resolution_days}d</span><br><span class="text-xs text-gray-500">Avg Days</span></div>
           </div>
           <div>
-            <p class="text-xs font-semibold text-gray-500 mb-1">TOP ISSUES</p>
+            <p class="text-xs font-semibold text-gray-500 mb-1.5">TOP ISSUES</p>
             \${topIssues.slice(0, 3).map(i => '<span class="inline-block text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded mr-1 mb-1">' + i + '</span>').join('')}
           </div>
           <div>
-            <p class="text-xs font-semibold text-gray-500 mb-1">TOP DEPARTMENTS</p>
+            <p class="text-xs font-semibold text-gray-500 mb-1.5">TOP DEPARTMENTS</p>
             \${topDepts.slice(0, 3).map(d => '<span class="inline-block text-xs bg-navy-50 text-navy-700 px-2 py-0.5 rounded mr-1 mb-1">' + d + '</span>').join('')}
           </div>
         </div>
       \`;
       panel.classList.remove('hidden');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ============================================
+    // CHART.JS VISUALIZATIONS
+    // ============================================
+    function initCharts() {
+      if (!ministryData.length) return;
+
+      // Shared Chart.js defaults
+      Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+      Chart.defaults.font.size = 11;
+
+      // 1. Ministry Bar Chart — Top 10 by complaint volume
+      const top10 = ministryData.slice(0, 10);
+      new Chart(document.getElementById('ministryBarChart'), {
+        type: 'bar',
+        data: {
+          labels: top10.map(m => m.ministry_name.replace('Ministry of ', '').replace('Department of ', '').slice(0, 25)),
+          datasets: [{
+            label: 'Complaints Received',
+            data: top10.map(m => m.complaints_received),
+            backgroundColor: top10.map((m, i) => {
+              const colors = ['#1a365d', '#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe', '#eff6ff', '#f8fafc'];
+              return colors[i] || '#e2e8f0';
+            }),
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => Number(ctx.raw).toLocaleString('en-IN') + ' complaints'
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: v => (v/1000) + 'K' }, grid: { color: '#f1f5f9' } },
+            x: { ticks: { maxRotation: 45, minRotation: 30, font: { size: 9 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      // 2. Status Doughnut Chart
+      const totalResolved = ministryData.reduce((s, m) => s + m.complaints_disposed, 0);
+      const totalPending = ministryData.reduce((s, m) => s + m.complaints_pending, 0);
+      const totalReceived = ministryData.reduce((s, m) => s + m.complaints_received, 0);
+      const estFakeClosed = Math.round(totalResolved * 0.31); // avg fake closure rate
+      const actualResolved = totalResolved - estFakeClosed;
+
+      new Chart(document.getElementById('statusDoughnutChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Actually Resolved', 'Fake Closed', 'Pending'],
+          datasets: [{
+            data: [actualResolved, estFakeClosed, totalPending],
+            backgroundColor: ['#22c55e', '#ef4444', '#f59e0b'],
+            borderWidth: 3,
+            borderColor: '#fff',
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, pointStyleWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ctx.label + ': ' + Number(ctx.raw).toLocaleString('en-IN') + ' (' + Math.round(ctx.raw / totalReceived * 100) + '%)'
+              }
+            }
+          }
+        }
+      });
+
+      // 3. Fake Closure Horizontal Bar — Top 8 worst
+      const sortedByFake = [...ministryData].sort((a, b) => b.fake_closure_rate - a.fake_closure_rate).slice(0, 8);
+      new Chart(document.getElementById('fakeClosureChart'), {
+        type: 'bar',
+        data: {
+          labels: sortedByFake.map(m => m.ministry_name.replace('Ministry of ', '').replace('Department of ', '').slice(0, 30)),
+          datasets: [{
+            label: 'Fake Closure Rate (%)',
+            data: sortedByFake.map(m => m.fake_closure_rate),
+            backgroundColor: sortedByFake.map(m => m.fake_closure_rate >= 35 ? '#dc2626' : m.fake_closure_rate >= 25 ? '#f97316' : '#fbbf24'),
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => ctx.raw + '% fake closure rate' } }
+          },
+          scales: {
+            x: { beginAtZero: true, max: 50, ticks: { callback: v => v + '%' }, grid: { color: '#f1f5f9' } },
+            y: { ticks: { font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      // 4. Resolution Days Comparison
+      const top10Days = [...ministryData].sort((a, b) => b.avg_resolution_days - a.avg_resolution_days).slice(0, 10);
+      new Chart(document.getElementById('resolutionDaysChart'), {
+        type: 'bar',
+        data: {
+          labels: top10Days.map(m => m.ministry_name.replace('Ministry of ', '').replace('Department of ', '').slice(0, 22)),
+          datasets: [{
+            label: 'Avg Days',
+            data: top10Days.map(m => m.avg_resolution_days),
+            backgroundColor: top10Days.map(m => m.avg_resolution_days > 40 ? '#dc2626' : m.avg_resolution_days > 30 ? '#f97316' : '#22c55e'),
+            borderRadius: 6,
+            borderSkipped: false
+          }, {
+            label: '30-Day Target',
+            data: top10Days.map(() => 30),
+            type: 'line',
+            borderColor: '#1a365d',
+            borderWidth: 2,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 10 } } },
+            tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.raw + ' days' } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { callback: v => v + 'd' }, grid: { color: '#f1f5f9' } },
+            x: { ticks: { maxRotation: 45, minRotation: 30, font: { size: 9 } }, grid: { display: false } }
+          }
+        }
+      });
     }
 
     // ============================================
@@ -289,9 +557,8 @@ export function dashboardPage(): string {
     // ============================================
     async function loadScorecard() {
       const sort = document.getElementById('scorecardSort').value;
-      const order = sort === 'citizen_satisfaction_rate' ? 'asc' : 'desc';
       try {
-        const res = await fetch(\`/api/ministries?sort=\${sort}&order=\${sort === 'citizen_satisfaction_rate' ? 'asc' : 'desc'}\`);
+        const res = await fetch('/api/ministries?sort=' + sort + '&order=' + (sort === 'citizen_satisfaction_rate' ? 'asc' : 'desc'));
         const json = await res.json();
         if (json.success) {
           document.getElementById('scorecardBody').innerHTML = json.data.map((m, i) => \`
@@ -399,12 +666,14 @@ export function dashboardPage(): string {
     .leaflet-tooltip-custom {
       background: white;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 6px 10px;
+      border-radius: 10px;
+      padding: 8px 12px;
       font-family: 'Inter', sans-serif;
       font-size: 12px;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.12);
+      line-height: 1.5;
     }
+    .leaflet-tooltip-custom::before { display: none; }
   </style>
   `
   return layout('Public Dashboard', content, 'dashboard')

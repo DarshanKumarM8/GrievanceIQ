@@ -197,29 +197,35 @@ export function layout(title: string, content: string, activePage: string = ''):
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center gap-1">
           <a href="/" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'home' ? 'nav-active' : ''}">
-            <i class="fas fa-home mr-1.5"></i>Home
+            <i class="fas fa-home mr-1.5"></i><span data-i18n="nav_home">Home</span>
           </a>
           <a href="/complaint" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'complaint' ? 'nav-active' : ''}">
-            <i class="fas fa-pen-to-square mr-1.5"></i>File Complaint
+            <i class="fas fa-pen-to-square mr-1.5"></i><span data-i18n="nav_complaint">File Complaint</span>
           </a>
           <a href="/tracker" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'tracker' ? 'nav-active' : ''}">
-            <i class="fas fa-magnifying-glass mr-1.5"></i>Track
+            <i class="fas fa-magnifying-glass mr-1.5"></i><span data-i18n="nav_track">Track</span>
+          </a>
+          <a href="/my-complaints" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'my-complaints' ? 'nav-active' : ''}">
+            <i class="fas fa-folder-open mr-1.5"></i><span data-i18n="nav_my_complaints">My Complaints</span>
           </a>
           <a href="/dashboard" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'dashboard' ? 'nav-active' : ''}">
-            <i class="fas fa-chart-line mr-1.5"></i>Dashboard
+            <i class="fas fa-chart-line mr-1.5"></i><span data-i18n="nav_dashboard">Dashboard</span>
           </a>
           <a href="/how-it-works" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'how-it-works' ? 'nav-active' : ''}">
-            <i class="fas fa-circle-info mr-1.5"></i>How It Works
+            <i class="fas fa-circle-info mr-1.5"></i><span data-i18n="nav_how">How It Works</span>
           </a>
           <a href="/about" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'about' ? 'nav-active' : ''}">
-            <i class="fas fa-users mr-1.5"></i>About
+            <i class="fas fa-users mr-1.5"></i><span data-i18n="nav_about">About</span>
           </a>
         </div>
         
-        <!-- CTA Button -->
+        <!-- CTA + Language Toggle -->
         <div class="hidden md:flex items-center gap-3">
+          <button onclick="toggleLanguage()" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors" title="Switch language">
+            <i class="fas fa-language mr-1"></i><span id="langToggleLabel">हिन्दी</span>
+          </button>
           <a href="/complaint" class="bg-gradient-to-r from-saffron-500 to-saffron-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:from-saffron-600 hover:to-saffron-700 transition-all shadow-md hover:shadow-lg">
-            File a Complaint <i class="fas fa-arrow-right ml-1.5"></i>
+            <span data-i18n="nav_file_cta">File a Complaint</span> <i class="fas fa-arrow-right ml-1.5"></i>
           </a>
         </div>
         
@@ -257,11 +263,14 @@ export function layout(title: string, content: string, activePage: string = ''):
           <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
             <i class="fas fa-chart-line w-5"></i> Public Dashboard
           </a>
+          <a href="/my-complaints" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
+            <i class="fas fa-folder-open w-5"></i> <span data-i18n="nav_my_complaints">My Complaints</span>
+          </a>
           <a href="/how-it-works" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
-            <i class="fas fa-circle-info w-5"></i> How It Works
+            <i class="fas fa-circle-info w-5"></i> <span data-i18n="nav_how">How It Works</span>
           </a>
           <a href="/about" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
-            <i class="fas fa-users w-5"></i> About Us
+            <i class="fas fa-users w-5"></i> <span data-i18n="nav_about">About Us</span>
           </a>
           <div class="pt-4 mt-4 border-t">
             <a href="/complaint" class="block text-center bg-gradient-to-r from-saffron-500 to-saffron-600 text-white px-6 py-3 rounded-xl font-semibold">
@@ -408,6 +417,62 @@ export function layout(title: string, content: string, activePage: string = ''):
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }
+
+    // ============================================
+    // HINDI UI TOGGLE (i18n Foundation)
+    // ============================================
+    const i18n = {
+      en: {
+        nav_home: 'Home', nav_complaint: 'File Complaint', nav_track: 'Track',
+        nav_my_complaints: 'My Complaints', nav_dashboard: 'Dashboard', nav_how: 'How It Works',
+        nav_about: 'About', nav_file_cta: 'File a Complaint',
+        complaint_title: 'Smart Complaint Builder',
+        complaint_subtitle: 'Type your problem in any language. Our AI identifies the right department, scores your complaint, and rewrites it for maximum impact.',
+        step1_title: 'Step 1: Describe Your Problem',
+        analyze_btn: 'Analyze My Complaint',
+        tracker_title: 'Complaint Tracker',
+        tracker_subtitle: 'Enter your CPGRAMS complaint ID to track progress, get Day 15/25 countdown reminders, and report outcomes.',
+        my_complaints_title: 'My Complaints',
+        my_complaints_subtitle: 'Track all your analyzed complaints, their status, and filing progress in one place.'
+      },
+      hi: {
+        nav_home: 'होम', nav_complaint: 'शिकायत दर्ज करें', nav_track: 'ट्रैक करें',
+        nav_my_complaints: 'मेरी शिकायतें', nav_dashboard: 'डैशबोर्ड', nav_how: 'कैसे काम करता है',
+        nav_about: 'हमारे बारे में', nav_file_cta: 'शिकायत दर्ज करें',
+        complaint_title: 'स्मार्ट शिकायत बिल्डर',
+        complaint_subtitle: 'अपनी समस्या किसी भी भाषा में लिखें। हमारा AI सही विभाग पहचानता है, शिकायत को स्कोर करता है, और अधिकतम प्रभाव के लिए फिर से लिखता है।',
+        step1_title: 'चरण 1: अपनी समस्या बताएं',
+        analyze_btn: 'मेरी शिकायत का विश्लेषण करें',
+        tracker_title: 'शिकायत ट्रैकर',
+        tracker_subtitle: 'प्रगति ट्रैक करने, दिन 15/25 की काउंटडाउन रिमाइंडर प्राप्त करने और परिणाम रिपोर्ट करने के लिए अपना CPGRAMS शिकायत ID दर्ज करें।',
+        my_complaints_title: 'मेरी शिकायतें',
+        my_complaints_subtitle: 'अपनी सभी विश्लेषित शिकायतों, उनकी स्थिति और फाइलिंग प्रगति को एक ही स्थान पर ट्रैक करें।'
+      }
+    };
+
+    let currentLang = localStorage.getItem('grievanceiq_lang') || 'en';
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'hi' : 'en';
+      localStorage.setItem('grievanceiq_lang', currentLang);
+      applyLanguage(currentLang);
+    }
+
+    function applyLanguage(lang) {
+      const strings = i18n[lang] || i18n.en;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (strings[key]) el.textContent = strings[key];
+      });
+      // Update toggle button label
+      const label = document.getElementById('langToggleLabel');
+      if (label) label.textContent = lang === 'en' ? 'हिन्दी' : 'English';
+      // Update html lang
+      document.documentElement.lang = lang;
+    }
+
+    // Apply saved language on load
+    if (currentLang !== 'en') applyLanguage(currentLang);
   </script>
 </body>
 </html>`

@@ -8,6 +8,7 @@ import { howItWorksPage } from './pages/how-it-works'
 import { complaintPage } from './pages/complaint'
 import { trackerPage } from './pages/tracker'
 import { rtiPage } from './pages/rti'
+import { myComplaintsPage } from './pages/my-complaints'
 
 type Bindings = {
   DB: D1Database
@@ -34,5 +35,6 @@ app.get('/how-it-works', (c) => c.html(howItWorksPage()))
 app.get('/complaint', (c) => c.html(complaintPage()))
 app.get('/tracker', (c) => c.html(trackerPage()))
 app.get('/rti', (c) => c.html(rtiPage()))
+app.get('/my-complaints', (c) => c.html(myComplaintsPage()))
 
 export default app
