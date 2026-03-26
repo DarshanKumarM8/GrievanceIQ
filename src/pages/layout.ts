@@ -219,11 +219,23 @@ export function layout(title: string, content: string, activePage: string = ''):
           </a>
         </div>
         
-        <!-- CTA + Language Toggle -->
+        <!-- CTA + Language Toggle + Auth -->
         <div class="hidden md:flex items-center gap-3">
           <button onclick="toggleLanguage()" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors" title="Switch language">
             <i class="fas fa-language mr-1"></i><span id="langToggleLabel">हिन्दी</span>
           </button>
+          <!-- Auth state: Guest -->
+          <div id="navGuest" class="flex items-center gap-2">
+            <a href="/login" class="text-xs px-3 py-1.5 rounded-lg border border-navy-200 text-navy-600 hover:bg-navy-50 font-medium transition-colors">
+              <i class="fas fa-sign-in-alt mr-1"></i>Sign In
+            </a>
+          </div>
+          <!-- Auth state: Logged in -->
+          <div id="navUser" class="hidden flex items-center gap-2">
+            <a href="/profile" class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors">
+              <i class="fas fa-user-circle text-saffron-500"></i><span id="navUserName">Account</span>
+            </a>
+          </div>
           <a href="/complaint" class="bg-gradient-to-r from-saffron-500 to-saffron-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:from-saffron-600 hover:to-saffron-700 transition-all shadow-md hover:shadow-lg">
             <span data-i18n="nav_file_cta">File a Complaint</span> <i class="fas fa-arrow-right ml-1.5"></i>
           </a>
@@ -272,7 +284,17 @@ export function layout(title: string, content: string, activePage: string = ''):
           <a href="/about" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
             <i class="fas fa-users w-5"></i> <span data-i18n="nav_about">About Us</span>
           </a>
-          <div class="pt-4 mt-4 border-t">
+          <div class="pt-4 mt-4 border-t space-y-2">
+            <div id="mobileGuest">
+              <a href="/login" class="block text-center bg-navy-600 text-white px-6 py-3 rounded-xl font-semibold">
+                <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+              </a>
+            </div>
+            <div id="mobileUser" class="hidden space-y-2">
+              <a href="/profile" class="block text-center bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold">
+                <i class="fas fa-user-circle mr-2"></i><span id="mobileUserName">My Profile</span>
+              </a>
+            </div>
             <a href="/complaint" class="block text-center bg-gradient-to-r from-saffron-500 to-saffron-600 text-white px-6 py-3 rounded-xl font-semibold">
               File a Complaint <i class="fas fa-arrow-right ml-2"></i>
             </a>
@@ -473,6 +495,46 @@ export function layout(title: string, content: string, activePage: string = ''):
 
     // Apply saved language on load
     if (currentLang !== 'en') applyLanguage(currentLang);
+
+    // ============================================
+    // AUTH STATE IN NAVIGATION
+    // ============================================
+    (function initAuthNav() {
+      const token = localStorage.getItem('giq_token');
+      const userStr = localStorage.getItem('giq_user');
+      if (token && userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          // Show logged-in nav
+          const navGuest = document.getElementById('navGuest');
+          const navUser = document.getElementById('navUser');
+          const navUserName = document.getElementById('navUserName');
+          const mobileGuest = document.getElementById('mobileGuest');
+          const mobileUser = document.getElementById('mobileUser');
+          const mobileUserName = document.getElementById('mobileUserName');
+          if (navGuest) navGuest.classList.add('hidden');
+          if (navUser) { navUser.classList.remove('hidden'); navUser.classList.add('flex'); }
+          if (navUserName) navUserName.textContent = (user.name || 'Account').split(' ')[0];
+          if (mobileGuest) mobileGuest.classList.add('hidden');
+          if (mobileUser) mobileUser.classList.remove('hidden');
+          if (mobileUserName) mobileUserName.textContent = user.name || 'My Profile';
+        } catch(e) {}
+      }
+
+      // Listen for auth state changes
+      window.addEventListener('auth-state-changed', (e) => {
+        const user = e.detail?.user;
+        if (user) {
+          localStorage.setItem('giq_user', JSON.stringify(user));
+          const navGuest = document.getElementById('navGuest');
+          const navUser = document.getElementById('navUser');
+          if (navGuest) navGuest.classList.add('hidden');
+          if (navUser) { navUser.classList.remove('hidden'); navUser.classList.add('flex'); }
+          const navUserName = document.getElementById('navUserName');
+          if (navUserName) navUserName.textContent = (user.name || 'Account').split(' ')[0];
+        }
+      });
+    })();
   </script>
 </body>
 </html>`

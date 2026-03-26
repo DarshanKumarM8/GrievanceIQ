@@ -131,10 +131,10 @@ INSERT OR IGNORE INTO social_signals (platform, keyword_matched, source_url, sou
 -- SAMPLE COMPLAINTS — Demo data
 -- ============================================
 
-INSERT OR IGNORE INTO users (id, email, name, language_preference, complaints_filed_count) VALUES
-(1, 'demo@grievanceiq.in', 'Demo Citizen', 'en', 3),
-(2, 'ram.kumar@example.com', 'Ram Kumar', 'hi', 2),
-(3, 'priya.nair@example.com', 'Priya Nair', 'en', 1);
+INSERT OR IGNORE INTO users (id, email, name, language_preference, complaints_filed_count, is_verified, is_active, login_count) VALUES
+(1, 'demo@grievanceiq.in', 'Demo Citizen', 'en', 3, 1, 1, 5),
+(2, 'ram.kumar@example.com', 'Ram Kumar', 'hi', 2, 1, 1, 3),
+(3, 'priya.nair@example.com', 'Priya Nair', 'en', 1, 1, 1, 1);
 
 INSERT OR IGNORE INTO complaints (id, user_id, raw_text, language_detected, department_predicted, department_confidence, department_2nd, department_2nd_confidence, department_3rd, department_3rd_confidence, quality_score_before, quality_score_after, improved_draft, status, cpgrams_id, created_at) VALUES
 

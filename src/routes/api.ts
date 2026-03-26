@@ -1,9 +1,12 @@
 import { Hono } from 'hono'
 import { analyzeComplaint, generateRTI } from '../services/gemini'
+import { sanitizeInput } from '../services/auth'
+import { authMiddleware } from '../middleware/security'
 
 type Bindings = {
   DB: D1Database
   GEMINI_API_KEY?: string
+  RESEND_API_KEY?: string
 }
 
 export const apiRoutes = new Hono<{ Bindings: Bindings }>()
@@ -16,8 +19,8 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '3.0.0',
-    week: 3,
+    version: '4.0.0',
+    week: 4,
     ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGeminiKey ? 'active' : 'fallback-only',
     features: [
@@ -39,7 +42,16 @@ apiRoutes.get('/health', (c) => {
       '7_step_wizard',
       'realtime_validation',
       'day15_day25_countdown',
-      'computed_timelines'
+      'computed_timelines',
+      'email_otp_auth',
+      'jwt_sessions',
+      'csp_security_headers',
+      'xss_sanitization',
+      'rate_limiting',
+      'audit_logging',
+      'email_reminders_foundation',
+      'user_profiles',
+      'passwordless_login'
     ]
   })
 })
@@ -180,19 +192,26 @@ apiRoutes.post('/complaints/analyze', async (c) => {
     return c.json({ success: false, error: 'Complaint text must be at least 10 characters' }, 400)
   }
 
+  // Sanitize input
+  const sanitizedText = text.trim()
+
   // Use Gemini AI with mock fallback
   const apiKey = c.env.GEMINI_API_KEY
-  const analysis = await analyzeComplaint(apiKey, text, language || 'en')
+  const analysis = await analyzeComplaint(apiKey, sanitizedText, language || 'en')
+
+  // Get user ID if authenticated
+  const userId = c.get?.('userId') || null
 
   // Save to database
   const db = c.env.DB
   try {
     const d = analysis.data
     const result = await db.prepare(`
-      INSERT INTO complaints (raw_text, language_detected, translated_text, department_predicted, department_confidence, department_2nd, department_2nd_confidence, department_3rd, department_3rd_confidence, department_reasoning, quality_score_before, quality_score_after, missing_elements, improved_draft, documents_checklist, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', datetime('now'))
+      INSERT INTO complaints (user_id, raw_text, language_detected, translated_text, department_predicted, department_confidence, department_2nd, department_2nd_confidence, department_3rd, department_3rd_confidence, department_reasoning, quality_score_before, quality_score_after, missing_elements, improved_draft, documents_checklist, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', datetime('now'))
     `).bind(
-      text,
+      userId,
+      sanitizedText,
       d.language_detected,
       d.translated_text || null,
       d.departments[0].name,
@@ -229,7 +248,8 @@ apiRoutes.post('/complaints/analyze', async (c) => {
         _ai_source: analysis.source,
         _ai_model: analysis.model,
         _ai_latency_ms: analysis.latency_ms,
-        _db_error: e.message
+        _db_error: e.message,
+        _authenticated: !!userId
       }
     })
   }
@@ -370,14 +390,28 @@ apiRoutes.get('/complaints/all', async (c) => {
   const db = c.env.DB
   const limit = parseInt(c.req.query('limit') || '50')
   const status = c.req.query('status') || ''
+  const userId = c.get?.('userId') || null
+  
   try {
     let query = 'SELECT id, raw_text, language_detected, department_predicted, department_confidence, quality_score_before, quality_score_after, status, cpgrams_id, filed_at, rti_generated, created_at FROM complaints'
+    const conditions: string[] = []
     const params: any[] = []
     
+    // Filter by authenticated user if logged in
+    if (userId) {
+      conditions.push('user_id = ?')
+      params.push(userId)
+    }
+    
     if (status && status !== 'all') {
-      query += ' WHERE status = ?'
+      conditions.push('status = ?')
       params.push(status)
     }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
+    
     query += ' ORDER BY created_at DESC LIMIT ?'
     params.push(limit)
 
