@@ -13,6 +13,7 @@ import { rtiPage } from './pages/rti'
 import { myComplaintsPage } from './pages/my-complaints'
 import { loginPage } from './pages/login'
 import { profilePage } from './pages/profile'
+import { complaintDetailPage } from './pages/complaint-detail'
 
 type Bindings = {
   DB: D1Database
@@ -60,5 +61,6 @@ app.get('/rti', (c) => c.html(rtiPage()))
 app.get('/my-complaints', (c) => c.html(myComplaintsPage()))
 app.get('/login', (c) => c.html(loginPage()))
 app.get('/profile', (c) => c.html(profilePage()))
+app.get('/complaint-detail', (c) => c.html(complaintDetailPage()))
 
 export default app

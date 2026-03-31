@@ -19,8 +19,8 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '4.0.0',
-    week: 4,
+    version: '5.0.0',
+    week: 5,
     ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGeminiKey ? 'active' : 'fallback-only',
     features: [
@@ -51,7 +51,16 @@ apiRoutes.get('/health', (c) => {
       'audit_logging',
       'email_reminders_foundation',
       'user_profiles',
-      'passwordless_login'
+      'passwordless_login',
+      'advanced_chartjs_timeseries',
+      'comparative_analysis_charts',
+      'mini_sparklines',
+      'district_drilldown_map',
+      'pdf_export_dashboard',
+      'advanced_complaint_filters',
+      'complaint_detail_view',
+      'department_comparison_radar',
+      'monthly_trend_analysis'
     ]
   })
 })
@@ -456,7 +465,111 @@ apiRoutes.get('/complaints/stats', async (c) => {
 })
 
 // ============================================
-// COMPLAINT BY ID (must be after /complaints/recent, /all, /stats)
+// ADVANCED COMPLAINT SEARCH & FILTERS (must be before :id)
+// ============================================
+apiRoutes.get('/complaints/search', async (c) => {
+  const db = c.env.DB
+  const userId = c.get?.('userId') || null
+
+  const search = c.req.query('q') || ''
+  const status = c.req.query('status') || ''
+  const department = c.req.query('department') || ''
+  const dateFrom = c.req.query('date_from') || ''
+  const dateTo = c.req.query('date_to') || ''
+  const scoreMin = parseInt(c.req.query('score_min') || '0')
+  const scoreMax = parseInt(c.req.query('score_max') || '10')
+  const sortBy = c.req.query('sort') || 'created_at'
+  const sortOrder = c.req.query('order') || 'desc'
+  const page = parseInt(c.req.query('page') || '1')
+  const limit = Math.min(parseInt(c.req.query('limit') || '20'), 50)
+  const offset = (page - 1) * limit
+
+  try {
+    let conditions: string[] = []
+    let params: any[] = []
+
+    if (userId) { conditions.push('c.user_id = ?'); params.push(userId) }
+    if (search) {
+      conditions.push("(c.raw_text LIKE ? OR c.department_predicted LIKE ? OR c.cpgrams_id LIKE ?)")
+      const st = `%${search}%`; params.push(st, st, st)
+    }
+    if (status && status !== 'all') { conditions.push('c.status = ?'); params.push(status) }
+    if (department) { conditions.push('c.department_predicted LIKE ?'); params.push(`%${department}%`) }
+    if (dateFrom) { conditions.push('c.created_at >= ?'); params.push(dateFrom) }
+    if (dateTo) { conditions.push('c.created_at <= ?'); params.push(dateTo + ' 23:59:59') }
+    if (scoreMin > 0) { conditions.push('c.quality_score_after >= ?'); params.push(scoreMin) }
+    if (scoreMax < 10) { conditions.push('c.quality_score_after <= ?'); params.push(scoreMax) }
+
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+    const validSorts: Record<string, string> = { 'created_at':'c.created_at', 'quality_score':'c.quality_score_after', 'confidence':'c.department_confidence', 'department':'c.department_predicted', 'status':'c.status' }
+    const sortCol = validSorts[sortBy] || 'c.created_at'
+    const order = sortOrder === 'asc' ? 'ASC' : 'DESC'
+
+    const countQuery = `SELECT COUNT(*) as total FROM complaints c ${whereClause}`
+    const countStmt = db.prepare(countQuery)
+    const countResult = params.length > 0 ? await countStmt.bind(...params).first() : await countStmt.first()
+    const total = (countResult?.total as number) || 0
+
+    const dataQuery = `SELECT c.id, c.raw_text, c.language_detected, c.department_predicted, c.department_confidence, c.department_2nd, c.department_3rd, c.quality_score_before, c.quality_score_after, c.status, c.cpgrams_id, c.filed_at, c.rti_generated, c.created_at FROM complaints c ${whereClause} ORDER BY ${sortCol} ${order} LIMIT ? OFFSET ?`
+    const dataParams = [...params, limit, offset]
+    const dataResult = await db.prepare(dataQuery).bind(...dataParams).all()
+
+    const deptQuery = userId
+      ? "SELECT department_predicted, COUNT(*) as count FROM complaints WHERE user_id = ? GROUP BY department_predicted ORDER BY count DESC"
+      : "SELECT department_predicted, COUNT(*) as count FROM complaints GROUP BY department_predicted ORDER BY count DESC"
+    const deptResult = userId ? await db.prepare(deptQuery).bind(userId).all() : await db.prepare(deptQuery).all()
+
+    return c.json({
+      success: true,
+      data: dataResult.results,
+      pagination: { page, limit, total, total_pages: Math.ceil(total / limit), has_next: page * limit < total, has_prev: page > 1 },
+      filters: { departments: deptResult.results }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// COMPLAINT DETAIL (must be before :id)
+// ============================================
+apiRoutes.get('/complaints/:id/detail', async (c) => {
+  const id = c.req.param('id')
+  const db = c.env.DB
+  try {
+    const complaint = await db.prepare('SELECT * FROM complaints WHERE id = ?').bind(id).first()
+    if (!complaint) return c.json({ success: false, error: 'Complaint not found' }, 404)
+
+    const feedback = await db.prepare('SELECT * FROM complaint_feedback WHERE complaint_id = ? ORDER BY feedback_given_at DESC').bind(id).all()
+    let user = null
+    if (complaint.user_id) {
+      user = await db.prepare('SELECT id, name, email, language_preference FROM users WHERE id = ?').bind(complaint.user_id).first()
+    }
+    const parseJSON = (str: any) => { try { return JSON.parse(str as string) } catch { return [] } }
+
+    let timeline = null
+    if (complaint.cpgrams_id) {
+      timeline = generateComputedTimeline(complaint.cpgrams_id as string, complaint.filed_at as string | undefined)
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        ...complaint,
+        missing_elements: parseJSON(complaint.missing_elements),
+        documents_checklist: parseJSON(complaint.documents_checklist),
+        feedback: feedback.results,
+        user: user ? { id: user.id, name: user.name } : null,
+        timeline
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// COMPLAINT BY ID (must be after /complaints/recent, /all, /stats, /search, /detail)
 // ============================================
 apiRoutes.get('/complaints/:id', async (c) => {
   const id = c.req.param('id')
@@ -465,6 +578,192 @@ apiRoutes.get('/complaints/:id', async (c) => {
     const result = await db.prepare('SELECT * FROM complaints WHERE id = ?').bind(id).first()
     if (!result) return c.json({ success: false, error: 'Complaint not found' }, 404)
     return c.json({ success: true, data: result })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// ANALYTICS — Time-series & comparative data for advanced charts
+// ============================================
+apiRoutes.get('/analytics/timeseries', async (c) => {
+  const db = c.env.DB
+  try {
+    // Generate monthly simulated time-series data based on ministry stats
+    const ministries = await db.prepare('SELECT * FROM ministry_stats ORDER BY complaints_received DESC LIMIT 10').all()
+    
+    // Simulate 12 months of data (Jan-Dec 2025 to Jan 2026)
+    const months = ['Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25', 'Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26']
+    
+    // Aggregate national data with seasonal variation
+    const totalBase = ministries.results.reduce((s: number, m: any) => s + m.complaints_received, 0)
+    const seasonalFactors = [0.75, 0.72, 0.80, 0.85, 0.90, 0.88, 0.95, 0.92, 0.88, 0.98, 1.05, 1.10, 1.00, 0.95, 1.02]
+    const nationalTotal = months.map((_, i) => Math.round(totalBase * seasonalFactors[i]))
+    const nationalResolved = months.map((_, i) => Math.round(totalBase * seasonalFactors[i] * (0.72 + Math.random() * 0.08)))
+    const nationalFakeClosed = months.map((_, i) => Math.round(totalBase * seasonalFactors[i] * (0.08 + Math.random() * 0.04)))
+    const nationalPending = months.map((_, i) => nationalTotal[i] - nationalResolved[i] - nationalFakeClosed[i])
+
+    // Top 5 ministries time series
+    const topMinistries = ministries.results.slice(0, 5).map((m: any) => ({
+      name: (m.ministry_name as string).replace('Ministry of ', '').replace('Department of ', ''),
+      data: months.map((_, i) => Math.round((m.complaints_received as number) * seasonalFactors[i] * (0.9 + Math.random() * 0.2)))
+    }))
+
+    // Satisfaction trend
+    const satisfactionTrend = months.map((_, i) => Math.round(38 + i * 0.7 + Math.random() * 3))
+    const fakeClosureTrend = months.map((_, i) => Math.round(35 - i * 0.3 + Math.random() * 3))
+
+    return c.json({
+      success: true,
+      data: {
+        labels: months,
+        national: { total: nationalTotal, resolved: nationalResolved, fake_closed: nationalFakeClosed, pending: nationalPending },
+        top_ministries: topMinistries,
+        satisfaction_trend: satisfactionTrend,
+        fake_closure_trend: fakeClosureTrend
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+apiRoutes.get('/analytics/comparison', async (c) => {
+  const db = c.env.DB
+  const codes = (c.req.query('codes') || '').split(',').filter(Boolean)
+  
+  try {
+    let ministries: any[] = []
+    if (codes.length > 0) {
+      const placeholders = codes.map(() => '?').join(',')
+      const result = await db.prepare(`SELECT * FROM ministry_stats WHERE ministry_code IN (${placeholders})`).bind(...codes).all()
+      ministries = result.results
+    } else {
+      // Default: top 6 by volume for radar comparison
+      const result = await db.prepare('SELECT * FROM ministry_stats ORDER BY complaints_received DESC LIMIT 6').all()
+      ministries = result.results
+    }
+
+    // Normalize to 0-100 scale for radar chart
+    const maxReceived = Math.max(...ministries.map((m: any) => m.complaints_received))
+    const maxDays = Math.max(...ministries.map((m: any) => m.avg_resolution_days))
+
+    const radarData = ministries.map((m: any) => ({
+      label: (m.ministry_name as string).replace('Ministry of ', '').replace('Department of ', '').slice(0, 25),
+      code: m.ministry_code,
+      metrics: {
+        volume: Math.round(((m.complaints_received as number) / maxReceived) * 100),
+        resolution_rate: m.official_resolution_rate,
+        satisfaction: m.citizen_satisfaction_rate,
+        fake_closure: m.fake_closure_rate,
+        speed: Math.round((1 - (m.avg_resolution_days as number) / maxDays) * 100),
+        pending_ratio: Math.round(((m.complaints_pending as number) / (m.complaints_received as number)) * 100)
+      }
+    }))
+
+    return c.json({ success: true, data: radarData })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// Sparkline data — mini charts per state
+apiRoutes.get('/analytics/sparklines', async (c) => {
+  const db = c.env.DB
+  try {
+    const states = await db.prepare('SELECT state_name, state_code, total_complaints, resolution_rate, fake_closure_rate, avg_resolution_days, citizen_satisfaction_rate FROM state_grievance_stats ORDER BY total_complaints DESC LIMIT 15').all()
+
+    // Generate 6-month sparkline data points per state
+    const sparklines = states.results.map((s: any) => ({
+      state_code: s.state_code,
+      state_name: s.state_name,
+      current: {
+        total: s.total_complaints,
+        resolution_rate: s.resolution_rate,
+        fake_closure: s.fake_closure_rate,
+        satisfaction: s.citizen_satisfaction_rate
+      },
+      complaint_trend: Array.from({length: 6}, (_, i) => 
+        Math.round((s.total_complaints as number) * (0.7 + i * 0.06 + Math.random() * 0.05))
+      ),
+      resolution_trend: Array.from({length: 6}, (_, i) =>
+        Math.round((s.resolution_rate as number) * (0.92 + i * 0.012 + Math.random() * 0.02) * 10) / 10
+      )
+    }))
+
+    return c.json({ success: true, data: sparklines })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// DISTRICT DRILL-DOWN — Simulated district data for state
+// ============================================
+apiRoutes.get('/states/:code/districts', async (c) => {
+  const code = c.req.param('code')
+  const db = c.env.DB
+
+  try {
+    const state = await db.prepare('SELECT * FROM state_grievance_stats WHERE state_code = ?').bind(code).first()
+    if (!state) return c.json({ success: false, error: 'State not found' }, 404)
+
+    // Simulated district-level data based on state totals
+    const districtNames: Record<string, string[]> = {
+      'UP': ['Lucknow', 'Varanasi', 'Kanpur', 'Agra', 'Prayagraj', 'Noida', 'Ghaziabad', 'Meerut', 'Gorakhpur', 'Bareilly'],
+      'MH': ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Nashik', 'Aurangabad', 'Kolhapur', 'Solapur', 'Amravati', 'Ratnagiri'],
+      'RJ': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Ajmer', 'Bikaner', 'Bharatpur', 'Alwar', 'Sikar', 'Bhilwara'],
+      'TN': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli', 'Tirunelveli', 'Vellore', 'Erode', 'Thanjavur', 'Dindigul'],
+      'KA': ['Bengaluru', 'Mysuru', 'Hubli-Dharwad', 'Mangaluru', 'Belagavi', 'Gulbarga', 'Davanagere', 'Bellary', 'Shimoga', 'Tumkur'],
+      'GJ': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Junagadh', 'Gandhinagar', 'Jamnagar', 'Anand', 'Mehsana'],
+      'WB': ['Kolkata', 'Howrah', 'North 24 Parganas', 'South 24 Parganas', 'Hooghly', 'Burdwan', 'Nadia', 'Murshidabad', 'Darjeeling', 'Malda'],
+      'MP': ['Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas', 'Satna', 'Ratlam', 'Rewa'],
+      'BR': ['Patna', 'Gaya', 'Muzaffarpur', 'Bhagalpur', 'Darbhanga', 'Purnia', 'Arrah', 'Begusarai', 'Katihar', 'Munger'],
+      'AP': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Tirupati', 'Rajahmundry', 'Kakinada', 'Anantapur', 'Eluru'],
+      'TG': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Ramagundam', 'Khammam', 'Mahbubnagar', 'Nalgonda', 'Adilabad', 'Suryapet'],
+      'KL': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kannur', 'Kollam', 'Alappuzha', 'Palakkad', 'Malappuram', 'Kottayam'],
+      'DL': ['New Delhi', 'South Delhi', 'North Delhi', 'East Delhi', 'West Delhi', 'Central Delhi', 'South West Delhi', 'North West Delhi', 'North East Delhi', 'Shahdara'],
+      'HR': ['Gurugram', 'Faridabad', 'Ambala', 'Karnal', 'Hisar', 'Panipat', 'Sonipat', 'Rohtak', 'Bhiwani', 'Sirsa'],
+      'PB': ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali', 'Pathankot', 'Hoshiarpur', 'Moga', 'Firozpur']
+    }
+
+    const districts = (districtNames[code] || ['District 1', 'District 2', 'District 3', 'District 4', 'District 5', 'District 6', 'District 7', 'District 8']).map((name, i) => {
+      const totalState = state.total_complaints as number
+      // Distribution: first district gets most, descending
+      const share = (10 - i) / 55 // Sum of 1..10 = 55
+      const total = Math.round(totalState * share * (0.85 + Math.random() * 0.3))
+      const resRate = Math.round(((state.resolution_rate as number) + (Math.random() * 10 - 5)) * 10) / 10
+      const fakeRate = Math.round(((state.fake_closure_rate as number) + (Math.random() * 6 - 3)) * 10) / 10
+      const satRate = Math.round(((state.citizen_satisfaction_rate as number) + (Math.random() * 8 - 4)) * 10) / 10
+      const avgDays = Math.round(((state.avg_resolution_days as number) + (Math.random() * 10 - 5)) * 10) / 10
+
+      return {
+        name,
+        rank: i + 1,
+        total_complaints: total,
+        resolution_rate: Math.min(95, Math.max(40, resRate)),
+        fake_closure_rate: Math.min(30, Math.max(2, fakeRate)),
+        citizen_satisfaction_rate: Math.min(80, Math.max(25, satRate)),
+        avg_resolution_days: Math.max(10, avgDays),
+        trend: Math.random() > 0.5 ? 'rising' : 'falling'
+      }
+    })
+
+    return c.json({
+      success: true,
+      data: {
+        state_name: state.state_name,
+        state_code: state.state_code,
+        state_summary: {
+          total: state.total_complaints,
+          resolution_rate: state.resolution_rate,
+          fake_closure_rate: state.fake_closure_rate,
+          satisfaction: state.citizen_satisfaction_rate,
+          avg_days: state.avg_resolution_days
+        },
+        districts: districts.sort((a, b) => b.total_complaints - a.total_complaints)
+      }
+    })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
   }
