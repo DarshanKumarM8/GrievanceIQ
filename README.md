@@ -2,165 +2,165 @@
 
 **File Smarter. Get Heard. Hold Them Accountable.**
 
-AI-powered citizen grievance intelligence platform for India's CPGRAMS system. Helps citizens file stronger complaints, track resolution progress, and escalate with RTI applications when ignored.
+AI-powered citizen grievance intelligence platform for India's CPGRAMS system. Helps citizens file smarter complaints, track progress with Day 15/25 countdown reminders, detect fake closures, and auto-draft RTI applications.
 
-## Project Overview
-- **Name**: GrievanceIQ
-- **Goal**: Intelligence layer between citizens and India's grievance system
-- **Target Users**: Citizens, journalists, NGOs, researchers
-- **Tech Stack**: Hono (TypeScript), Tailwind CSS (CDN), Cloudflare D1 SQLite, Google Gemini AI
-- **Status**: Week 4 completed, Auth & Security active
+## Live URLs
 
-## URLs
-- **Live Preview**: https://3000-ijj8l21qjw9nnoh5yjcir-2b54fc91.sandbox.novita.ai
-- **GitHub**: https://github.com/DarshanKumarM8/GrievanceIQ
+| Resource | URL |
+|---|---|
+| **Live Preview** | https://3000-ijj8l21qjw9nnoh5yjcir-5c13a017.sandbox.novita.ai |
+| **GitHub** | https://github.com/DarshanKumarM8/GrievanceIQ |
 
-## Features
+## Current Version: 5.0.0 (Week 5)
 
-### Citizen Tools
-- **7-Step Smart Complaint Builder** — Write, validate, analyze, route, improve, docs, file
-- **Real-Time Validation** — 6 quality checks as you type (dates, refs, location, amounts, scheme, word count)
-- **AI Department Router** — Identifies correct ministry from 92 options with confidence scores
-- **Quality Scorer** — Rates complaint 1-10, shows before/after improvement
-- **AI Complaint Rewriter** — Side-by-side editor with professionally improved draft
-- **Document Checklist** — Interactive checklist of required documents per complaint type
-- **Complaint Tracker** — Computed timeline with live countdown timer (Day 15/25/30)
-- **Action Recommendations** — Context-aware next steps based on complaint phase
-- **RTI Auto-Drafter** — One-click legally formatted RTI application with PDF download
-- **My Complaints** — History page with stats, filtering, and quick actions (user-filtered when logged in)
-- **Hindi UI Toggle** — English/Hindi navigation with localStorage persistence
-- **8 Quick Templates** — Pension, PM-KISAN, Railway, Passport, Ration, Electricity, EPFO, Banking
+### Feature Summary (37 features)
 
-### Authentication & Security (NEW — Week 4)
-- **Passwordless Login** — Email OTP authentication (no passwords to steal)
-- **JWT Sessions** — HMAC-SHA256 signed tokens, 7-day expiry, Web Crypto API
-- **OTP Flow** — 6-digit code, 10-minute expiry, max 5 attempts, auto-registration
-- **User Profiles** — Name, language preference, complaint history tracking
-- **CSP Headers** — Full Content Security Policy with whitelisted CDN sources
-- **Rate Limiting** — D1-based per-IP limiter (120/min API, 10/5min auth)
-- **XSS Sanitization** — HTML entity encoding for all user inputs
-- **HSTS + X-Frame-Options + X-XSS-Protection** — Full security header suite
-- **Audit Logging** — All auth events logged (OTP requests, logins, logouts)
-- **Email Reminders Foundation** — Resend API integration + Day 15/25 reminder queue
+#### Citizen Tools
+- **AI Complaint Builder** — 7-step wizard with real-time validation, language detection, department routing (92 ministries), quality scoring (before/after), improved draft, document checklist
+- **Complaint Tracker** — CPGRAMS ID tracking with Day 15/25 countdown timer, computed timelines, recommended actions
+- **RTI Auto-Drafter** — AI-generated Right to Information applications with legal references and filing options
+- **My Complaints** — Full complaint history with **advanced filters** (search, status, department, date range, quality score), **pagination**, and clickable detail view
+- **Complaint Detail View** — Full-page AI analysis display with department routing, quality gauges, side-by-side drafts, document checklist, timeline, feedback history, and PDF export
 
-### Public Dashboard
-- **India GeoJSON Choropleth Map** — Interactive state boundaries with 4 metric views
-- **Chart.js Analytics** — 4 charts: ministry volume, status distribution, fake closure rates, resolution speed
-- **Department Scorecard** — 30 ministries ranked with sortable columns
-- **Systemic Issue Radar** — Trending complaint clusters with severity, spike factor, affected states
-- **Social Monitoring Feed** — Twitter/news signal tracking with spike detection
+#### Public Dashboard
+- **India Choropleth Map** — GeoJSON heatmap of 36 states/UTs with 4 switchable metrics
+- **District Drill-Down** — Click any state to see 10-district breakdown table with complaints, resolution, fake closure, satisfaction
+- **15-Month Time-Series Charts** — National complaint trend, satisfaction vs fake closure, top 5 ministry comparison
+- **Department Comparison Radar** — Multi-metric radar comparing 6 ministries across 6 dimensions
+- **State Sparklines** — 15-state grid with inline 6-month mini-trend charts
+- **Analytics Charts** — Bar, doughnut, horizontal bar (4 original + 4 new = 8 total charts)
+- **Department Scorecard** — Sortable table of 30 ministries with fake closure flags
+- **Systemic Issue Radar** — 8 trending complaint clusters with spike factors
+- **Social Monitoring Feed** — Twitter/news signals with trend direction
+- **PDF Export** — One-click dashboard report generation with jsPDF
 
-### AI Engine
-- **Primary**: Google Gemini 2.0 Flash (with flash-lite fallback)
-- **Fallback**: Mock keyword classifier (17 categories, 92 ministries)
-- **Features**: Exponential backoff, 30s timeout, rate limit handling, JSON schema validation
-- **Transparency**: AI source badges showing model used and latency
+#### Authentication & Security
+- **Passwordless Login** — Email OTP (6-digit, 10-min expiry, 5-attempt lockout, demo mode)
+- **JWT Sessions** — HMAC-SHA256, 7-day expiry, stored in D1
+- **Security Headers** — CSP, HSTS, X-Frame-Options, Referrer-Policy
+- **Rate Limiting** — D1-based (120 req/min API, 10 req/5min auth)
+- **XSS Sanitization** — Input validation and HTML entity encoding
+- **Audit Logging** — Auth events tracked in audit_log table
 
-## API Endpoints (22 total)
+#### Language Support
+- **Hindi/English Toggle** — Full UI translation (navigation, labels, form text)
+- **Multi-Language Input** — Complaint analysis in English, Hindi, Tamil, Telugu, Bengali
+
+## API Endpoints (28 total)
 
 ### Core APIs (16)
 | Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/health` | Service status, version, 28 features list |
-| GET | `/api/stats` | Dashboard aggregate statistics |
-| GET | `/api/ministries` | Ministry scorecards (sortable, filterable) |
+|---|---|---|
+| GET | `/api/health` | Service status, version, features |
+| GET | `/api/stats` | Aggregate dashboard statistics |
+| GET | `/api/ministries` | Ministry scorecard (sort, limit) |
 | GET | `/api/ministries/:code` | Single ministry detail |
-| GET | `/api/states` | State grievance stats (for map) |
+| GET | `/api/states` | All state grievance data |
 | GET | `/api/states/:code` | Single state detail |
-| GET | `/api/trending` | Systemic issue radar data |
+| GET | `/api/states/:code/districts` | District drill-down data |
+| GET | `/api/trending` | Trending issue clusters |
 | GET | `/api/social` | Social monitoring signals |
-| POST | `/api/complaints/analyze` | AI complaint analysis (links to user if authenticated) |
-| POST | `/api/complaints/track` | Computed timeline with countdown |
-| GET | `/api/complaints/recent` | Recent analyzed complaints |
-| GET | `/api/complaints/all` | All complaints (filtered by user when auth'd) |
-| GET | `/api/complaints/stats` | Complaint count statistics |
-| GET | `/api/complaints/:id` | Single complaint detail |
-| POST | `/api/feedback` | Citizen outcome reporting |
-| POST | `/api/rti/generate` | AI RTI application generation |
+| POST | `/api/complaints/analyze` | AI complaint analysis |
+| POST | `/api/complaints/track` | Track by CPGRAMS ID |
+| POST | `/api/feedback` | Citizen outcome report |
+| POST | `/api/rti/generate` | Generate RTI application |
+| GET | `/api/complaints/search` | Advanced search/filter with pagination |
+| GET | `/api/complaints/:id/detail` | Full complaint view |
+| GET | `/api/complaints/recent` | Recent complaints list |
 
-### Auth APIs (6 — NEW Week 4)
-| Method | Path | Auth | Rate Limit | Description |
-|--------|------|------|-----------|-------------|
-| POST | `/api/auth/request-otp` | No | 5/5min | Send OTP to email |
-| POST | `/api/auth/verify-otp` | No | 10/5min | Verify OTP, get JWT |
-| POST | `/api/auth/logout` | Optional | 120/min | End session |
-| GET | `/api/auth/me` | Optional | 120/min | Get current user |
-| PUT | `/api/auth/profile` | Required | 120/min | Update profile |
-| POST | `/api/auth/send-reminder` | No | 120/min | Trigger Day 15/25 reminders |
+### Analytics APIs (4)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/analytics/timeseries` | 15-month national trend data |
+| GET | `/api/analytics/comparison` | Radar chart metrics |
+| GET | `/api/analytics/sparklines` | State 6-month trends |
+| GET | `/api/complaints/stats` | Complaint statistics |
+
+### Auth APIs (8)
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/auth/request-otp` | Request email OTP |
+| POST | `/api/auth/verify-otp` | Verify OTP & get JWT |
+| GET | `/api/auth/me` | Current user profile |
+| POST | `/api/auth/logout` | End session |
+| PUT | `/api/auth/profile` | Update profile |
+| POST | `/api/auth/send-reminder` | Trigger email reminders |
+
+## Pages (11)
+
+| Page | Path | Description |
+|---|---|---|
+| Home | `/` | Landing page with CTAs |
+| File Complaint | `/complaint` | 7-step AI complaint wizard |
+| Track Complaint | `/tracker` | CPGRAMS tracker with countdown |
+| My Complaints | `/my-complaints` | Filtered complaint history |
+| Complaint Detail | `/complaint-detail?id=X` | Full AI analysis view |
+| Dashboard | `/dashboard` | Public analytics dashboard |
+| RTI Drafter | `/rti` | AI RTI application generator |
+| How It Works | `/how-it-works` | Platform guide |
+| About | `/about` | About page |
+| Login | `/login` | Email OTP login |
+| Profile | `/profile` | User settings & security |
 
 ## Data Architecture
 
-### Database Tables (12)
-**Original (7):**
-- **users** — Email, name, language preference, auth fields (is_verified, last_login, login_count)
-- **complaints** — Full complaint lifecycle with user_id linkage
-- **complaint_feedback** — Citizen outcome reports, fake closure detection
-- **ministry_stats** — 30 ministries with performance metrics
-- **state_grievance_stats** — 36 states/UTs with complaint data
-- **trending_issues** — 8 systemic issue clusters
-- **social_signals** — 8 Twitter/news monitoring entries
+### Database: Cloudflare D1 (SQLite)
+- **12 tables**: users, complaints, complaint_feedback, ministry_stats, trending_issues, social_signals, state_grievance_stats, auth_otp, user_sessions, rate_limits, audit_log, email_queue
+- **Seed data**: 30 ministries, 36 states/UTs, 8 trending issues, 10+ social signals, 3 demo complaints
 
-**New (5 — Week 4):**
-- **auth_otp** — OTP codes with expiry, attempts, purpose
-- **user_sessions** — JWT session tracking with IP/user-agent
-- **rate_limits** — Per-IP/endpoint request counting
-- **audit_log** — Security event history
-- **email_queue** — Notification queue (OTP, reminders, welcome)
+### Storage
+- **D1 SQLite** — All application data
+- **JWT** — Session tokens (client-side storage with server validation)
+- **LocalStorage** — Auth state, language preference
 
-### Seed Data
-- 96+ rows across 12 tables
-- 30 ministries, 36 states, 8 trending issues, 8 social signals, 3+ users, 3+ sample complaints
+## Tech Stack
 
-## Development
+| Layer | Technology |
+|---|---|
+| Runtime | Cloudflare Workers (Edge) |
+| Framework | Hono v4 (TypeScript) |
+| Database | Cloudflare D1 (SQLite) |
+| AI Engine | Google Gemini 2.0 Flash (with 17-category mock fallback) |
+| CSS | Tailwind CSS (CDN) |
+| Charts | Chart.js 4.4.0 |
+| Maps | Leaflet 1.9.4 + GeoJSON India |
+| PDF | jsPDF 2.5.1 |
+| Icons | Font Awesome 6.5.0 |
+| Build | Vite 6 + wrangler |
+| Process | PM2 |
+
+## Development Milestones
+
+| Week | Focus | Features Added |
+|---|---|---|
+| 1 | Foundation | 7 SSR pages, 14 REST endpoints, D1 schema, seed data |
+| 2 | AI Core | Gemini integration, 17-category fallback, AI transparency |
+| 3 | Visualization | Chart.js, GeoJSON choropleth, 7-step wizard, Hindi UI |
+| 4 | Security | Email OTP auth, JWT, CSP, rate limiting, XSS, audit log |
+| 5 | Analytics | Time-series, radar, sparklines, district drill-down, PDF, filters, detail view |
+
+## Quick Start
 
 ```bash
-# Install dependencies
+# Install
 npm install
 
-# Setup database
-npm run db:migrate:local && npm run db:seed
+# Database setup
+npm run db:migrate:local
+npm run db:seed
 
-# Build and preview
+# Development
 npm run build
-npm run preview   # or: pm2 start ecosystem.config.cjs
+npm run preview
 
-# Environment variables (.dev.vars file)
-# GEMINI_API_KEY=your_key_here
-# RESEND_API_KEY=your_resend_key_here  (optional - for email delivery)
+# Deploy to Cloudflare
+npm run deploy
 ```
 
-## Pages (10)
-1. `/` — Home with hero, stats, problem/solution, trending preview
-2. `/complaint` — 7-step AI complaint wizard
-3. `/tracker` — Countdown timer, timeline, action recommendations
-4. `/my-complaints` — History with stats and filtering (user-filtered when logged in)
-5. `/dashboard` — GeoJSON map, charts, scorecard, trending, social
-6. `/rti` — RTI auto-drafter with PDF download
-7. `/how-it-works` — 5-step citizen flow + researcher flow
-8. `/about` — Project info and team
-9. `/login` — Email OTP sign-in (3-step flow) — **NEW**
-10. `/profile` — Account settings and security — **NEW**
+## Deployment
 
-## Weekly Progress
-- **Week 1** ✅ Foundation: 7 pages, 12 APIs, 7 DB tables, 36 states, 30 ministries, mock AI
-- **Week 2** ✅ AI Core: Gemini integration, 17 categories, transparency badges, 14 APIs
-- **Week 3** ✅ UX & Completeness: 7-step wizard, computed timelines, My Complaints, Hindi UI, GeoJSON, Chart.js
-- **Week 4** ✅ Auth & Security: Email OTP login, JWT sessions, CSP headers, rate limiting, XSS sanitization, audit logging, email reminders, user profiles
-- **Week 5** 📋 Analytics: District drill-down, PDF export, advanced charts
-- **Week 6** 📋 Regional & Data: Tamil/Telugu/Bengali UI, CPGRAMS scraping, Twitter API
-- **Week 7** 📋 Final: 2G testing, Lighthouse optimization, deployment, documentation
-
-## Codebase
-- **Source Files**: 15 TypeScript files
-- **Total Lines**: ~6,200
-- **Bundle Size**: 310 KB
-- **DB Tables**: 12
-- **API Endpoints**: 22
-- **Features**: 28
-- **Dependencies**: Hono ^4.12.5
-- **CDN Libraries**: Tailwind CSS, Leaflet 1.9.4, Chart.js 4.4.0, jsPDF 2.5.1, Font Awesome 6.5.0
-
-## License
-Open source civic tech. Built for India's citizens.
-
-**Last Updated**: March 26, 2026 (Week 4)
+- **Platform**: Cloudflare Pages
+- **Status**: Active (Development)
+- **Bundle**: 364 KB
+- **Tech**: Hono + TypeScript + Tailwind CSS + Chart.js + Leaflet
+- **Last Updated**: March 31, 2026
