@@ -49,12 +49,14 @@ export function profilePage(): string {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-1.5">Language Preference</label>
-                <select id="profileLang" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-saffron-200 focus:border-saffron-400 outline-none">
+                <select id="profileLang" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-saffron-200 focus:border-saffron-400 outline-none" aria-label="Language preference">
                   <option value="en">English</option>
                   <option value="hi">हिन्दी (Hindi)</option>
                   <option value="ta">தமிழ் (Tamil)</option>
                   <option value="te">తెలుగు (Telugu)</option>
                   <option value="bn">বাংলা (Bengali)</option>
+                  <option value="mr">मराठी (Marathi)</option>
+                  <option value="kn">ಕನ್ನಡ (Kannada)</option>
                 </select>
               </div>
               <div>

@@ -1,11 +1,44 @@
-export function layout(title: string, content: string, activePage: string = ''): string {
+export interface PageSEO {
+  description?: string
+  keywords?: string
+  ogImage?: string
+  canonical?: string
+  structuredData?: object
+}
+
+export function layout(title: string, content: string, activePage: string = '', seo: PageSEO = {}): string {
+  const desc = seo.description || "File Smarter. Get Heard. Hold Them Accountable. India's citizen-facing grievance intelligence platform powered by AI."
+  const keywords = seo.keywords || 'grievance, complaint, CPGRAMS, India, RTI, AI, citizen, government, accountability'
+  const ogImage = seo.ogImage || ''
+  const canonical = seo.canonical || ''
+  const structuredData = seo.structuredData ? '<script type="application/ld+json">' + JSON.stringify(seo.structuredData) + '</script>' : ''
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title} — GrievanceIQ</title>
-  <meta name="description" content="File Smarter. Get Heard. Hold Them Accountable. India's citizen-facing grievance intelligence platform.">
+  <meta name="description" content="${desc}">
+  <meta name="keywords" content="${keywords}">
+  <meta name="author" content="GrievanceIQ">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1a365d">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="${title} — GrievanceIQ">
+  <meta property="og:description" content="${desc}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="GrievanceIQ">
+  ${ogImage ? '<meta property="og:image" content="' + ogImage + '">' : ''}
+  ${canonical ? '<link rel="canonical" href="' + canonical + '">' : ''}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${title} — GrievanceIQ">
+  <meta name="twitter:description" content="${desc}">
+
+  ${structuredData}
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -149,6 +182,29 @@ export function layout(title: string, content: string, activePage: string = ''):
       transition: transform 0.3s ease;
     }
     .mobile-menu.open { transform: translateX(0); }
+
+    /* A11y: Focus styles */
+    :focus-visible {
+      outline: 3px solid #ff9933;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      .card-hover { border: 2px solid currentColor; }
+      .badge-critical, .badge-high, .badge-medium, .badge-low { border-width: 2px; font-weight: 700; }
+      .quality-gauge { border: 2px solid currentColor; }
+    }
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      .pulse-dot { animation: none; }
+    }
     
     /* Loading spinner */
     .spinner {
@@ -176,11 +232,17 @@ export function layout(title: string, content: string, activePage: string = ''):
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
-  
+  <!-- A11y: Skip to main content link -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-saffron-500 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold focus:shadow-lg" tabindex="0">
+    Skip to main content
+  </a>
+  <!-- A11y: Live announcements region -->
+  <div id="a11y-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
   <!-- ============================================ -->
   <!-- NAVIGATION -->
   <!-- ============================================ -->
-  <nav class="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+  <nav class="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Main navigation">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
@@ -221,9 +283,20 @@ export function layout(title: string, content: string, activePage: string = ''):
         
         <!-- CTA + Language Toggle + Auth -->
         <div class="hidden md:flex items-center gap-3">
-          <button onclick="toggleLanguage()" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors" title="Switch language">
-            <i class="fas fa-language mr-1"></i><span id="langToggleLabel">हिन्दी</span>
-          </button>
+          <div class="relative" id="langPickerWrap">
+            <button onclick="toggleLangDropdown(event)" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors" title="Switch language" aria-haspopup="listbox" aria-expanded="false">
+              <i class="fas fa-globe mr-1"></i><span id="langToggleLabel">हिन्दी</span> <i class="fas fa-caret-down ml-0.5 text-[10px]"></i>
+            </button>
+            <div id="langDropdown" class="hidden absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden" role="listbox" aria-label="Select language">
+              <button onclick="setLang('en')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇬🇧 English</span></button>
+              <button onclick="setLang('hi')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 हिन्दी</span></button>
+              <button onclick="setLang('ta')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 தமிழ்</span></button>
+              <button onclick="setLang('te')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 తెలుగు</span></button>
+              <button onclick="setLang('bn')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 বাংলা</span></button>
+              <button onclick="setLang('mr')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 मराठी</span></button>
+              <button onclick="setLang('kn')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 ಕನ್ನಡ</span></button>
+            </div>
+          </div>
           <!-- Auth state: Guest -->
           <div id="navGuest" class="flex items-center gap-2">
             <a href="/login" class="text-xs px-3 py-1.5 rounded-lg border border-navy-200 text-navy-600 hover:bg-navy-50 font-medium transition-colors">
@@ -307,14 +380,14 @@ export function layout(title: string, content: string, activePage: string = ''):
   <!-- ============================================ -->
   <!-- MAIN CONTENT -->
   <!-- ============================================ -->
-  <main class="flex-1">
+  <main id="main-content" class="flex-1" role="main" tabindex="-1">
     ${content}
   </main>
 
   <!-- ============================================ -->
   <!-- FOOTER -->
   <!-- ============================================ -->
-  <footer class="bg-navy-800 text-white mt-auto">
+  <footer class="bg-navy-800 text-white mt-auto" role="contentinfo">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
         <!-- Brand -->
@@ -441,13 +514,13 @@ export function layout(title: string, content: string, activePage: string = ''):
     }
 
     // ============================================
-    // HINDI UI TOGGLE (i18n Foundation)
+    // MULTI-LANGUAGE i18n — 7 Indian Languages
     // ============================================
     const i18n = {
       en: {
         nav_home: 'Home', nav_complaint: 'File Complaint', nav_track: 'Track',
         nav_my_complaints: 'My Complaints', nav_dashboard: 'Dashboard', nav_how: 'How It Works',
-        nav_about: 'About', nav_file_cta: 'File a Complaint',
+        nav_about: 'About', nav_file_cta: 'File a Complaint', nav_admin: 'Admin',
         complaint_title: 'Smart Complaint Builder',
         complaint_subtitle: 'Type your problem in any language. Our AI identifies the right department, scores your complaint, and rewrites it for maximum impact.',
         step1_title: 'Step 1: Describe Your Problem',
@@ -455,12 +528,32 @@ export function layout(title: string, content: string, activePage: string = ''):
         tracker_title: 'Complaint Tracker',
         tracker_subtitle: 'Enter your CPGRAMS complaint ID to track progress, get Day 15/25 countdown reminders, and report outcomes.',
         my_complaints_title: 'My Complaints',
-        my_complaints_subtitle: 'Track all your analyzed complaints, their status, and filing progress in one place.'
+        my_complaints_subtitle: 'Track all your analyzed complaints, their status, and filing progress in one place.',
+        dashboard_title: 'Public Accountability Dashboard',
+        dashboard_subtitle: 'Real-time grievance analytics across India — powered by citizen data and AI transparency.',
+        rti_title: 'RTI Auto-Drafter',
+        rti_subtitle: 'Generate legally-accurate Right to Information applications instantly.',
+        about_title: 'About GrievanceIQ',
+        footer_tagline: 'The intelligence layer between citizens and India\'s grievance system.',
+        footer_tools: 'Citizen Tools', footer_dashboard: 'Public Dashboard',
+        hero_badge: 'INDIA\'S CITIZEN GRIEVANCE INTELLIGENCE PLATFORM',
+        hero_h1_1: 'File', hero_h1_2: 'Smarter.', hero_h1_3: 'Get', hero_h1_4: 'Heard.',
+        hero_h1_5: 'Hold Them', hero_h1_6: 'Accountable.',
+        hero_sub: 'Type your problem in plain language. Our AI identifies the right department, strengthens your complaint, and gives you the tools to follow up.',
+        login_title: 'Sign In to GrievanceIQ',
+        profile_title: 'My Profile',
+        search_placeholder: 'Search complaints...',
+        export_pdf: 'Export PDF',
+        loading: 'Loading...',
+        no_results: 'No results found',
+        status_draft: 'Draft', status_filed: 'Filed', status_pending: 'Pending',
+        status_resolved: 'Resolved', status_fake_closed: 'Fake Closed', status_escalated: 'Escalated',
+        lang_name: 'English'
       },
       hi: {
         nav_home: 'होम', nav_complaint: 'शिकायत दर्ज करें', nav_track: 'ट्रैक करें',
         nav_my_complaints: 'मेरी शिकायतें', nav_dashboard: 'डैशबोर्ड', nav_how: 'कैसे काम करता है',
-        nav_about: 'हमारे बारे में', nav_file_cta: 'शिकायत दर्ज करें',
+        nav_about: 'हमारे बारे में', nav_file_cta: 'शिकायत दर्ज करें', nav_admin: 'एडमिन',
         complaint_title: 'स्मार्ट शिकायत बिल्डर',
         complaint_subtitle: 'अपनी समस्या किसी भी भाषा में लिखें। हमारा AI सही विभाग पहचानता है, शिकायत को स्कोर करता है, और अधिकतम प्रभाव के लिए फिर से लिखता है।',
         step1_title: 'चरण 1: अपनी समस्या बताएं',
@@ -468,33 +561,293 @@ export function layout(title: string, content: string, activePage: string = ''):
         tracker_title: 'शिकायत ट्रैकर',
         tracker_subtitle: 'प्रगति ट्रैक करने, दिन 15/25 की काउंटडाउन रिमाइंडर प्राप्त करने और परिणाम रिपोर्ट करने के लिए अपना CPGRAMS शिकायत ID दर्ज करें।',
         my_complaints_title: 'मेरी शिकायतें',
-        my_complaints_subtitle: 'अपनी सभी विश्लेषित शिकायतों, उनकी स्थिति और फाइलिंग प्रगति को एक ही स्थान पर ट्रैक करें।'
+        my_complaints_subtitle: 'अपनी सभी विश्लेषित शिकायतों, उनकी स्थिति और फाइलिंग प्रगति को एक ही स्थान पर ट्रैक करें।',
+        dashboard_title: 'सार्वजनिक जवाबदेही डैशबोर्ड',
+        dashboard_subtitle: 'भारत भर में वास्तविक समय शिकायत विश्लेषण — नागरिक डेटा और AI पारदर्शिता द्वारा संचालित।',
+        rti_title: 'RTI ऑटो-ड्राफ्टर',
+        rti_subtitle: 'कानूनी रूप से सटीक सूचना का अधिकार आवेदन तुरंत तैयार करें।',
+        about_title: 'GrievanceIQ के बारे में',
+        footer_tagline: 'नागरिकों और भारत की शिकायत प्रणाली के बीच इंटेलिजेंस परत।',
+        footer_tools: 'नागरिक उपकरण', footer_dashboard: 'सार्वजनिक डैशबोर्ड',
+        hero_badge: 'भारत का नागरिक शिकायत इंटेलिजेंस प्लेटफॉर्म',
+        hero_h1_1: 'स्मार्ट', hero_h1_2: 'दर्ज करें।', hero_h1_3: 'सुनवाई', hero_h1_4: 'पाएं।',
+        hero_h1_5: 'उन्हें', hero_h1_6: 'जवाबदेह बनाएं।',
+        hero_sub: 'अपनी समस्या सामान्य भाषा में टाइप करें। हमारा AI सही विभाग पहचानता है, शिकायत मजबूत करता है, और फॉलो-अप के साधन देता है।',
+        login_title: 'GrievanceIQ में साइन इन करें',
+        profile_title: 'मेरी प्रोफ़ाइल',
+        search_placeholder: 'शिकायतें खोजें...',
+        export_pdf: 'PDF निर्यात',
+        loading: 'लोड हो रहा है...',
+        no_results: 'कोई परिणाम नहीं मिला',
+        status_draft: 'ड्राफ्ट', status_filed: 'दर्ज', status_pending: 'लंबित',
+        status_resolved: 'हल किया', status_fake_closed: 'फर्जी बंद', status_escalated: 'बढ़ाया गया',
+        lang_name: 'हिन्दी'
+      },
+      ta: {
+        nav_home: 'முகப்பு', nav_complaint: 'புகார் பதிவு', nav_track: 'கண்காணி',
+        nav_my_complaints: 'என் புகார்கள்', nav_dashboard: 'டாஷ்போர்டு', nav_how: 'எப்படி செயல்படுகிறது',
+        nav_about: 'எங்களை பற்றி', nav_file_cta: 'புகார் பதிவு செய்', nav_admin: 'நிர்வாகம்',
+        complaint_title: 'ஸ்மார்ட் புகார் பில்டர்',
+        complaint_subtitle: 'உங்கள் பிரச்சனையை எந்த மொழியிலும் தட்டச்சு செய்யுங்கள். எங்கள் AI சரியான துறையை அடையாளம் காணும்.',
+        step1_title: 'படி 1: உங்கள் பிரச்சனையை விவரியுங்கள்',
+        analyze_btn: 'என் புகாரை பகுப்பாய்வு செய்',
+        tracker_title: 'புகார் கண்காணிப்பு',
+        tracker_subtitle: 'முன்னேற்றம் கண்காணிக்க உங்கள் CPGRAMS புகார் ID ஐ உள்ளிடுங்கள்.',
+        my_complaints_title: 'என் புகார்கள்',
+        my_complaints_subtitle: 'உங்கள் அனைத்து பகுப்பாய்வு செய்யப்பட்ட புகார்களையும் ஒரே இடத்தில் கண்காணிக்கவும்.',
+        dashboard_title: 'பொது பொறுப்புணர்வு டாஷ்போர்டு',
+        dashboard_subtitle: 'இந்தியா முழுவதும் நிகழ்நேர புகார் பகுப்பாய்வு.',
+        rti_title: 'RTI தானியங்கி வரைவாளர்',
+        rti_subtitle: 'சட்டப்படி துல்லியமான தகவல் அறியும் உரிமை விண்ணப்பங்களை உடனடியாக உருவாக்குங்கள்.',
+        about_title: 'GrievanceIQ பற்றி',
+        footer_tagline: 'குடிமக்களுக்கும் இந்தியாவின் புகார் அமைப்புக்கும் இடையிலான நுண்ணறிவு அடுக்கு.',
+        footer_tools: 'குடிமக்கள் கருவிகள்', footer_dashboard: 'பொது டாஷ்போர்டு',
+        hero_badge: 'இந்தியாவின் குடிமக்கள் புகார் நுண்ணறிவு தளம்',
+        hero_h1_1: 'புத்திசாலித்தனமாக', hero_h1_2: 'பதிவு செய்.', hero_h1_3: 'கேட்க', hero_h1_4: 'வை.',
+        hero_h1_5: 'அவர்களை', hero_h1_6: 'பொறுப்பாக்கு.',
+        hero_sub: 'உங்கள் பிரச்சனையை எளிய மொழியில் தட்டச்சு செய்யுங்கள்.',
+        login_title: 'GrievanceIQ இல் உள்நுழையவும்',
+        profile_title: 'என் சுயவிவரம்',
+        search_placeholder: 'புகார்களை தேடு...',
+        export_pdf: 'PDF ஏற்றுமதி',
+        loading: 'ஏற்றுகிறது...',
+        no_results: 'முடிவுகள் கிடைக்கவில்லை',
+        status_draft: 'வரைவு', status_filed: 'பதிவு', status_pending: 'நிலுவை',
+        status_resolved: 'தீர்க்கப்பட்டது', status_fake_closed: 'போலி மூடல்', status_escalated: 'அதிகரிக்கப்பட்டது',
+        lang_name: 'தமிழ்'
+      },
+      te: {
+        nav_home: 'హోమ్', nav_complaint: 'ఫిర్యాదు చేయండి', nav_track: 'ట్రాక్',
+        nav_my_complaints: 'నా ఫిర్యాదులు', nav_dashboard: 'డాష్‌బోర్డ్', nav_how: 'ఎలా పనిచేస్తుంది',
+        nav_about: 'మా గురించి', nav_file_cta: 'ఫిర్యాదు చేయండి', nav_admin: 'అడ్మిన్',
+        complaint_title: 'స్మార్ట్ ఫిర్యాదు బిల్డర్',
+        complaint_subtitle: 'మీ సమస్యను ఏ భాషలోనైనా టైప్ చేయండి. మా AI సరైన విభాగాన్ని గుర్తిస్తుంది.',
+        step1_title: 'దశ 1: మీ సమస్యను వివరించండి',
+        analyze_btn: 'నా ఫిర్యాదును విశ్లేషించండి',
+        tracker_title: 'ఫిర్యాదు ట్రాకర్',
+        tracker_subtitle: 'పురోగతిని ట్రాక్ చేయడానికి మీ CPGRAMS ఫిర్యాదు ID నమోదు చేయండి.',
+        my_complaints_title: 'నా ఫిర్యాదులు',
+        my_complaints_subtitle: 'మీ అన్ని విశ్లేషించిన ఫిర్యాదులను ఒకే చోట ట్రాక్ చేయండి.',
+        dashboard_title: 'పబ్లిక్ జవాబుదారీతనం డాష్‌బోర్డ్',
+        dashboard_subtitle: 'భారతదేశం అంతటా రియల్-టైమ్ ఫిర్యాదు విశ్లేషణ.',
+        rti_title: 'RTI ఆటో-డ్రాఫ్టర్',
+        rti_subtitle: 'చట్టపరంగా ఖచ్చితమైన RTI దరఖాస్తులను తక్షణంగా రూపొందించండి.',
+        about_title: 'GrievanceIQ గురించి',
+        footer_tagline: 'పౌరులు మరియు భారతదేశ ఫిర్యాదు వ్యవస్థ మధ్య మేధో పొరన.',
+        footer_tools: 'పౌర సాధనాలు', footer_dashboard: 'పబ్లిక్ డాష్‌బోర్డ్',
+        hero_badge: 'భారతదేశ పౌర ఫిర్యాదు మేధో వేదిక',
+        hero_h1_1: 'తెలివిగా', hero_h1_2: 'ఫైల్ చేయి.', hero_h1_3: 'వినబడు.', hero_h1_4: '',
+        hero_h1_5: 'వారిని', hero_h1_6: 'జవాబుదారీగా చేయి.',
+        hero_sub: 'మీ సమస్యను సామాన్య భాషలో టైప్ చేయండి.',
+        login_title: 'GrievanceIQ లో సైన్ ఇన్ చేయండి',
+        profile_title: 'నా ప్రొఫైల్',
+        search_placeholder: 'ఫిర్యాదులను వెతకండి...',
+        export_pdf: 'PDF ఎగుమతి',
+        loading: 'లోడ్ అవుతోంది...',
+        no_results: 'ఫలితాలు కనుగొనబడలేదు',
+        status_draft: 'డ్రాఫ్ట్', status_filed: 'ఫైల్ చేసింది', status_pending: 'పెండింగ్',
+        status_resolved: 'పరిష్కరించబడింది', status_fake_closed: 'నకిలీ మూసివేత', status_escalated: 'ఎస్కలేట్',
+        lang_name: 'తెలుగు'
+      },
+      bn: {
+        nav_home: 'হোম', nav_complaint: 'অভিযোগ দায়ের', nav_track: 'ট্র্যাক',
+        nav_my_complaints: 'আমার অভিযোগ', nav_dashboard: 'ড্যাশবোর্ড', nav_how: 'কীভাবে কাজ করে',
+        nav_about: 'আমাদের সম্পর্কে', nav_file_cta: 'অভিযোগ দায়ের করুন', nav_admin: 'অ্যাডমিন',
+        complaint_title: 'স্মার্ট অভিযোগ বিল্ডার',
+        complaint_subtitle: 'আপনার সমস্যা যেকোনো ভাষায় টাইপ করুন। আমাদের AI সঠিক বিভাগ চিহ্নিত করবে।',
+        step1_title: 'ধাপ 1: আপনার সমস্যা বর্ণনা করুন',
+        analyze_btn: 'আমার অভিযোগ বিশ্লেষণ করুন',
+        tracker_title: 'অভিযোগ ট্র্যাকার',
+        tracker_subtitle: 'অগ্রগতি ট্র্যাক করতে আপনার CPGRAMS অভিযোগ ID লিখুন।',
+        my_complaints_title: 'আমার অভিযোগসমূহ',
+        my_complaints_subtitle: 'আপনার সমস্ত বিশ্লেষিত অভিযোগ এক জায়গায় ট্র্যাক করুন।',
+        dashboard_title: 'পাবলিক জবাবদিহি ড্যাশবোর্ড',
+        dashboard_subtitle: 'ভারতজুড়ে রিয়েল-টাইম অভিযোগ বিশ্লেষণ।',
+        rti_title: 'RTI অটো-ড্রাফটার',
+        rti_subtitle: 'আইনত সঠিক তথ্য অধিকার আবেদন তাৎক্ষণিকভাবে তৈরি করুন।',
+        about_title: 'GrievanceIQ সম্পর্কে',
+        footer_tagline: 'নাগরিক এবং ভারতের অভিযোগ ব্যবস্থার মধ্যে বুদ্ধিমত্তা স্তর।',
+        footer_tools: 'নাগরিক সরঞ্জাম', footer_dashboard: 'পাবলিক ড্যাশবোর্ড',
+        hero_badge: 'ভারতের নাগরিক অভিযোগ বুদ্ধিমত্তা প্ল্যাটফর্ম',
+        hero_h1_1: 'বুদ্ধিমানভাবে', hero_h1_2: 'দায়ের কর।', hero_h1_3: 'শোনো।', hero_h1_4: '',
+        hero_h1_5: 'তাদের', hero_h1_6: 'জবাবদিহি কর।',
+        hero_sub: 'আপনার সমস্যা সাধারণ ভাষায় টাইপ করুন।',
+        login_title: 'GrievanceIQ-এ সাইন ইন করুন',
+        profile_title: 'আমার প্রোফাইল',
+        search_placeholder: 'অভিযোগ খুঁজুন...',
+        export_pdf: 'PDF রপ্তানি',
+        loading: 'লোড হচ্ছে...',
+        no_results: 'কোনো ফলাফল পাওয়া যায়নি',
+        status_draft: 'ড্রাফট', status_filed: 'দায়ের', status_pending: 'বিচারাধীন',
+        status_resolved: 'সমাধান', status_fake_closed: 'ভুয়া বন্ধ', status_escalated: 'বৃদ্ধি',
+        lang_name: 'বাংলা'
+      },
+      mr: {
+        nav_home: 'मुखपृष्ठ', nav_complaint: 'तक्रार नोंदवा', nav_track: 'ट्रॅक करा',
+        nav_my_complaints: 'माझ्या तक्रारी', nav_dashboard: 'डॅशबोर्ड', nav_how: 'कसे कार्य करते',
+        nav_about: 'आमच्याबद्दल', nav_file_cta: 'तक्रार नोंदवा', nav_admin: 'ॲडमिन',
+        complaint_title: 'स्मार्ट तक्रार बिल्डर',
+        complaint_subtitle: 'तुमची समस्या कोणत्याही भाषेत टाइप करा. आमचा AI योग्य विभाग ओळखतो.',
+        step1_title: 'पायरी 1: तुमची समस्या सांगा',
+        analyze_btn: 'माझ्या तक्रारीचे विश्लेषण करा',
+        tracker_title: 'तक्रार ट्रॅकर',
+        tracker_subtitle: 'प्रगती ट्रॅक करण्यासाठी तुमचा CPGRAMS तक्रार ID प्रविष्ट करा.',
+        my_complaints_title: 'माझ्या तक्रारी',
+        my_complaints_subtitle: 'तुमच्या सर्व विश्लेषित तक्रारी एकाच ठिकाणी ट्रॅक करा.',
+        dashboard_title: 'सार्वजनिक उत्तरदायित्व डॅशबोर्ड',
+        dashboard_subtitle: 'संपूर्ण भारतातील रिअल-टाइम तक्रार विश्लेषण.',
+        rti_title: 'RTI ऑटो-ड्राफ्टर',
+        rti_subtitle: 'कायदेशीरदृष्ट्या अचूक माहिती अधिकार अर्ज तात्काळ तयार करा.',
+        about_title: 'GrievanceIQ बद्दल',
+        footer_tagline: 'नागरिक आणि भारताच्या तक्रार प्रणालीमधील बुद्धिमत्ता स्तर.',
+        footer_tools: 'नागरिक साधने', footer_dashboard: 'सार्वजनिक डॅशबोर्ड',
+        hero_badge: 'भारताचा नागरिक तक्रार बुद्धिमत्ता प्लॅटफॉर्म',
+        hero_h1_1: 'हुशारीने', hero_h1_2: 'नोंदवा.', hero_h1_3: 'ऐकून', hero_h1_4: 'घ्या.',
+        hero_h1_5: 'त्यांना', hero_h1_6: 'जबाबदार धरा.',
+        hero_sub: 'तुमची समस्या साध्या भाषेत टाइप करा.',
+        login_title: 'GrievanceIQ मध्ये साइन इन करा',
+        profile_title: 'माझी प्रोफाइल',
+        search_placeholder: 'तक्रारी शोधा...',
+        export_pdf: 'PDF निर्यात',
+        loading: 'लोड होत आहे...',
+        no_results: 'कोणतेही परिणाम नाहीत',
+        status_draft: 'मसुदा', status_filed: 'दाखल', status_pending: 'प्रलंबित',
+        status_resolved: 'निराकरण', status_fake_closed: 'खोटे बंद', status_escalated: 'वाढवले',
+        lang_name: 'मराठी'
+      },
+      kn: {
+        nav_home: 'ಮುಖಪುಟ', nav_complaint: 'ದೂರು ಸಲ್ಲಿಸಿ', nav_track: 'ಟ್ರ್ಯಾಕ್',
+        nav_my_complaints: 'ನನ್ನ ದೂರುಗಳು', nav_dashboard: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್', nav_how: 'ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ',
+        nav_about: 'ನಮ್ಮ ಬಗ್ಗೆ', nav_file_cta: 'ದೂರು ಸಲ್ಲಿಸಿ', nav_admin: 'ನಿರ್ವಾಹಕ',
+        complaint_title: 'ಸ್ಮಾರ್ಟ್ ದೂರು ಬಿಲ್ಡರ್',
+        complaint_subtitle: 'ನಿಮ್ಮ ಸಮಸ್ಯೆಯನ್ನು ಯಾವುದೇ ಭಾಷೆಯಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ. ನಮ್ಮ AI ಸರಿಯಾದ ಇಲಾಖೆಯನ್ನು ಗುರುತಿಸುತ್ತದೆ.',
+        step1_title: 'ಹಂತ 1: ನಿಮ್ಮ ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ',
+        analyze_btn: 'ನನ್ನ ದೂರನ್ನು ವಿಶ್ಲೇಷಿಸಿ',
+        tracker_title: 'ದೂರು ಟ್ರ್ಯಾಕರ್',
+        tracker_subtitle: 'ಪ್ರಗತಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ನಿಮ್ಮ CPGRAMS ದೂರು ID ನಮೂದಿಸಿ.',
+        my_complaints_title: 'ನನ್ನ ದೂರುಗಳು',
+        my_complaints_subtitle: 'ನಿಮ್ಮ ಎಲ್ಲಾ ವಿಶ್ಲೇಷಿತ ದೂರುಗಳನ್ನು ಒಂದೇ ಸ್ಥಳದಲ್ಲಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ.',
+        dashboard_title: 'ಸಾರ್ವಜನಿಕ ಹೊಣೆಗಾರಿಕೆ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+        dashboard_subtitle: 'ಭಾರತದಾದ್ಯಂತ ನೈಜ-ಸಮಯ ದೂರು ವಿಶ್ಲೇಷಣೆ.',
+        rti_title: 'RTI ಆಟೋ-ಡ್ರಾಫ್ಟರ್',
+        rti_subtitle: 'ಕಾನೂನುಬದ್ಧವಾಗಿ ನಿಖರವಾದ RTI ಅರ್ಜಿಗಳನ್ನು ತಕ್ಷಣ ರಚಿಸಿ.',
+        about_title: 'GrievanceIQ ಬಗ್ಗೆ',
+        footer_tagline: 'ನಾಗರಿಕರು ಮತ್ತು ಭಾರತದ ದೂರು ವ್ಯವಸ್ಥೆಯ ನಡುವಿನ ಬುದ್ಧಿವಂತಿಕೆ ಪದರ.',
+        footer_tools: 'ನಾಗರಿಕ ಉಪಕರಣಗಳು', footer_dashboard: 'ಸಾರ್ವಜನಿಕ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+        hero_badge: 'ಭಾರತದ ನಾಗರಿಕ ದೂರು ಬುದ್ಧಿವಂತಿಕೆ ವೇದಿಕೆ',
+        hero_h1_1: 'ಬುದ್ಧಿವಂತಿಕೆಯಿಂದ', hero_h1_2: 'ಸಲ್ಲಿಸಿ.', hero_h1_3: 'ಕೇಳಿಸಿಕೊಳ್ಳಿ.', hero_h1_4: '',
+        hero_h1_5: 'ಅವರನ್ನು', hero_h1_6: 'ಹೊಣೆಗಾರರನ್ನಾಗಿ ಮಾಡಿ.',
+        hero_sub: 'ನಿಮ್ಮ ಸಮಸ್ಯೆಯನ್ನು ಸರಳ ಭಾಷೆಯಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ.',
+        login_title: 'GrievanceIQ ಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ',
+        profile_title: 'ನನ್ನ ಪ್ರೊಫೈಲ್',
+        search_placeholder: 'ದೂರುಗಳನ್ನು ಹುಡುಕಿ...',
+        export_pdf: 'PDF ರಫ್ತು',
+        loading: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ...',
+        no_results: 'ಫಲಿತಾಂಶಗಳಿಲ್ಲ',
+        status_draft: 'ಡ್ರಾಫ್ಟ್', status_filed: 'ಸಲ್ಲಿಸಲಾಗಿದೆ', status_pending: 'ಬಾಕಿ',
+        status_resolved: 'ಪರಿಹರಿಸಲಾಗಿದೆ', status_fake_closed: 'ನಕಲಿ ಮುಕ್ತಾಯ', status_escalated: 'ಹೆಚ್ಚಿಸಲಾಗಿದೆ',
+        lang_name: 'ಕನ್ನಡ'
       }
     };
 
+    const langLabels = { en:'English', hi:'हिन्दी', ta:'தமிழ்', te:'తెలుగు', bn:'বাংলা', mr:'मराठी', kn:'ಕನ್ನಡ' };
+    const langOrder = ['en','hi','ta','te','bn','mr','kn'];
     let currentLang = localStorage.getItem('grievanceiq_lang') || 'en';
 
-    function toggleLanguage() {
-      currentLang = currentLang === 'en' ? 'hi' : 'en';
+    function cycleLang() {
+      const idx = langOrder.indexOf(currentLang);
+      currentLang = langOrder[(idx + 1) % langOrder.length];
       localStorage.setItem('grievanceiq_lang', currentLang);
       applyLanguage(currentLang);
+    }
+
+    function setLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('grievanceiq_lang', lang);
+      applyLanguage(lang);
+      const dd = document.getElementById('langDropdown');
+      if (dd) dd.classList.add('hidden');
+    }
+
+    function toggleLangDropdown(e) {
+      e && e.stopPropagation();
+      const dd = document.getElementById('langDropdown');
+      if (dd) dd.classList.toggle('hidden');
     }
 
     function applyLanguage(lang) {
       const strings = i18n[lang] || i18n.en;
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (strings[key]) el.textContent = strings[key];
+        if (strings[key]) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.placeholder = strings[key];
+          } else {
+            el.textContent = strings[key];
+          }
+        }
       });
       // Update toggle button label
       const label = document.getElementById('langToggleLabel');
-      if (label) label.textContent = lang === 'en' ? 'हिन्दी' : 'English';
+      if (label) label.textContent = langLabels[lang] || 'English';
       // Update html lang
-      document.documentElement.lang = lang;
+      document.documentElement.lang = lang === 'hi' || lang === 'mr' ? 'hi' : lang;
+      // Announce language change for a11y
+      const announce = document.getElementById('a11y-announce');
+      if (announce) announce.textContent = 'Language changed to ' + (langLabels[lang] || lang);
     }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', () => {
+      const dd = document.getElementById('langDropdown');
+      if (dd) dd.classList.add('hidden');
+    });
 
     // Apply saved language on load
     if (currentLang !== 'en') applyLanguage(currentLang);
+
+    // ============================================
+    // A11Y: KEYBOARD NAVIGATION & FOCUS MANAGEMENT
+    // ============================================
+    (function initA11y() {
+      // Escape closes dropdowns and modals
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const dd = document.getElementById('langDropdown');
+          if (dd && !dd.classList.contains('hidden')) {
+            dd.classList.add('hidden');
+            document.getElementById('langToggleBtn')?.focus();
+          }
+          const mobileMenu = document.getElementById('mobileMenu');
+          if (mobileMenu && mobileMenu.classList.contains('open')) {
+            mobileMenu.classList.remove('open');
+          }
+        }
+      });
+
+      // Trap focus in mobile menu when open
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Tab') return;
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (!mobileMenu || !mobileMenu.classList.contains('open')) return;
+        const focusable = mobileMenu.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first.focus();
+        }
+      });
+
+      // Add aria-current to active nav links
+      document.querySelectorAll('nav a').forEach(link => {
+        if (link.classList.contains('nav-active')) {
+          link.setAttribute('aria-current', 'page');
+        }
+      });
+    })();
 
     // ============================================
     // AUTH STATE IN NAVIGATION

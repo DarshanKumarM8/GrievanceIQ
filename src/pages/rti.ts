@@ -173,5 +173,8 @@ export function rtiPage(): string {
     }
   </script>
   `
-  return layout('RTI Auto-Drafter', content, 'rti')
+  return layout('RTI Auto-Drafter', content, 'rti', {
+    description: 'Auto-generate legally accurate Right to Information (RTI) applications under Section 6(1) of RTI Act 2005 for unresolved CPGRAMS complaints.',
+    keywords: 'RTI application, Right to Information, RTI Act 2005, CPGRAMS RTI, government accountability'
+  })
 }

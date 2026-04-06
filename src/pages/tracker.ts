@@ -393,5 +393,8 @@ export function trackerPage(): string {
     }
   </script>
   `
-  return layout('Complaint Tracker', content, 'tracker')
+  return layout('Complaint Tracker', content, 'tracker', {
+    description: 'Track your CPGRAMS complaint progress with Day 15/25 countdown reminders, status timeline, and RTI escalation tools.',
+    keywords: 'CPGRAMS tracker, complaint tracking, Day 15 reminder, Day 25 warning, RTI escalation'
+  })
 }

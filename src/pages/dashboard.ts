@@ -7,9 +7,9 @@ export function dashboardPage(): string {
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">
-            <i class="fas fa-chart-line text-saffron-400 mr-2"></i>Public Accountability Dashboard
+            <i class="fas fa-chart-line text-saffron-400 mr-2" aria-hidden="true"></i><span data-i18n="dashboard_title">Public Accountability Dashboard</span>
           </h1>
-          <p class="text-gray-300 text-sm">Real-time grievance intelligence for journalists, NGOs, and researchers. No login required.</p>
+          <p class="text-gray-300 text-sm" data-i18n="dashboard_subtitle">Real-time grievance intelligence for journalists, NGOs, and researchers. No login required.</p>
         </div>
         <div class="flex items-center gap-3">
           <button onclick="exportDashboardPDF()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors">
@@ -693,5 +693,16 @@ export function dashboardPage(): string {
     .leaflet-tooltip-custom::before { display:none; }
   </style>
   `
-  return layout('Public Dashboard', content, 'dashboard')
+  return layout('Public Dashboard', content, 'dashboard', {
+    description: 'Real-time grievance analytics across India. Track ministry performance, fake closure rates, and citizen satisfaction powered by AI and CPGRAMS data.',
+    keywords: 'grievance dashboard, CPGRAMS, India, ministry performance, fake closure, citizen satisfaction, AI analytics',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'GrievanceIQ Dashboard',
+      applicationCategory: 'GovernmentApplication',
+      operatingSystem: 'Web',
+      description: 'Public accountability dashboard for India\'s grievance redressal system'
+    }
+  })
 }

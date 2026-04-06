@@ -518,5 +518,17 @@ export function homePage(): string {
     loadStats();
   </script>
   `
-  return layout('Home', content, 'home')
+  return layout('Home', content, 'home', {
+    description: 'File Smarter. Get Heard. Hold Them Accountable. GrievanceIQ uses AI to help Indian citizens file effective CPGRAMS complaints, track progress, and generate RTI applications.',
+    keywords: 'GrievanceIQ, CPGRAMS, India grievance, AI complaint, RTI generator, citizen rights, government accountability',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'GrievanceIQ',
+      applicationCategory: 'GovernmentApplication',
+      operatingSystem: 'Web',
+      description: 'AI-powered citizen grievance intelligence platform for India',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' }
+    }
+  })
 }

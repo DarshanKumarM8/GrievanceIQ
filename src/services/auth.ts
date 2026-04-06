@@ -355,7 +355,7 @@ export class AuthService {
       values.push(sanitizeInput(updates.name))
     }
     if (updates.language_preference) {
-      const validLangs = ['en', 'hi', 'ta', 'te', 'bn']
+      const validLangs = ['en', 'hi', 'ta', 'te', 'bn', 'mr', 'kn']
       if (!validLangs.includes(updates.language_preference)) {
         return { success: false, message: 'Invalid language preference' }
       }

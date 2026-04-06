@@ -14,6 +14,7 @@ import { myComplaintsPage } from './pages/my-complaints'
 import { loginPage } from './pages/login'
 import { profilePage } from './pages/profile'
 import { complaintDetailPage } from './pages/complaint-detail'
+import { adminPage } from './pages/admin'
 
 type Bindings = {
   DB: D1Database
@@ -62,5 +63,24 @@ app.get('/my-complaints', (c) => c.html(myComplaintsPage()))
 app.get('/login', (c) => c.html(loginPage()))
 app.get('/profile', (c) => c.html(profilePage()))
 app.get('/complaint-detail', (c) => c.html(complaintDetailPage()))
+app.get('/admin', (c) => c.html(adminPage()))
+
+// ============================================
+// SEO ROUTES
+// ============================================
+app.get('/sitemap.xml', (c) => {
+  const baseUrl = new URL(c.req.url).origin
+  const pages = ['/', '/dashboard', '/complaint', '/tracker', '/rti', '/my-complaints', '/how-it-works', '/about', '/login', '/admin']
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pages.map(p => `  <url><loc>${baseUrl}${p}</loc><lastmod>${new Date().toISOString().split('T')[0]}</lastmod></url>`).join('\n')}
+</urlset>`
+  return c.text(xml, 200, { 'Content-Type': 'application/xml' })
+})
+
+app.get('/robots.txt', (c) => {
+  const baseUrl = new URL(c.req.url).origin
+  return c.text(`User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${baseUrl}/sitemap.xml`, 200, { 'Content-Type': 'text/plain' })
+})
 
 export default app

@@ -104,5 +104,8 @@ export function aboutPage(): string {
     </div>
   </section>
   `
-  return layout('About', content, 'about')
+  return layout('About', content, 'about', {
+    description: 'GrievanceIQ is an open-source civic tech platform that uses AI to empower Indian citizens in the grievance redressal process.',
+    keywords: 'GrievanceIQ about, civic tech, open source, citizen empowerment, India governance'
+  })
 }

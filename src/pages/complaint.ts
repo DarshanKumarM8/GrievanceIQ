@@ -599,5 +599,8 @@ export function complaintPage(): string {
     updateWizardStep(1);
   </script>
   `
-  return layout('Smart Complaint Builder', content, 'complaint')
+  return layout('Smart Complaint Builder', content, 'complaint', {
+    description: 'AI-powered complaint builder for CPGRAMS. Type your problem in any Indian language, get department routing, quality scoring, and an improved draft.',
+    keywords: 'CPGRAMS complaint, AI complaint builder, grievance filing, department routing, India'
+  })
 }

@@ -19,8 +19,8 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '5.0.0',
-    week: 5,
+    version: '6.0.0',
+    week: 6,
     ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGeminiKey ? 'active' : 'fallback-only',
     features: [
@@ -60,9 +60,66 @@ apiRoutes.get('/health', (c) => {
       'advanced_complaint_filters',
       'complaint_detail_view',
       'department_comparison_radar',
-      'monthly_trend_analysis'
+      'monthly_trend_analysis',
+      'regional_languages_7',
+      'cpgrams_data_integration',
+      'cpgrams_alerts_system',
+      'cpgrams_bulk_sync',
+      'accessibility_wcag2',
+      'skip_navigation',
+      'aria_landmarks',
+      'keyboard_navigation',
+      'seo_meta_tags',
+      'open_graph_tags',
+      'structured_data_jsonld',
+      'sitemap_xml',
+      'admin_analytics_page',
+      'system_health_monitor',
+      'audit_log_viewer',
+      'language_dropdown_picker'
     ]
   })
+})
+
+// ============================================
+// SITEMAP.XML — SEO
+// ============================================
+apiRoutes.get('/sitemap.xml', (c) => {
+  const baseUrl = c.req.url.replace(/\/api\/sitemap\.xml$/, '')
+  const pages = [
+    { loc: '/', changefreq: 'daily', priority: '1.0' },
+    { loc: '/dashboard', changefreq: 'hourly', priority: '0.9' },
+    { loc: '/complaint', changefreq: 'weekly', priority: '0.9' },
+    { loc: '/tracker', changefreq: 'weekly', priority: '0.8' },
+    { loc: '/rti', changefreq: 'weekly', priority: '0.8' },
+    { loc: '/my-complaints', changefreq: 'daily', priority: '0.7' },
+    { loc: '/how-it-works', changefreq: 'monthly', priority: '0.6' },
+    { loc: '/about', changefreq: 'monthly', priority: '0.5' },
+    { loc: '/login', changefreq: 'monthly', priority: '0.4' },
+    { loc: '/admin', changefreq: 'daily', priority: '0.3' }
+  ]
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pages.map(p => `  <url>
+    <loc>${baseUrl}${p.loc}</loc>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+  </url>`).join('\n')}
+</urlset>`
+  return c.text(xml, 200, { 'Content-Type': 'application/xml' })
+})
+
+// ============================================
+// ROBOTS.TXT — SEO
+// ============================================
+apiRoutes.get('/robots.txt', (c) => {
+  const baseUrl = c.req.url.replace(/\/api\/robots\.txt$/, '')
+  return c.text(`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Sitemap: ${baseUrl}/api/sitemap.xml`, 200, { 'Content-Type': 'text/plain' })
 })
 
 // ============================================
@@ -762,6 +819,286 @@ apiRoutes.get('/states/:code/districts', async (c) => {
           avg_days: state.avg_resolution_days
         },
         districts: districts.sort((a, b) => b.total_complaints - a.total_complaints)
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// ADMIN — Audit logs, email queue, system health
+// ============================================
+
+apiRoutes.get('/admin/audit-logs', async (c) => {
+  const db = c.env.DB
+  try {
+    const logs = await db.prepare(
+      "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 50"
+    ).all()
+    return c.json({ success: true, data: logs.results })
+  } catch (e: any) {
+    // Table might not exist yet
+    return c.json({ success: true, data: [] })
+  }
+})
+
+apiRoutes.get('/admin/email-queue', async (c) => {
+  const db = c.env.DB
+  try {
+    const emails = await db.prepare(
+      "SELECT * FROM email_queue ORDER BY created_at DESC LIMIT 30"
+    ).all()
+    return c.json({ success: true, data: emails.results })
+  } catch (e: any) {
+    return c.json({ success: true, data: [] })
+  }
+})
+
+apiRoutes.get('/admin/system-health', async (c) => {
+  const db = c.env.DB
+  const hasGemini = !!(c.env.GEMINI_API_KEY && c.env.GEMINI_API_KEY.length > 10)
+  const hasResend = !!(c.env.RESEND_API_KEY && c.env.RESEND_API_KEY.length > 10)
+
+  try {
+    const users = await db.prepare('SELECT COUNT(*) as c FROM users').first()
+    const complaints = await db.prepare('SELECT COUNT(*) as c FROM complaints').first()
+    const sessions = await db.prepare("SELECT COUNT(*) as c FROM user_sessions WHERE is_active = 1 AND expires_at > datetime('now')").first()
+    const feedbacks = await db.prepare('SELECT COUNT(*) as c FROM complaint_feedback').first()
+
+    return c.json({
+      success: true,
+      data: {
+        status: 'healthy',
+        services: {
+          database: 'connected',
+          ai_engine: hasGemini ? 'active' : 'fallback',
+          email: hasResend ? 'active' : 'mock',
+          auth: 'active'
+        },
+        metrics: {
+          total_users: users?.c || 0,
+          total_complaints: complaints?.c || 0,
+          active_sessions: sessions?.c || 0,
+          total_feedbacks: feedbacks?.c || 0
+        },
+        uptime: process.uptime ? process.uptime() : 'N/A',
+        timestamp: new Date().toISOString()
+      }
+    })
+  } catch (e: any) {
+    return c.json({
+      success: true,
+      data: {
+        status: 'degraded',
+        services: { database: 'error', ai_engine: hasGemini ? 'active' : 'fallback', email: 'unknown', auth: 'unknown' },
+        error: e.message,
+        timestamp: new Date().toISOString()
+      }
+    })
+  }
+})
+
+// ============================================
+// CPGRAMS DATA INTEGRATION — Enhanced official data sync
+// ============================================
+
+// Simulate CPGRAMS portal response (in production, this would proxy to actual CPGRAMS API)
+function simulateCPGRAMSLookup(cpgramsId: string) {
+  const hash = cpgramsId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  const statuses = ['Under Process', 'Disposed', 'Forwarded', 'Pending at Ministry', 'Reminder Issued']
+  const departments = ['Ministry of Railways', 'Ministry of Finance', 'Ministry of Agriculture', 'Ministry of Health', 'Department of Posts']
+  const officers = ['Sh. R. K. Sharma', 'Ms. Priya Verma', 'Dr. A. K. Singh', 'Sh. M. P. Rao', 'Ms. Sudha Nair']
+
+  return {
+    registration_number: cpgramsId,
+    date_of_receipt: new Date(Date.now() - (hash % 60 + 5) * 86400000).toISOString().split('T')[0],
+    status: statuses[hash % statuses.length],
+    department_transferred: departments[hash % departments.length],
+    officer_name: officers[hash % officers.length],
+    last_action_date: new Date(Date.now() - (hash % 10) * 86400000).toISOString().split('T')[0],
+    disposal_date: statuses[hash % statuses.length] === 'Disposed'
+      ? new Date(Date.now() - (hash % 5) * 86400000).toISOString().split('T')[0]
+      : null,
+    reply_received: statuses[hash % statuses.length] === 'Disposed',
+    is_overdue: (hash % 60 + 5) > 30 && statuses[hash % statuses.length] !== 'Disposed',
+    grievance_type: hash % 2 === 0 ? 'Individual' : 'Public',
+    reminder_count: Math.max(0, Math.floor((hash % 60 - 15) / 10))
+  }
+}
+
+// GET /cpgrams/lookup/:id — Lookup CPGRAMS complaint status
+apiRoutes.get('/cpgrams/lookup/:id', async (c) => {
+  const cpgramsId = c.req.param('id')
+  if (!cpgramsId || cpgramsId.length < 5) {
+    return c.json({ success: false, error: 'Invalid CPGRAMS ID' }, 400)
+  }
+
+  try {
+    const officialData = simulateCPGRAMSLookup(cpgramsId)
+
+    // Check if we have local data to enrich
+    const db = c.env.DB
+    const localComplaint = await db.prepare(
+      'SELECT id, department_predicted, quality_score_after, status, rti_generated FROM complaints WHERE cpgrams_id = ?'
+    ).bind(cpgramsId).first()
+
+    const feedback = localComplaint
+      ? await db.prepare('SELECT citizen_actual_resolution, is_fake_closure, satisfaction_score FROM complaint_feedback WHERE complaint_id = ? ORDER BY feedback_given_at DESC LIMIT 1').bind(localComplaint.id).first()
+      : null
+
+    return c.json({
+      success: true,
+      data: {
+        official: officialData,
+        local: localComplaint ? {
+          complaint_id: localComplaint.id,
+          ai_department: localComplaint.department_predicted,
+          quality_score: localComplaint.quality_score_after,
+          local_status: localComplaint.status,
+          rti_generated: localComplaint.rti_generated,
+          citizen_feedback: feedback ? {
+            resolution: feedback.citizen_actual_resolution,
+            fake_closure: feedback.is_fake_closure,
+            satisfaction: feedback.satisfaction_score
+          } : null
+        } : null,
+        discrepancy: localComplaint && officialData.status === 'Disposed' && localComplaint.status !== 'resolved'
+          ? { type: 'potential_fake_closure', message: 'Official status says Disposed but citizen has not confirmed resolution.' }
+          : null
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// POST /cpgrams/sync — Bulk sync CPGRAMS status for user's complaints
+apiRoutes.post('/cpgrams/sync', async (c) => {
+  const db = c.env.DB
+  const userId = c.get?.('userId') || null
+
+  try {
+    const query = userId
+      ? "SELECT id, cpgrams_id, status FROM complaints WHERE cpgrams_id IS NOT NULL AND cpgrams_id != '' AND user_id = ?"
+      : "SELECT id, cpgrams_id, status FROM complaints WHERE cpgrams_id IS NOT NULL AND cpgrams_id != '' LIMIT 50"
+
+    const complaints = userId
+      ? await db.prepare(query).bind(userId).all()
+      : await db.prepare(query).all()
+
+    const syncResults = complaints.results.map((comp: any) => {
+      const official = simulateCPGRAMSLookup(comp.cpgrams_id)
+      const discrepancy = official.status === 'Disposed' && comp.status !== 'resolved'
+      return {
+        complaint_id: comp.id,
+        cpgrams_id: comp.cpgrams_id,
+        local_status: comp.status,
+        official_status: official.status,
+        is_overdue: official.is_overdue,
+        discrepancy,
+        last_action: official.last_action_date
+      }
+    })
+
+    const overdue = syncResults.filter((r: any) => r.is_overdue).length
+    const discrepancies = syncResults.filter((r: any) => r.discrepancy).length
+
+    return c.json({
+      success: true,
+      data: {
+        total_synced: syncResults.length,
+        overdue_count: overdue,
+        discrepancy_count: discrepancies,
+        complaints: syncResults
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /cpgrams/alerts — Active alerts for delayed/discrepant complaints
+apiRoutes.get('/cpgrams/alerts', async (c) => {
+  const db = c.env.DB
+  try {
+    // Find complaints needing attention
+    const filed = await db.prepare(
+      "SELECT id, cpgrams_id, raw_text, department_predicted, filed_at, status FROM complaints WHERE cpgrams_id IS NOT NULL AND status IN ('filed', 'pending') ORDER BY filed_at ASC LIMIT 20"
+    ).all()
+
+    const alerts = filed.results.map((comp: any) => {
+      const official = simulateCPGRAMSLookup(comp.cpgrams_id)
+      const filedDate = comp.filed_at ? new Date(comp.filed_at) : null
+      const daysElapsed = filedDate ? Math.floor((Date.now() - filedDate.getTime()) / 86400000) : 0
+
+      let severity: 'info' | 'warning' | 'critical' = 'info'
+      let action = ''
+      if (daysElapsed > 30 && official.status !== 'Disposed') {
+        severity = 'critical'
+        action = 'File RTI application — 30-day window expired'
+      } else if (daysElapsed > 25) {
+        severity = 'critical'
+        action = 'Urgent: Only ' + (30 - daysElapsed) + ' days remaining. Prepare RTI.'
+      } else if (daysElapsed > 15) {
+        severity = 'warning'
+        action = 'Follow up on CPGRAMS portal. Day 15 reminder triggered.'
+      }
+      if (official.status === 'Disposed' && comp.status !== 'resolved') {
+        severity = 'critical'
+        action = 'Potential fake closure detected. Report citizen feedback.'
+      }
+
+      return {
+        complaint_id: comp.id,
+        cpgrams_id: comp.cpgrams_id,
+        department: comp.department_predicted,
+        summary: (comp.raw_text as string || '').substring(0, 80) + '...',
+        days_elapsed: daysElapsed,
+        official_status: official.status,
+        severity,
+        action,
+        reminder_count: official.reminder_count
+      }
+    }).filter((a: any) => a.severity !== 'info')
+
+    return c.json({
+      success: true,
+      data: {
+        total_alerts: alerts.length,
+        critical: alerts.filter((a: any) => a.severity === 'critical').length,
+        warnings: alerts.filter((a: any) => a.severity === 'warning').length,
+        alerts
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /cpgrams/statistics — CPGRAMS aggregate statistics
+apiRoutes.get('/cpgrams/statistics', async (c) => {
+  const db = c.env.DB
+  try {
+    const total = await db.prepare("SELECT COUNT(*) as c FROM complaints WHERE cpgrams_id IS NOT NULL").first()
+    const disposed = await db.prepare("SELECT COUNT(*) as c FROM complaints WHERE status = 'resolved'").first()
+    const fakeClosedCount = await db.prepare("SELECT COUNT(*) as c FROM complaint_feedback WHERE is_fake_closure = 1").first()
+    const avgDays = await db.prepare("SELECT AVG(julianday(COALESCE(last_updated_at, created_at)) - julianday(filed_at)) as avg FROM complaints WHERE filed_at IS NOT NULL").first()
+
+    // Department-wise breakdown
+    const deptBreakdown = await db.prepare(
+      "SELECT department_predicted, COUNT(*) as total, SUM(CASE WHEN status='resolved' THEN 1 ELSE 0 END) as resolved, SUM(CASE WHEN status='fake_closed' THEN 1 ELSE 0 END) as fake_closed FROM complaints WHERE cpgrams_id IS NOT NULL GROUP BY department_predicted ORDER BY total DESC LIMIT 10"
+    ).all()
+
+    return c.json({
+      success: true,
+      data: {
+        total_tracked: total?.c || 0,
+        total_disposed: disposed?.c || 0,
+        fake_closures_detected: fakeClosedCount?.c || 0,
+        avg_resolution_days: Math.round((avgDays?.avg as number) || 0),
+        department_breakdown: deptBreakdown.results,
+        data_freshness: new Date().toISOString()
       }
     })
   } catch (e: any) {

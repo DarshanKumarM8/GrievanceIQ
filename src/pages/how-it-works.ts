@@ -114,5 +114,8 @@ export function howItWorksPage(): string {
     </div>
   </section>
   `
-  return layout('How It Works', content, 'how-it-works')
+  return layout('How It Works', content, 'how-it-works', {
+    description: 'Learn how GrievanceIQ uses AI to analyze complaints, route to departments, track progress, and generate RTI applications for Indian citizens.',
+    keywords: 'how GrievanceIQ works, complaint analysis, AI routing, complaint tracking, RTI generation'
+  })
 }
