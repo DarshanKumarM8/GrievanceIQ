@@ -2,7 +2,7 @@
 
 **File Smarter. Get Heard. Hold Them Accountable.**
 
-AI-powered citizen grievance intelligence platform for India's CPGRAMS system. Helps citizens file smarter complaints, track progress with Day 15/25 countdown reminders, detect fake closures, and auto-draft RTI applications.
+AI-powered citizen grievance intelligence platform for India's CPGRAMS system. Helps citizens file smarter complaints, track progress with Day 15/25 countdown reminders, detect fake closures, and auto-draft RTI applications. Now available in 7 Indian languages.
 
 ## Live URLs
 
@@ -11,9 +11,9 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | **Live Preview** | https://3000-ijj8l21qjw9nnoh5yjcir-5c13a017.sandbox.novita.ai |
 | **GitHub** | https://github.com/DarshanKumarM8/GrievanceIQ |
 
-## Current Version: 5.0.0 (Week 5)
+## Current Version: 6.0.0 (Week 6)
 
-### Feature Summary (37 features)
+### Feature Summary (53 features)
 
 #### Citizen Tools
 - **AI Complaint Builder** — 7-step wizard with real-time validation, language detection, department routing (92 ministries), quality scoring (before/after), improved draft, document checklist
@@ -24,11 +24,11 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 
 #### Public Dashboard
 - **India Choropleth Map** — GeoJSON heatmap of 36 states/UTs with 4 switchable metrics
-- **District Drill-Down** — Click any state to see 10-district breakdown table with complaints, resolution, fake closure, satisfaction
+- **District Drill-Down** — Click any state to see 10-district breakdown table
 - **15-Month Time-Series Charts** — National complaint trend, satisfaction vs fake closure, top 5 ministry comparison
 - **Department Comparison Radar** — Multi-metric radar comparing 6 ministries across 6 dimensions
 - **State Sparklines** — 15-state grid with inline 6-month mini-trend charts
-- **Analytics Charts** — Bar, doughnut, horizontal bar (4 original + 4 new = 8 total charts)
+- **Analytics Charts** — Bar, doughnut, horizontal bar (8 total charts)
 - **Department Scorecard** — Sortable table of 30 ministries with fake closure flags
 - **Systemic Issue Radar** — 8 trending complaint clusters with spike factors
 - **Social Monitoring Feed** — Twitter/news signals with trend direction
@@ -42,11 +42,44 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 - **XSS Sanitization** — Input validation and HTML entity encoding
 - **Audit Logging** — Auth events tracked in audit_log table
 
-#### Language Support
-- **Hindi/English Toggle** — Full UI translation (navigation, labels, form text)
-- **Multi-Language Input** — Complaint analysis in English, Hindi, Tamil, Telugu, Bengali
+#### Regional Language Support (Week 6)
+- **7 Languages**: English, Hindi, Tamil, Telugu, Bengali, Marathi, Kannada
+- **50+ translation keys** per language covering all UI elements
+- **Language picker dropdown** in navigation bar with persistent selection
+- **Profile language preference** saved to database
 
-## API Endpoints (28 total)
+#### CPGRAMS Data Integration (Week 6)
+- **CPGRAMS Lookup** — Official complaint status, department, officer, overdue detection
+- **Bulk Sync** — Sync all user complaints with CPGRAMS for discrepancy detection
+- **Alerts System** — Critical/warning alerts for overdue and potentially fake-closed complaints
+- **Statistics** — Aggregate CPGRAMS tracking metrics
+
+#### Accessibility (WCAG 2.1 AA) (Week 6)
+- **Skip-to-content** navigation link
+- **ARIA landmarks** — navigation, main, contentinfo, listbox, log
+- **Keyboard navigation** — Escape closes modals, Tab trap in mobile menu
+- **Focus-visible styles** — 3px saffron outline
+- **prefers-reduced-motion** — Respects user preference
+- **prefers-contrast: high** — Enhanced borders/weight
+- **Screen reader support** — aria-live, aria-label, aria-hidden on decorative icons
+
+#### SEO (Week 6)
+- **Open Graph tags** — og:title, og:description, og:type, og:site_name
+- **Twitter Cards** — summary_large_image
+- **JSON-LD Structured Data** — WebApplication schema
+- **Per-page meta descriptions** and keywords
+- **Sitemap.xml** — Auto-generated, 10 pages
+- **Robots.txt** — Crawler directives
+
+#### Admin Dashboard (Week 6)
+- **System Health Monitor** — Service status, DB, AI engine, email
+- **CPGRAMS Alerts Panel** — Critical/warning alerts with actions
+- **Audit Log Viewer** — Scrollable log of system events
+- **Email Queue Viewer** — Status tracking for sent/pending/failed emails
+- **Department Performance Chart** — Resolution, fake closure, satisfaction comparison
+- **CPGRAMS Integration Statistics** — Tracked, disposed, fake closures, avg days
+
+## API Endpoints (35+ total)
 
 ### Core APIs (16)
 | Method | Path | Description |
@@ -76,6 +109,21 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | GET | `/api/analytics/sparklines` | State 6-month trends |
 | GET | `/api/complaints/stats` | Complaint statistics |
 
+### CPGRAMS Integration APIs (4) — NEW
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/cpgrams/lookup/:id` | Official CPGRAMS status lookup |
+| POST | `/api/cpgrams/sync` | Bulk sync with discrepancy detection |
+| GET | `/api/cpgrams/alerts` | Active alerts (overdue/fake closure) |
+| GET | `/api/cpgrams/statistics` | Aggregate CPGRAMS stats |
+
+### Admin APIs (3) — NEW
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/admin/audit-logs` | Last 50 audit entries |
+| GET | `/api/admin/email-queue` | Last 30 queued emails |
+| GET | `/api/admin/system-health` | Full system health check |
+
 ### Auth APIs (8)
 | Method | Path | Description |
 |---|---|---|
@@ -86,7 +134,13 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | PUT | `/api/auth/profile` | Update profile |
 | POST | `/api/auth/send-reminder` | Trigger email reminders |
 
-## Pages (11)
+### SEO Routes (2) — NEW
+| Method | Path | Description |
+|---|---|---|
+| GET | `/sitemap.xml` | Auto-generated XML sitemap |
+| GET | `/robots.txt` | Crawler directives |
+
+## Pages (12)
 
 | Page | Path | Description |
 |---|---|---|
@@ -101,6 +155,7 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | About | `/about` | About page |
 | Login | `/login` | Email OTP login |
 | Profile | `/profile` | User settings & security |
+| Admin | `/admin` | System health & analytics |
 
 ## Data Architecture
 
@@ -138,6 +193,7 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | 3 | Visualization | Chart.js, GeoJSON choropleth, 7-step wizard, Hindi UI |
 | 4 | Security | Email OTP auth, JWT, CSP, rate limiting, XSS, audit log |
 | 5 | Analytics | Time-series, radar, sparklines, district drill-down, PDF, filters, detail view |
+| 6 | Platform | 7 regional languages, CPGRAMS integration, A11y audit, SEO, admin dashboard |
 
 ## Quick Start
 
@@ -161,6 +217,6 @@ npm run deploy
 
 - **Platform**: Cloudflare Pages
 - **Status**: Active (Development)
-- **Bundle**: 364 KB
+- **Bundle**: 427 KB
 - **Tech**: Hono + TypeScript + Tailwind CSS + Chart.js + Leaflet
-- **Last Updated**: March 31, 2026
+- **Last Updated**: April 6, 2026
