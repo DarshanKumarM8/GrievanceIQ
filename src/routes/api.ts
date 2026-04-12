@@ -19,7 +19,7 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '6.0.0',
+    version: '6.0.1',
     week: 6,
     ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGeminiKey ? 'active' : 'fallback-only',

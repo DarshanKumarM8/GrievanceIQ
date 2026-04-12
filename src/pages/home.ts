@@ -50,6 +50,8 @@ export function homePage(): string {
                   <option value="ta">தமிழ் (Tamil)</option>
                   <option value="te">తెలుగు (Telugu)</option>
                   <option value="bn">বাংলা (Bengali)</option>
+                  <option value="mr">मराठी (Marathi)</option>
+                  <option value="kn">ಕನ್ನಡ (Kannada)</option>
                 </select>
               </div>
               

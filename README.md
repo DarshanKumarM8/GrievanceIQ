@@ -11,7 +11,7 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | **Live Preview** | https://3000-ijj8l21qjw9nnoh5yjcir-5c13a017.sandbox.novita.ai |
 | **GitHub** | https://github.com/DarshanKumarM8/GrievanceIQ |
 
-## Current Version: 6.0.0 (Week 6)
+## Current Version: 6.0.1 (Week 6 — Bug Fixes)
 
 ### Feature Summary (53 features)
 
@@ -213,10 +213,32 @@ npm run preview
 npm run deploy
 ```
 
+## Project Statistics
+
+| Metric | Value |
+|---|---|
+| Version | 6.0.1 |
+| Features | 53 |
+| API Endpoints | 35+ (16 core, 4 analytics, 4 CPGRAMS, 3 admin, 8 auth) |
+| Pages | 12 |
+| Source Files | 19 TypeScript files |
+| Lines of Code | ~8,300 |
+| Bundle Size | 428 KB |
+| DB Tables | 12 |
+| DB Migrations | 3 |
+| Languages | 7 (EN, HI, TA, TE, BN, MR, KN) |
+
 ## Deployment
 
 - **Platform**: Cloudflare Pages
 - **Status**: Active (Development)
-- **Bundle**: 427 KB
+- **Bundle**: 428 KB
 - **Tech**: Hono + TypeScript + Tailwind CSS + Chart.js + Leaflet
-- **Last Updated**: April 6, 2026
+- **Last Updated**: April 12, 2026
+
+## Bug Fixes (v6.0.1)
+- Fixed: Marathi (mr) and Kannada (kn) missing from language selectors in Home and Complaint pages
+- Fixed: Admin audit log viewer field name mismatch (event_type/event_detail vs action/details)
+- Fixed: HTML lang attribute for Marathi now correctly sets `mr` instead of `hi`
+- Added: Migration 0003 with performance indexes (language_preference, complaint dept+status, filed_at, reminders)
+- Verified: All 12 pages return HTTP 200, all 20+ API endpoints operational

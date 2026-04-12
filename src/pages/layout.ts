@@ -791,7 +791,7 @@ export function layout(title: string, content: string, activePage: string = '', 
       const label = document.getElementById('langToggleLabel');
       if (label) label.textContent = langLabels[lang] || 'English';
       // Update html lang
-      document.documentElement.lang = lang === 'hi' || lang === 'mr' ? 'hi' : lang;
+      document.documentElement.lang = lang === 'hi' ? 'hi' : lang === 'mr' ? 'mr' : lang;
       // Announce language change for a11y
       const announce = document.getElementById('a11y-announce');
       if (announce) announce.textContent = 'Language changed to ' + (langLabels[lang] || lang);

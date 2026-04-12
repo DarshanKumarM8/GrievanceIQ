@@ -60,6 +60,8 @@ export function complaintPage(): string {
               <option value="ta">தமிழ் (Tamil)</option>
               <option value="te">తెలుగు (Telugu)</option>
               <option value="bn">বাংলা (Bengali)</option>
+              <option value="mr">मराठी (Marathi)</option>
+              <option value="kn">ಕನ್ನಡ (Kannada)</option>
             </select>
           </div>
           <textarea id="complaintInput" rows="6" placeholder="Write your complaint in plain language...&#10;&#10;Example: My PM-KISAN payment has not come for 3 months. I have done eKYC in November 2025 but still showing payment failed on the portal. My Aadhaar is linked to my State Bank account." class="w-full px-5 py-4 text-gray-800 placeholder-gray-400 resize-none focus:outline-none text-base leading-relaxed"></textarea>

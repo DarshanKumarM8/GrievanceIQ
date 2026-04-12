@@ -270,12 +270,14 @@ export function adminPage(): string {
         }
 
         el.innerHTML = json.data.map(log => {
-          const iconMap = { login: 'fas fa-sign-in-alt text-ashoka-500', logout: 'fas fa-sign-out-alt text-gray-400', otp_request: 'fas fa-key text-saffron-500', profile_update: 'fas fa-user-edit text-blue-500', complaint_filed: 'fas fa-file-alt text-purple-500' };
-          const icon = iconMap[log.action] || 'fas fa-circle text-gray-400';
+          const evType = log.event_type || log.action || '';
+          const evDetail = log.event_detail || log.details || '';
+          const iconMap = { login_success: 'fas fa-sign-in-alt text-ashoka-500', logout: 'fas fa-sign-out-alt text-gray-400', otp_request: 'fas fa-key text-saffron-500', otp_sent: 'fas fa-key text-saffron-500', profile_update: 'fas fa-user-edit text-blue-500', complaint_filed: 'fas fa-file-alt text-purple-500', login_failed: 'fas fa-times-circle text-red-500' };
+          const icon = iconMap[evType] || 'fas fa-circle text-gray-400';
           return '<div class="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 border-b border-gray-50">' +
             '<i class="' + icon + ' text-sm w-5 text-center flex-shrink-0"></i>' +
-            '<div class="flex-1 min-w-0"><span class="text-xs font-semibold text-gray-700">' + (log.action || '').replace(/_/g, ' ') + '</span>' +
-            (log.details ? ' <span class="text-[10px] text-gray-400">— ' + log.details + '</span>' : '') + '</div>' +
+            '<div class="flex-1 min-w-0"><span class="text-xs font-semibold text-gray-700">' + evType.replace(/_/g, ' ') + '</span>' +
+            (evDetail ? ' <span class="text-[10px] text-gray-400">— ' + evDetail + '</span>' : '') + '</div>' +
             '<span class="text-[10px] text-gray-400 flex-shrink-0">' + new Date(log.created_at).toLocaleString('en-IN', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) + '</span></div>';
         }).join('');
       } catch (e) {
