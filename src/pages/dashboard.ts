@@ -186,6 +186,68 @@ export function dashboardPage(): string {
     </div>
   </section>
 
+  <!-- NEW: Resolution Funnel (Week 7) -->
+  <section class="py-8 sm:py-12" id="funnel" data-lazy>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-filter text-saffron-500 mr-2"></i>Resolution Funnel &mdash; National Pipeline</h2>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-700">
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-waterfall mr-1.5"></i>Complaint Journey: Filing to Resolution</h3>
+        </div>
+        <div class="p-6" id="funnelContainer">
+          <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading funnel data...</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEW: Complaint Heatmap Calendar (Week 7) -->
+  <section class="py-8 sm:py-12 bg-gray-50" id="heatmap" data-lazy>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-calendar-days text-saffron-500 mr-2"></i>Complaint Activity Heatmap &mdash; 12 Months</h2>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 flex items-center justify-between">
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-fire mr-1.5"></i>Daily Complaint Volume Heatmap</h3>
+          <div class="flex items-center gap-1.5" id="heatLegend">
+            <span class="text-[10px] text-white/70">Less</span>
+            <span class="w-3 h-3 rounded-sm" style="background:#ecfdf5"></span>
+            <span class="w-3 h-3 rounded-sm" style="background:#6ee7b7"></span>
+            <span class="w-3 h-3 rounded-sm" style="background:#10b981"></span>
+            <span class="w-3 h-3 rounded-sm" style="background:#047857"></span>
+            <span class="w-3 h-3 rounded-sm" style="background:#064e3b"></span>
+            <span class="text-[10px] text-white/70">More</span>
+          </div>
+        </div>
+        <div class="p-6 overflow-x-auto" id="heatmapContainer">
+          <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading heatmap data...</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEW: Department Network Graph (Week 7) -->
+  <section class="py-8 sm:py-12" id="network" data-lazy>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-diagram-project text-saffron-500 mr-2"></i>Department Interaction Network</h2>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="px-5 py-3 bg-gradient-to-r from-rose-600 to-pink-700">
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-share-nodes mr-1.5"></i>Inter-Ministry Complaint Transfer Network &mdash; Top 15</h3>
+        </div>
+        <div class="p-4" id="networkContainer" style="height:500px; position:relative;">
+          <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading network data...</p></div>
+          <canvas id="networkCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        </div>
+        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-3 text-[10px] text-gray-500">
+          <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Good satisfaction</span>
+          <span><span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1"></span>Average</span>
+          <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Flagged</span>
+          <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>High fake closure</span>
+          <span class="ml-auto">Line thickness = transfer volume</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Department Scorecard -->
   <section class="py-8 sm:py-12 bg-gray-50" id="scorecard">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -684,6 +746,224 @@ export function dashboardPage(): string {
       doc.save('GrievanceIQ_Dashboard_' + new Date().toISOString().split('T')[0] + '.pdf');
       showToast('Dashboard PDF exported!', 'success');
     }
+
+    // ============================================
+    // RESOLUTION FUNNEL (Week 7)
+    // ============================================
+    async function loadFunnel() {
+      try {
+        const res = await fetch('/api/analytics/funnel');
+        const json = await res.json();
+        if (!json.success) return;
+        const stages = json.data.stages;
+        const maxWidth = 100;
+
+        document.getElementById('funnelContainer').innerHTML = 
+          '<div class="max-w-2xl mx-auto space-y-1">' +
+          stages.map((s, i) => {
+            const width = Math.max(25, s.percent);
+            const isDropoff = s.label === 'Fake Closed';
+            return '<div class="relative group">' +
+              '<div class="flex items-center gap-3">' +
+                '<div class="w-28 text-right"><span class="text-xs font-semibold text-gray-600">' + s.label + '</span></div>' +
+                '<div class="flex-1">' +
+                  '<div class="relative h-10 rounded-lg overflow-hidden bg-gray-100 transition-all" style="width:' + width + '%;margin:0 auto 0 0;">' +
+                    '<div class="absolute inset-0 rounded-lg transition-all duration-700" style="background:' + s.color + ';opacity:' + (isDropoff ? '0.8' : '0.9') + '"></div>' +
+                    '<div class="absolute inset-0 flex items-center justify-center">' +
+                      '<span class="text-xs font-bold text-white drop-shadow">' + Number(s.count).toLocaleString('en-IN') + ' (' + s.percent + '%)</span>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              (i < stages.length - 1 && !isDropoff ? '<div class="ml-32 pl-8 text-[10px] text-gray-400 py-0.5"><i class="fas fa-arrow-down mr-1"></i>-' + (stages[i].percent - stages[i+1]?.percent || 0) + '% dropoff</div>' : '') +
+            '</div>';
+          }).join('') +
+          '</div>' +
+          '<div class="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-3">' +
+          Object.entries(json.data.dropoff).map(([k, v]) => {
+            const label = k.replace(/_/g, ' → ').replace('to', '→');
+            return '<div class="text-center bg-gray-50 rounded-lg p-2"><div class="text-lg font-bold text-red-500">-' + v + '%</div><div class="text-[9px] text-gray-500">' + label + '</div></div>';
+          }).join('') +
+          '</div>';
+      } catch(e) { console.error('Funnel error:', e); }
+    }
+
+    // ============================================
+    // HEATMAP CALENDAR (Week 7)
+    // ============================================
+    async function loadHeatmap() {
+      try {
+        const res = await fetch('/api/analytics/heatmap');
+        const json = await res.json();
+        if (!json.success) return;
+        const data = json.data.heatmap;
+        const summary = json.data.summary;
+
+        // Group by month
+        const months = {};
+        data.forEach(d => {
+          const m = d.date.slice(0, 7); // YYYY-MM
+          if (!months[m]) months[m] = [];
+          months[m].push(d);
+        });
+
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const dayNames = ['S','M','T','W','T','F','S'];
+        const maxCount = summary.max_daily;
+        const getColor = (count) => {
+          const ratio = count / maxCount;
+          if (ratio < 0.2) return '#ecfdf5';
+          if (ratio < 0.4) return '#6ee7b7';
+          if (ratio < 0.6) return '#10b981';
+          if (ratio < 0.8) return '#047857';
+          return '#064e3b';
+        };
+
+        let html = '<div class="flex gap-4 overflow-x-auto pb-2">';
+        // Day labels
+        html += '<div class="flex flex-col gap-0.5 mt-5">' + dayNames.map(d => '<div class="w-4 h-4 text-[8px] text-gray-400 flex items-center justify-center">' + d + '</div>').join('') + '</div>';
+
+        Object.entries(months).forEach(([monthKey, days]) => {
+          const monthNum = parseInt(monthKey.split('-')[1]);
+          html += '<div class="flex flex-col items-center"><div class="text-[9px] font-semibold text-gray-500 mb-1">' + monthNames[monthNum - 1] + '</div>';
+          // Group days into weeks
+          const firstDow = days[0].day_of_week;
+          const grid = Array(42).fill(null);
+          days.forEach((d, i) => { grid[firstDow + i] = d; });
+          
+          html += '<div class="grid grid-cols-7 gap-0.5">';
+          for (let w = 0; w < 6; w++) {
+            for (let d = 0; d < 7; d++) {
+              const cell = grid[w * 7 + d];
+              if (cell) {
+                html += '<div class="w-4 h-4 rounded-sm cursor-pointer transition-transform hover:scale-125" style="background:' + getColor(cell.count) + '" title="' + cell.date + ': ' + Number(cell.count).toLocaleString() + ' complaints"></div>';
+              } else {
+                html += '<div class="w-4 h-4"></div>';
+              }
+            }
+          }
+          html += '</div></div>';
+        });
+        html += '</div>';
+
+        // Summary stats
+        html += '<div class="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">' +
+          '<span><strong class="text-navy-700">' + summary.total_days + '</strong> days tracked</span>' +
+          '<span>Avg: <strong class="text-navy-700">' + Number(summary.avg_daily).toLocaleString() + '</strong>/day</span>' +
+          '<span>Peak: <strong class="text-red-600">' + Number(summary.max_daily).toLocaleString() + '</strong>/day</span>' +
+          '<span>Low: <strong class="text-ashoka-600">' + Number(summary.min_daily).toLocaleString() + '</strong>/day</span>' +
+          '</div>';
+
+        document.getElementById('heatmapContainer').innerHTML = html;
+      } catch(e) { console.error('Heatmap error:', e); }
+    }
+
+    // ============================================
+    // DEPARTMENT NETWORK GRAPH (Week 7)
+    // ============================================
+    async function loadNetworkGraph() {
+      try {
+        const res = await fetch('/api/analytics/network');
+        const json = await res.json();
+        if (!json.success) return;
+        const { nodes, edges } = json.data;
+        const container = document.getElementById('networkContainer');
+        const canvas = document.getElementById('networkCanvas');
+        if (!canvas || !container) return;
+
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+
+        // Scale node positions
+        const scale = Math.min(W / 800, H / 600);
+        nodes.forEach(n => { n.sx = n.x * scale; n.sy = n.y * scale; n.sr = Math.max(12, n.size * scale * 0.5); });
+
+        // Draw edges
+        ctx.clearRect(0, 0, W, H);
+        edges.forEach(e => {
+          const src = nodes.find(n => n.id === e.source);
+          const tgt = nodes.find(n => n.id === e.target);
+          if (!src || !tgt) return;
+          ctx.beginPath();
+          ctx.moveTo(src.sx, src.sy);
+          ctx.lineTo(tgt.sx, tgt.sy);
+          ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+          ctx.lineWidth = Math.max(1, Math.min(4, e.weight / 150));
+          ctx.stroke();
+        });
+
+        // Draw nodes
+        nodes.forEach(n => {
+          // Glow
+          ctx.beginPath();
+          ctx.arc(n.sx, n.sy, n.sr + 4, 0, Math.PI * 2);
+          ctx.fillStyle = n.color + '20';
+          ctx.fill();
+          // Circle
+          ctx.beginPath();
+          ctx.arc(n.sx, n.sy, n.sr, 0, Math.PI * 2);
+          ctx.fillStyle = n.color;
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.fill();
+          ctx.stroke();
+          // Label
+          ctx.fillStyle = '#1e293b';
+          ctx.font = Math.max(8, 10 * scale) + 'px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(n.label.slice(0, 15), n.sx, n.sy + n.sr + 14);
+          // Complaint count inside node
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold ' + Math.max(7, 9 * scale) + 'px Inter, sans-serif';
+          ctx.fillText(Math.round(n.complaints / 1000) + 'K', n.sx, n.sy + 3);
+        });
+
+        // Add tooltip on hover
+        let tooltip = document.createElement('div');
+        tooltip.className = 'absolute hidden bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-200 dark:border-dark-600 p-3 text-xs z-50 pointer-events-none';
+        container.appendChild(tooltip);
+
+        canvas.addEventListener('mousemove', (ev) => {
+          const r = canvas.getBoundingClientRect();
+          const mx = ev.clientX - r.left, my = ev.clientY - r.top;
+          const hovered = nodes.find(n => Math.hypot(mx - n.sx, my - n.sy) <= n.sr);
+          if (hovered) {
+            tooltip.classList.remove('hidden');
+            tooltip.style.left = Math.min(mx + 12, W - 180) + 'px';
+            tooltip.style.top = (my - 10) + 'px';
+            tooltip.innerHTML = '<div class="font-bold text-gray-800 dark:text-gray-200 mb-1">' + hovered.full_name + '</div>' +
+              '<div class="text-gray-500">Complaints: <strong>' + Number(hovered.complaints).toLocaleString() + '</strong></div>' +
+              '<div class="text-gray-500">Resolution: <strong>' + hovered.resolution_rate + '%</strong></div>' +
+              '<div class="text-gray-500">Fake Closure: <strong class="text-red-500">' + hovered.fake_closure + '%</strong></div>' +
+              '<div class="text-gray-500">Satisfaction: <strong>' + hovered.satisfaction + '%</strong></div>';
+            canvas.style.cursor = 'pointer';
+          } else {
+            tooltip.classList.add('hidden');
+            canvas.style.cursor = 'default';
+          }
+        });
+      } catch(e) { console.error('Network graph error:', e); }
+    }
+
+    // ============================================
+    // LAZY LOADING — IntersectionObserver (Week 7)
+    // ============================================
+    const lazyLoaded = new Set();
+    const lazyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !lazyLoaded.has(entry.target.id)) {
+          lazyLoaded.add(entry.target.id);
+          if (entry.target.id === 'funnel') loadFunnel();
+          if (entry.target.id === 'heatmap') loadHeatmap();
+          if (entry.target.id === 'network') loadNetworkGraph();
+        }
+      });
+    }, { rootMargin: '200px' });
+
+    document.querySelectorAll('[data-lazy]').forEach(el => lazyObserver.observe(el));
 
     loadDashboard();
   </script>

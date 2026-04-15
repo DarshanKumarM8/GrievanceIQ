@@ -14,7 +14,7 @@ export function layout(title: string, content: string, activePage: string = '', 
   const structuredData = seo.structuredData ? '<script type="application/ld+json">' + JSON.stringify(seo.structuredData) + '</script>' : ''
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,12 +44,14 @@ export function layout(title: string, content: string, activePage: string = '', 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             saffron: { 50: '#fff8f0', 100: '#fff0db', 200: '#ffe0b5', 300: '#ffcb85', 400: '#ffad52', 500: '#ff9933', 600: '#f07800', 700: '#c25e00', 800: '#9a4a00', 900: '#7a3b00' },
             navy: { 50: '#f0f4ff', 100: '#dce4f5', 200: '#b8c9eb', 300: '#8da8db', 400: '#6384c4', 500: '#3f64a8', 600: '#1a365d', 700: '#152d4f', 800: '#102340', 900: '#0b1a33' },
-            ashoka: { 50: '#f0f9f0', 100: '#d8f0d8', 200: '#b0e0b0', 300: '#80cc80', 400: '#4db84d', 500: '#138808', 600: '#0f6e06', 700: '#0b5605', 800: '#084004', 900: '#052c03' }
+            ashoka: { 50: '#f0f9f0', 100: '#d8f0d8', 200: '#b0e0b0', 300: '#80cc80', 400: '#4db84d', 500: '#138808', 600: '#0f6e06', 700: '#0b5605', 800: '#084004', 900: '#052c03' },
+            dark: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a', 950: '#020617' }
           },
           fontFamily: {
             display: ['Inter', 'system-ui', 'sans-serif'],
@@ -69,17 +71,35 @@ export function layout(title: string, content: string, activePage: string = '', 
       }
     }
   </script>
+  <!-- Dark mode: apply saved preference before paint to prevent flash -->
+  <script>
+    (function(){
+      const t=localStorage.getItem('giq_theme');
+      if(t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches)){
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
   
-  <!-- Google Fonts -->
+  <!-- Performance: DNS Prefetch & Preconnect (Week 7) -->
+  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://unpkg.com">
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Google Fonts (optimized: display swap) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- Font Awesome -->
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" rel="stylesheet">
   
   <!-- Leaflet CSS (for map pages) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Prefetch critical API (Week 7) -->
+  <link rel="prefetch" href="/api/health" as="fetch" crossorigin>
   
   <style>
     * { font-family: 'Inter', system-ui, sans-serif; }
@@ -92,6 +112,9 @@ export function layout(title: string, content: string, activePage: string = '', 
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    .dark ::-webkit-scrollbar-track { background: #1e293b; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     
     /* Gradient text */
     .gradient-text {
@@ -153,6 +176,8 @@ export function layout(title: string, content: string, activePage: string = '', 
       align-items: center;
       justify-content: center;
     }
+    .dark .quality-gauge-inner { background: #1e293b; }
+    .dark .quality-gauge { background: conic-gradient(var(--gauge-color) var(--gauge-percent), #334155 var(--gauge-percent)); }
     
     /* Navigation active */
     .nav-active {
@@ -165,6 +190,10 @@ export function layout(title: string, content: string, activePage: string = '', 
     .badge-high { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
     .badge-medium { background: #d4edda; color: #155724; border: 1px solid #28a745; }
     .badge-low { background: #e2e3e5; color: #383d41; border: 1px solid #6c757d; }
+    .dark .badge-critical { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
+    .dark .badge-high { background: #451a03; color: #fcd34d; border-color: #78350f; }
+    .dark .badge-medium { background: #052e16; color: #86efac; border-color: #14532d; }
+    .dark .badge-low { background: #1e293b; color: #94a3b8; border-color: #334155; }
     
     /* Pulse dot */
     .pulse-dot {
@@ -214,7 +243,42 @@ export function layout(title: string, content: string, activePage: string = '', 
       width: 24px; height: 24px;
       animation: spin 0.8s linear infinite;
     }
+    .dark .spinner { border-color: #334155; border-top-color: #ff9933; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============================================ */
+    /* DARK MODE OVERRIDES                         */
+    /* ============================================ */
+    .dark body, html.dark body { background-color: #0f172a; color: #e2e8f0; }
+    .dark .bg-gray-50 { background-color: #0f172a !important; }
+    .dark .bg-gray-100 { background-color: #1e293b !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+    .dark .bg-white\/95 { background-color: rgba(30,41,59,0.97) !important; }
+    .dark .border-gray-200, .dark .border-gray-100 { border-color: #334155 !important; }
+    .dark .border-gray-300 { border-color: #475569 !important; }
+    .dark .text-gray-900 { color: #f1f5f9 !important; }
+    .dark .text-gray-800 { color: #e2e8f0 !important; }
+    .dark .text-gray-700 { color: #cbd5e1 !important; }
+    .dark .text-gray-600 { color: #94a3b8 !important; }
+    .dark .text-gray-500 { color: #64748b !important; }
+    .dark .text-gray-400 { color: #64748b !important; }
+    .dark .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+    .dark .shadow-lg { box-shadow: 0 10px 15px rgba(0,0,0,0.4) !important; }
+    .dark .shadow-xl { box-shadow: 0 20px 25px rgba(0,0,0,0.5) !important; }
+    .dark input, .dark textarea, .dark select {
+      background-color: #0f172a !important; color: #e2e8f0 !important;
+      border-color: #334155 !important;
+    }
+    .dark input::placeholder, .dark textarea::placeholder { color: #475569 !important; }
+    .dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+    .dark .hover\:bg-gray-50:hover { background-color: #1e293b !important; }
+    .dark .hover\:bg-saffron-50:hover { background-color: rgba(255,153,51,0.1) !important; }
+    .dark .bg-gradient-to-b.from-navy-900 { background: linear-gradient(to bottom, #020617, #0f172a) !important; }
+    .dark .bg-gradient-to-r.from-gray-50 { background: linear-gradient(to right, #1e293b, #0f172a) !important; }
+    .dark .card-hover:hover { box-shadow: 0 20px 25px rgba(0,0,0,0.5); }
+    .dark .bg-navy-50, .dark .bg-blue-50, .dark .bg-saffron-50, .dark .bg-ashoka-50, .dark .bg-purple-50, .dark .bg-red-50, .dark .bg-amber-50 { background-color: rgba(255,255,255,0.05) !important; }
+    .dark .bg-navy-100, .dark .bg-blue-100, .dark .bg-saffron-100, .dark .bg-ashoka-100, .dark .bg-purple-100, .dark .bg-red-100, .dark .bg-amber-100 { background-color: rgba(255,255,255,0.08) !important; }
+    .dark .ring-1 { --tw-ring-color: #334155; }
     
     /* Typing animation */
     .typing-cursor::after {
@@ -231,7 +295,7 @@ export function layout(title: string, content: string, activePage: string = '', 
     @keyframes fadeOut { to { opacity: 0; } }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+<body class="bg-gray-50 dark:bg-dark-900 text-gray-900 dark:text-dark-200 min-h-screen flex flex-col transition-colors duration-200">
   <!-- A11y: Skip to main content link -->
   <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-saffron-500 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold focus:shadow-lg" tabindex="0">
     Skip to main content
@@ -242,7 +306,7 @@ export function layout(title: string, content: string, activePage: string = '', 
   <!-- ============================================ -->
   <!-- NAVIGATION -->
   <!-- ============================================ -->
-  <nav class="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Main navigation">
+  <nav class="bg-white/95 dark:bg-dark-800/97 backdrop-blur-md border-b border-gray-200 dark:border-dark-700 sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Main navigation">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
@@ -281,13 +345,17 @@ export function layout(title: string, content: string, activePage: string = '', 
           </a>
         </div>
         
-        <!-- CTA + Language Toggle + Auth -->
+        <!-- CTA + Dark Mode + Language Toggle + Auth -->
         <div class="hidden md:flex items-center gap-3">
+          <!-- Dark Mode Toggle -->
+          <button onclick="toggleDarkMode()" id="darkModeBtn" class="text-xs p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors" title="Toggle dark mode" aria-label="Toggle dark mode">
+            <i class="fas fa-moon" id="darkModeIcon"></i>
+          </button>
           <div class="relative" id="langPickerWrap">
             <button onclick="toggleLangDropdown(event)" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors" title="Switch language" aria-haspopup="listbox" aria-expanded="false">
               <i class="fas fa-globe mr-1"></i><span id="langToggleLabel">हिन्दी</span> <i class="fas fa-caret-down ml-0.5 text-[10px]"></i>
             </button>
-            <div id="langDropdown" class="hidden absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden" role="listbox" aria-label="Select language">
+            <div id="langDropdown" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-xl shadow-xl z-50 overflow-hidden" role="listbox" aria-label="Select language">
               <button onclick="setLang('en')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇬🇧 English</span></button>
               <button onclick="setLang('hi')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 हिन्दी</span></button>
               <button onclick="setLang('ta')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 தமிழ்</span></button>
@@ -295,6 +363,22 @@ export function layout(title: string, content: string, activePage: string = '', 
               <button onclick="setLang('bn')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 বাংলা</span></button>
               <button onclick="setLang('mr')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 मराठी</span></button>
               <button onclick="setLang('kn')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 ಕನ್ನಡ</span></button>
+            </div>
+          </div>
+          <!-- Notification Bell (visible when logged in) -->
+          <div id="navNotifWrap" class="hidden relative">
+            <button onclick="toggleNotifPanel(event)" id="notifBellBtn" class="relative text-xs p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-bell"></i>
+              <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
+            </button>
+            <div id="notifPanel" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-2xl shadow-2xl z-50 overflow-hidden">
+              <div class="px-4 py-3 bg-gradient-to-r from-navy-600 to-navy-700 flex items-center justify-between">
+                <span class="text-white text-xs font-bold"><i class="fas fa-bell mr-1.5"></i>Notifications</span>
+                <button onclick="markAllNotifRead()" class="text-white/70 hover:text-white text-[10px] transition-colors">Mark all read</button>
+              </div>
+              <div id="notifList" class="max-h-72 overflow-y-auto">
+                <div class="p-4 text-center text-xs text-gray-400"><i class="fas fa-inbox text-lg mb-1 block"></i>No notifications</div>
+              </div>
             </div>
           </div>
           <!-- Auth state: Guest -->
@@ -322,7 +406,7 @@ export function layout(title: string, content: string, activePage: string = '', 
     </div>
     
     <!-- Mobile Navigation -->
-    <div id="mobileMenu" class="mobile-menu fixed inset-0 bg-white z-50 md:hidden">
+    <div id="mobileMenu" class="mobile-menu fixed inset-0 bg-white dark:bg-dark-900 z-50 md:hidden">
       <div class="p-4">
         <div class="flex justify-between items-center mb-8">
           <a href="/" class="flex items-center gap-2">
@@ -358,6 +442,9 @@ export function layout(title: string, content: string, activePage: string = '', 
             <i class="fas fa-users w-5"></i> <span data-i18n="nav_about">About Us</span>
           </a>
           <div class="pt-4 mt-4 border-t space-y-2">
+            <button onclick="toggleDarkMode()" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
+              <i class="fas fa-moon w-5" id="mobileDarkModeIcon"></i> <span id="mobileDarkModeLabel">Dark Mode</span>
+            </button>
             <div id="mobileGuest">
               <a href="/login" class="block text-center bg-navy-600 text-white px-6 py-3 rounded-xl font-semibold">
                 <i class="fas fa-sign-in-alt mr-2"></i>Sign In
@@ -462,6 +549,56 @@ export function layout(title: string, content: string, activePage: string = '', 
       const menu = document.getElementById('mobileMenu');
       menu.classList.toggle('open');
     }
+
+    // ============================================
+    // DARK MODE TOGGLE
+    // ============================================
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      localStorage.setItem('giq_theme', isDark ? 'dark' : 'light');
+      updateDarkModeUI(isDark);
+      // Update meta theme-color
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.content = isDark ? '#0f172a' : '#1a365d';
+      // Announce for a11y
+      const announce = document.getElementById('a11y-announce');
+      if (announce) announce.textContent = isDark ? 'Dark mode enabled' : 'Light mode enabled';
+      // Update Chart.js colors if any charts exist
+      if (window.Chart) {
+        Chart.defaults.color = isDark ? '#94a3b8' : '#666';
+        Chart.defaults.borderColor = isDark ? '#334155' : '#e5e7eb';
+        // Re-render any existing charts
+        Object.values(Chart.instances || {}).forEach(chart => { try { chart.update(); } catch(e){} });
+      }
+    }
+
+    function updateDarkModeUI(isDark) {
+      const icon = document.getElementById('darkModeIcon');
+      const mIcon = document.getElementById('mobileDarkModeIcon');
+      const mLabel = document.getElementById('mobileDarkModeLabel');
+      if (icon) icon.className = isDark ? 'fas fa-sun text-saffron-400' : 'fas fa-moon';
+      if (mIcon) mIcon.className = isDark ? 'fas fa-sun text-saffron-400 w-5' : 'fas fa-moon w-5';
+      if (mLabel) mLabel.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    }
+
+    // Apply on load
+    (function initDarkMode() {
+      const isDark = document.documentElement.classList.contains('dark');
+      updateDarkModeUI(isDark);
+      // Listen for system preference changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('giq_theme')) {
+          document.documentElement.classList.toggle('dark', e.matches);
+          updateDarkModeUI(e.matches);
+        }
+      });
+      // Update Chart.js defaults for dark mode
+      if (isDark && window.Chart) {
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = '#334155';
+      }
+    })();
     
     // Animate numbers on scroll
     function animateCountUp(element, target, duration = 1500) {
@@ -850,6 +987,96 @@ export function layout(title: string, content: string, activePage: string = '', 
     })();
 
     // ============================================
+    // NOTIFICATIONS CENTER
+    // ============================================
+    function toggleNotifPanel(e) {
+      e && e.stopPropagation();
+      const panel = document.getElementById('notifPanel');
+      if (panel) panel.classList.toggle('hidden');
+    }
+
+    async function loadNotifications() {
+      const token = localStorage.getItem('giq_token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/notifications', { headers: { 'Authorization': 'Bearer ' + token } });
+        const json = await res.json();
+        if (!json.success) return;
+        const badge = document.getElementById('notifBadge');
+        const list = document.getElementById('notifList');
+        if (badge) {
+          if (json.unread_count > 0) {
+            badge.textContent = json.unread_count > 9 ? '9+' : json.unread_count;
+            badge.classList.remove('hidden');
+          } else {
+            badge.classList.add('hidden');
+          }
+        }
+        if (list) {
+          if (!json.data || json.data.length === 0) {
+            list.innerHTML = '<div class="p-4 text-center text-xs text-gray-400"><i class="fas fa-inbox text-lg mb-1 block"></i>No notifications yet</div>';
+          } else {
+            list.innerHTML = json.data.map(n => {
+              const iconMap = { 'clipboard-check': 'fa-clipboard-check text-ashoka-500', 'file-lines': 'fa-file-lines text-purple-500', bell: 'fa-bell text-saffron-500', 'exclamation-triangle': 'fa-exclamation-triangle text-red-500', 'clock': 'fa-clock text-blue-500' };
+              const ic = iconMap[n.icon] || 'fa-bell text-saffron-500';
+              const unread = n.is_read ? '' : 'bg-saffron-50 dark:bg-saffron-900/20';
+              const dot = n.is_read ? '' : '<span class="w-2 h-2 bg-saffron-500 rounded-full flex-shrink-0"></span>';
+              const ago = timeAgo(n.created_at);
+              return '<a href="' + (n.link || '#') + '" onclick="markNotifRead(' + n.id + ')" class="flex items-start gap-2.5 px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors border-b border-gray-50 dark:border-dark-700 ' + unread + '">' +
+                '<i class="fas ' + ic + ' mt-0.5 text-sm flex-shrink-0"></i>' +
+                '<div class="flex-1 min-w-0"><div class="text-xs font-semibold text-gray-800 dark:text-gray-200">' + n.title + '</div>' +
+                '<div class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">' + n.message + '</div>' +
+                '<div class="text-[9px] text-gray-400 mt-1">' + ago + '</div></div>' +
+                dot + '</a>';
+            }).join('');
+          }
+        }
+      } catch(e) {}
+    }
+
+    function timeAgo(dateStr) {
+      const now = new Date(); const d = new Date(dateStr);
+      const s = Math.floor((now - d) / 1000);
+      if (s < 60) return 'Just now';
+      if (s < 3600) return Math.floor(s/60) + 'm ago';
+      if (s < 86400) return Math.floor(s/3600) + 'h ago';
+      return Math.floor(s/86400) + 'd ago';
+    }
+
+    async function markNotifRead(id) {
+      const token = localStorage.getItem('giq_token');
+      if (!token) return;
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+      } catch(e) {}
+    }
+
+    async function markAllNotifRead() {
+      const token = localStorage.getItem('giq_token');
+      if (!token) return;
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        loadNotifications();
+        showToast('All notifications marked as read', 'success');
+      } catch(e) {}
+    }
+
+    // Close notification panel on outside click
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('notifPanel');
+      const wrap = document.getElementById('navNotifWrap');
+      if (panel && wrap && !wrap.contains(e.target)) panel.classList.add('hidden');
+    });
+
+    // ============================================
     // AUTH STATE IN NAVIGATION
     // ============================================
     (function initAuthNav() {
@@ -865,12 +1092,18 @@ export function layout(title: string, content: string, activePage: string = '', 
           const mobileGuest = document.getElementById('mobileGuest');
           const mobileUser = document.getElementById('mobileUser');
           const mobileUserName = document.getElementById('mobileUserName');
+          const navNotifWrap = document.getElementById('navNotifWrap');
           if (navGuest) navGuest.classList.add('hidden');
           if (navUser) { navUser.classList.remove('hidden'); navUser.classList.add('flex'); }
           if (navUserName) navUserName.textContent = (user.name || 'Account').split(' ')[0];
           if (mobileGuest) mobileGuest.classList.add('hidden');
           if (mobileUser) mobileUser.classList.remove('hidden');
           if (mobileUserName) mobileUserName.textContent = user.name || 'My Profile';
+          if (navNotifWrap) navNotifWrap.classList.remove('hidden');
+          // Load notifications
+          loadNotifications();
+          // Poll every 60s
+          setInterval(loadNotifications, 60000);
         } catch(e) {}
       }
 
@@ -885,7 +1118,68 @@ export function layout(title: string, content: string, activePage: string = '', 
           if (navUser) { navUser.classList.remove('hidden'); navUser.classList.add('flex'); }
           const navUserName = document.getElementById('navUserName');
           if (navUserName) navUserName.textContent = (user.name || 'Account').split(' ')[0];
+          const navNotifWrap = document.getElementById('navNotifWrap');
+          if (navNotifWrap) navNotifWrap.classList.remove('hidden');
+          loadNotifications();
         }
+      });
+    })();
+
+    // ============================================
+    // PERFORMANCE: Animate on Scroll (Week 7)
+    // ============================================
+    (function initScrollAnimations() {
+      const animObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-fade-in');
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            animObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '50px' });
+
+      document.querySelectorAll('[data-animate]').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        animObserver.observe(el);
+      });
+    })();
+
+    // ============================================
+    // PERFORMANCE: Lazy load images (Week 7)
+    // ============================================
+    document.querySelectorAll('img[data-src]').forEach(img => {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+            io.unobserve(img);
+          }
+        });
+      });
+      io.observe(img);
+    });
+
+    // ============================================
+    // PERFORMANCE: Prefetch navigation targets (Week 7)
+    // ============================================
+    (function prefetchLinks() {
+      const links = document.querySelectorAll('a[href^="/"]');
+      const prefetched = new Set();
+      const prefetchLink = (url) => {
+        if (prefetched.has(url) || url === window.location.pathname) return;
+        prefetched.add(url);
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = url;
+        document.head.appendChild(link);
+      };
+      links.forEach(a => {
+        a.addEventListener('mouseenter', () => prefetchLink(a.getAttribute('href')), { once: true });
       });
     })();
   </script>

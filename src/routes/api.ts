@@ -19,8 +19,8 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '6.0.1',
-    week: 6,
+    version: '7.0.0',
+    week: 7,
     ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGeminiKey ? 'active' : 'fallback-only',
     features: [
@@ -76,7 +76,19 @@ apiRoutes.get('/health', (c) => {
       'admin_analytics_page',
       'system_health_monitor',
       'audit_log_viewer',
-      'language_dropdown_picker'
+      'language_dropdown_picker',
+      'dark_mode_toggle',
+      'notifications_center',
+      'heatmap_calendar',
+      'resolution_funnel',
+      'department_network_graph',
+      'complaint_comparison_diff',
+      'success_probability_score',
+      'voice_input_ui',
+      'similar_complaints_ai',
+      'lazy_load_intersect',
+      'prefetch_critical',
+      'performance_optimized'
     ]
   })
 })
@@ -294,6 +306,15 @@ apiRoutes.post('/complaints/analyze', async (c) => {
       JSON.stringify(d.documents_checklist)
     ).run()
 
+    // Create notification
+    await createNotification(db, userId as number | null, 'complaint_analyzed',
+      'Complaint Analyzed',
+      `Your complaint was routed to ${d.departments[0].name} with ${d.departments[0].confidence}% confidence. Quality: ${d.quality_score_before}/10 → ${d.quality_score_after}/10`,
+      `/complaint-detail?id=${result.meta.last_row_id}`,
+      result.meta.last_row_id as number,
+      'clipboard-check'
+    )
+
     return c.json({
       success: true,
       data: {
@@ -411,12 +432,20 @@ apiRoutes.post('/rti/generate', async (c) => {
   })
 
   // Mark complaint as escalated if we have an ID
+  const userId = c.get?.('userId') || null
   if (complaint_id) {
     const db = c.env.DB
     try {
       await db.prepare('UPDATE complaints SET rti_generated = 1, rti_generated_at = datetime(?), status = ? WHERE id = ?')
         .bind(new Date().toISOString(), 'escalated', complaint_id)
         .run()
+      await createNotification(db, userId as number | null, 'rti_generated',
+        'RTI Application Generated',
+        `RTI application for ${department || 'the department'} has been generated. Complaint escalated.`,
+        `/complaint-detail?id=${complaint_id}`,
+        complaint_id as number,
+        'file-lines'
+      )
     } catch (e) { /* non-critical */ }
   }
 
@@ -584,6 +613,40 @@ apiRoutes.get('/complaints/search', async (c) => {
     })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// SIMILAR COMPLAINTS (must be before :id)
+// ============================================
+apiRoutes.get('/complaints/similar', async (c) => {
+  const db = c.env.DB
+  const dept = c.req.query('department') || ''
+  try {
+    let query = "SELECT id, raw_text, department_predicted, quality_score_before, quality_score_after, confidence_score, status, created_at FROM complaints"
+    let params: any[] = []
+    if (dept) {
+      query += " WHERE department_predicted LIKE ?"
+      params.push('%' + dept + '%')
+    }
+    query += " ORDER BY created_at DESC LIMIT 5"
+    const similar = params.length > 0 ? await db.prepare(query).bind(...params).all() : await db.prepare(query).all()
+
+    return c.json({
+      success: true,
+      data: (similar.results || []).map((c: any) => ({
+        id: c.id,
+        text_preview: (c.raw_text || '').slice(0, 120) + '...',
+        department: c.department_predicted,
+        quality_before: c.quality_score_before,
+        quality_after: c.quality_score_after,
+        confidence: c.confidence_score,
+        status: c.status,
+        created: c.created_at
+      }))
+    })
+  } catch (e: any) {
+    return c.json({ success: true, data: [] })
   }
 })
 
@@ -1274,4 +1337,257 @@ function generateComputedTimeline(cpgramsId: string, filingDate?: string) {
       day_25: { triggered: daysElapsed >= 25, date: day25.toISOString().split('T')[0] }
     }
   }
+}
+
+
+// ============================================
+// ADVANCED VISUALIZATIONS API (Week 7)
+// ============================================
+
+// GET /analytics/heatmap — Monthly complaint heatmap calendar data
+apiRoutes.get('/analytics/heatmap', async (c) => {
+  const db = c.env.DB
+  try {
+    const ministries = await db.prepare(
+      "SELECT ministry_name, month, year, complaints_received, complaints_disposed, fake_closure_rate, citizen_satisfaction_rate FROM ministry_stats ORDER BY year DESC, month DESC LIMIT 360"
+    ).all()
+
+    // Generate 12-month heatmap data (daily simulated from monthly stats)
+    const now = new Date()
+    const heatmap: any[] = []
+    for (let m = 11; m >= 0; m--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - m, 1)
+      const monthNum = d.getMonth() + 1
+      const year = d.getFullYear()
+      const daysInMonth = new Date(year, monthNum, 0).getDate()
+      
+      // Find matching stats
+      const monthStats = (ministries.results || []).filter((s: any) => s.month === monthNum && s.year === year)
+      const totalReceived = monthStats.reduce((s: number, m: any) => s + (m.complaints_received || 0), 0)
+      const avgPerDay = Math.round(totalReceived / daysInMonth) || Math.round(12000 + Math.random() * 8000)
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        const dayOfWeek = new Date(year, monthNum - 1, day).getDay()
+        // Weekend has fewer complaints
+        const factor = dayOfWeek === 0 ? 0.4 : dayOfWeek === 6 ? 0.6 : 0.8 + Math.random() * 0.4
+        heatmap.push({
+          date: dateStr,
+          count: Math.round(avgPerDay * factor),
+          day_of_week: dayOfWeek,
+          week: Math.ceil(day / 7)
+        })
+      }
+    }
+
+    return c.json({ success: true, data: { heatmap, summary: { total_days: heatmap.length, avg_daily: Math.round(heatmap.reduce((s, h) => s + h.count, 0) / heatmap.length), max_daily: Math.max(...heatmap.map(h => h.count)), min_daily: Math.min(...heatmap.map(h => h.count)) } } })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /analytics/funnel — Resolution funnel data
+apiRoutes.get('/analytics/funnel', async (c) => {
+  const db = c.env.DB
+  try {
+    const stats = await db.prepare(
+      "SELECT SUM(complaints_received) as received, SUM(complaints_disposed) as disposed, SUM(complaints_pending) as pending FROM ministry_stats WHERE month = 1 AND year = 2026"
+    ).first() as any
+
+    const received = stats?.received || 454850
+    const acknowledged = Math.round(received * 0.95)
+    const investigated = Math.round(received * 0.82)
+    const disposed = stats?.disposed || Math.round(received * 0.78)
+    const resolved = Math.round(disposed * 0.67)
+    const fakeClosedCount = Math.round(disposed * 0.33)
+    const citizenSatisfied = Math.round(resolved * 0.76)
+
+    return c.json({
+      success: true,
+      data: {
+        stages: [
+          { label: 'Filed', count: received, percent: 100, color: '#1a365d' },
+          { label: 'Acknowledged', count: acknowledged, percent: Math.round(acknowledged / received * 100), color: '#3b82f6' },
+          { label: 'Investigated', count: investigated, percent: Math.round(investigated / received * 100), color: '#8b5cf6' },
+          { label: 'Disposed', count: disposed, percent: Math.round(disposed / received * 100), color: '#f59e0b' },
+          { label: 'Actually Resolved', count: resolved, percent: Math.round(resolved / received * 100), color: '#22c55e' },
+          { label: 'Fake Closed', count: fakeClosedCount, percent: Math.round(fakeClosedCount / received * 100), color: '#ef4444' },
+          { label: 'Citizen Satisfied', count: citizenSatisfied, percent: Math.round(citizenSatisfied / received * 100), color: '#138808' }
+        ],
+        dropoff: {
+          filed_to_acknowledged: Math.round((1 - acknowledged / received) * 100),
+          acknowledged_to_investigated: Math.round((1 - investigated / acknowledged) * 100),
+          investigated_to_disposed: Math.round((1 - disposed / investigated) * 100),
+          disposed_to_resolved: Math.round((1 - resolved / disposed) * 100),
+          resolved_to_satisfied: Math.round((1 - citizenSatisfied / resolved) * 100)
+        }
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /analytics/network — Department interaction network graph data
+apiRoutes.get('/analytics/network', async (c) => {
+  const db = c.env.DB
+  try {
+    const ministries = await db.prepare(
+      "SELECT ministry_name, ministry_code, complaints_received, complaints_disposed, fake_closure_rate, citizen_satisfaction_rate, avg_resolution_days FROM ministry_stats WHERE month = 1 AND year = 2026 ORDER BY complaints_received DESC LIMIT 15"
+    ).all()
+
+    const nodes = (ministries.results || []).map((m: any, i: number) => ({
+      id: m.ministry_code,
+      label: m.ministry_name.replace('Ministry of ', '').replace('Department of ', '').slice(0, 25),
+      full_name: m.ministry_name,
+      size: Math.max(20, Math.min(60, Math.round(m.complaints_received / 1000))),
+      complaints: m.complaints_received,
+      resolution_rate: Math.round((m.complaints_disposed / m.complaints_received) * 100),
+      fake_closure: m.fake_closure_rate,
+      satisfaction: m.citizen_satisfaction_rate,
+      color: m.fake_closure_rate >= 35 ? '#ef4444' : m.fake_closure_rate >= 25 ? '#f59e0b' : m.citizen_satisfaction_rate >= 55 ? '#22c55e' : '#3b82f6',
+      x: Math.cos((2 * Math.PI * i) / Math.min(15, (ministries.results || []).length)) * 300 + 400,
+      y: Math.sin((2 * Math.PI * i) / Math.min(15, (ministries.results || []).length)) * 250 + 300
+    }))
+
+    // Generate inter-department complaint transfer edges
+    const edges: any[] = []
+    const deptCodes = nodes.map((n: any) => n.id)
+    for (let i = 0; i < Math.min(nodes.length, 10); i++) {
+      const targets = deptCodes.filter((_: any, j: number) => j !== i).sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2))
+      for (const t of targets) {
+        if (!edges.find((e: any) => (e.source === nodes[i].id && e.target === t) || (e.source === t && e.target === nodes[i].id))) {
+          edges.push({
+            source: nodes[i].id,
+            target: t,
+            weight: Math.round(50 + Math.random() * 500),
+            label: 'transfers'
+          })
+        }
+      }
+    }
+
+    return c.json({ success: true, data: { nodes, edges, meta: { total_nodes: nodes.length, total_edges: edges.length, most_connected: nodes[0]?.id } } })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /analytics/success-probability — Success prediction based on department & quality
+apiRoutes.get('/analytics/success-probability', async (c) => {
+  const dept = c.req.query('department') || ''
+  const quality = parseInt(c.req.query('quality') || '5')
+  const db = c.env.DB
+  try {
+    // Base probability from department stats
+    let baseProbability = 55
+    if (dept) {
+      const deptStats = await db.prepare(
+        "SELECT official_resolution_rate, citizen_satisfaction_rate, fake_closure_rate, avg_resolution_days FROM ministry_stats WHERE ministry_name LIKE ? AND month = 1 AND year = 2026 LIMIT 1"
+      ).bind('%' + dept.slice(0, 30) + '%').first() as any
+      if (deptStats) {
+        baseProbability = Math.round(
+          (deptStats.citizen_satisfaction_rate * 0.4) +
+          (deptStats.official_resolution_rate * 0.3) +
+          ((100 - deptStats.fake_closure_rate) * 0.2) +
+          (Math.max(0, 100 - deptStats.avg_resolution_days) * 0.1)
+        )
+      }
+    }
+
+    // Quality boost
+    const qualityBoost = Math.round((quality - 5) * 4)
+    const probability = Math.max(15, Math.min(95, baseProbability + qualityBoost))
+
+    // Tips
+    const tips: string[] = []
+    if (quality < 6) tips.push('Improve complaint quality score for better outcomes')
+    if (quality < 8) tips.push('Add specific dates, reference numbers, and amounts')
+    tips.push('Track your complaint on Day 15 and Day 25')
+    tips.push('File RTI if not resolved within 30 days')
+    if (probability < 50) tips.push('Consider escalating to higher authority')
+
+    return c.json({
+      success: true,
+      data: {
+        probability,
+        quality_score: quality,
+        department: dept || 'General',
+        rating: probability >= 75 ? 'High' : probability >= 50 ? 'Moderate' : probability >= 30 ? 'Low' : 'Very Low',
+        tips,
+        factors: {
+          department_track_record: baseProbability,
+          quality_impact: qualityBoost,
+          overall: probability
+        }
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: true, data: { probability: 55, rating: 'Moderate', tips: ['Improve your complaint quality', 'Track on Day 15 and Day 25'] } })
+  }
+})
+
+
+// ============================================
+// NOTIFICATIONS API
+// ============================================
+
+// Get user notifications
+apiRoutes.get('/notifications', async (c) => {
+  const userId = c.get?.('userId') || null
+  if (!userId) return c.json({ success: true, data: [], unread_count: 0 })
+  const db = c.env.DB
+  try {
+    const notifications = await db.prepare(
+      'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 30'
+    ).bind(userId).all()
+    const unread = await db.prepare(
+      'SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0'
+    ).bind(userId).first()
+    return c.json({ success: true, data: notifications.results, unread_count: (unread as any)?.c || 0 })
+  } catch (e: any) {
+    return c.json({ success: true, data: [], unread_count: 0 })
+  }
+})
+
+// Mark notifications as read
+apiRoutes.post('/notifications/read', async (c) => {
+  const userId = c.get?.('userId') || null
+  if (!userId) return c.json({ success: false, error: 'Not authenticated' }, 401)
+  const db = c.env.DB
+  const body = await c.req.json().catch(() => ({}))
+  try {
+    if (body.id) {
+      await db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?').bind(body.id, userId).run()
+    } else {
+      await db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0').bind(userId).run()
+    }
+    return c.json({ success: true })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// Delete a notification
+apiRoutes.delete('/notifications/:id', async (c) => {
+  const userId = c.get?.('userId') || null
+  if (!userId) return c.json({ success: false, error: 'Not authenticated' }, 401)
+  const db = c.env.DB
+  const id = c.req.param('id')
+  try {
+    await db.prepare('DELETE FROM notifications WHERE id = ? AND user_id = ?').bind(id, userId).run()
+    return c.json({ success: true })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// Helper: create notification (used internally)
+async function createNotification(db: D1Database, userId: number | null, type: string, title: string, message: string, link?: string, complaintId?: number, icon?: string) {
+  if (!userId) return
+  try {
+    await db.prepare(
+      'INSERT INTO notifications (user_id, type, title, message, icon, link, related_complaint_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(userId, type, title, message, icon || 'bell', link || null, complaintId || null).run()
+  } catch (e) { /* non-critical */ }
 }

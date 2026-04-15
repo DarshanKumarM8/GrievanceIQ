@@ -98,6 +98,24 @@ export function complaintPage(): string {
             </div>
           </div>
 
+          <!-- Voice Input UI (Week 7) -->
+          <div class="px-5 py-3 border-t border-gray-100 bg-gradient-to-r from-violet-50 to-purple-50">
+            <div class="flex items-center gap-3">
+              <button onclick="toggleVoiceInput()" id="voiceBtn" class="flex items-center gap-2 text-xs bg-white border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg hover:bg-purple-50 transition-colors">
+                <i class="fas fa-microphone" id="voiceIcon"></i>
+                <span id="voiceLabel">Voice Input</span>
+              </button>
+              <span class="text-[10px] text-gray-400" id="voiceStatus">Click to speak your complaint</span>
+              <div class="hidden flex items-center gap-1 ml-2" id="voiceWave">
+                <span class="w-1 h-3 bg-purple-500 rounded-full animate-pulse"></span>
+                <span class="w-1 h-4 bg-purple-400 rounded-full animate-pulse" style="animation-delay:0.1s"></span>
+                <span class="w-1 h-5 bg-purple-600 rounded-full animate-pulse" style="animation-delay:0.2s"></span>
+                <span class="w-1 h-3 bg-purple-400 rounded-full animate-pulse" style="animation-delay:0.3s"></span>
+                <span class="w-1 h-4 bg-purple-500 rounded-full animate-pulse" style="animation-delay:0.4s"></span>
+              </div>
+            </div>
+          </div>
+
           <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-100">
             <div class="flex items-center gap-3">
               <span class="text-xs text-gray-400" id="inputCharCount">0 characters</span>
@@ -201,6 +219,58 @@ export function complaintPage(): string {
                 </div>
                 <textarea id="improvedText" class="text-sm text-gray-700 bg-ashoka-50/50 rounded-lg p-4 min-h-[200px] w-full border-0 focus:outline-none focus:ring-2 focus:ring-ashoka-300 resize-y leading-relaxed"></textarea>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW: Complaint Comparison Diff (Week 7) -->
+        <div class="max-w-5xl mx-auto mb-6 hidden" id="diffSection" data-animate>
+          <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-violet-600 to-purple-700 flex items-center gap-2">
+              <i class="fas fa-code-compare text-white"></i>
+              <h2 class="font-bold text-white">AI Improvement Diff</h2>
+              <span class="ml-auto text-xs text-purple-200">Highlighted changes</span>
+            </div>
+            <div class="p-6" id="diffContent">
+              <div class="prose prose-sm max-w-none" id="diffDisplay"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW: Success Probability (Week 7) -->
+        <div class="max-w-4xl mx-auto mb-6 hidden" id="successProbSection" data-animate>
+          <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 flex items-center gap-2">
+              <i class="fas fa-chart-line text-white"></i>
+              <h2 class="font-bold text-white">Success Probability</h2>
+              <span class="ml-auto text-xs text-emerald-200" id="probRating"></span>
+            </div>
+            <div class="p-6" id="successProbContent">
+              <div class="flex items-center gap-6">
+                <div class="flex-shrink-0">
+                  <div class="quality-gauge" style="--gauge-color:#22c55e;--gauge-percent:50%" id="probGauge">
+                    <div class="quality-gauge-inner"><span class="text-2xl font-black text-emerald-600" id="probPercent">—</span><span class="text-xs text-gray-400">%</span></div>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <div class="mb-3 grid grid-cols-3 gap-2" id="probFactors"></div>
+                  <div class="space-y-1" id="probTips"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW: Similar Complaints (Week 7) -->
+        <div class="max-w-4xl mx-auto mb-6 hidden" id="similarSection" data-animate>
+          <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-sky-600 to-blue-700 flex items-center gap-2">
+              <i class="fas fa-clone text-white"></i>
+              <h2 class="font-bold text-white">Similar Complaints</h2>
+              <span class="ml-auto text-xs text-blue-200">AI-suggested matches</span>
+            </div>
+            <div class="p-4" id="similarContent">
+              <p class="text-xs text-gray-400 text-center">Loading...</p>
             </div>
           </div>
         </div>
@@ -596,6 +666,195 @@ export function complaintPage(): string {
         if (i > 0) { document.getElementById(s).classList.add('text-gray-300'); document.getElementById(s).classList.remove('text-ashoka-600'); }
       });
     }
+
+    // ============================================
+    // VOICE INPUT — Web Speech API (Week 7)
+    // ============================================
+    let voiceRecognition = null;
+    let isRecording = false;
+
+    function toggleVoiceInput() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        showToast('Speech recognition not supported in this browser. Try Chrome or Edge.', 'error');
+        return;
+      }
+
+      if (isRecording) {
+        stopVoice();
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      voiceRecognition = new SpeechRecognition();
+      const lang = document.getElementById('langSelect').value;
+      const langMap = { en: 'en-IN', hi: 'hi-IN', ta: 'ta-IN', te: 'te-IN', bn: 'bn-IN', mr: 'mr-IN', kn: 'kn-IN' };
+      voiceRecognition.lang = langMap[lang] || 'en-IN';
+      voiceRecognition.continuous = true;
+      voiceRecognition.interimResults = true;
+
+      voiceRecognition.onstart = () => {
+        isRecording = true;
+        document.getElementById('voiceBtn').classList.add('bg-red-50', 'border-red-300', 'text-red-700');
+        document.getElementById('voiceBtn').classList.remove('bg-white', 'border-purple-200', 'text-purple-700');
+        document.getElementById('voiceIcon').className = 'fas fa-stop';
+        document.getElementById('voiceLabel').textContent = 'Stop';
+        document.getElementById('voiceStatus').textContent = 'Listening...';
+        document.getElementById('voiceWave').classList.remove('hidden');
+        document.getElementById('voiceWave').classList.add('flex');
+      };
+
+      voiceRecognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        const input = document.getElementById('complaintInput');
+        input.value = transcript;
+        input.dispatchEvent(new Event('input'));
+      };
+
+      voiceRecognition.onerror = (event) => {
+        if (event.error !== 'aborted') {
+          showToast('Voice error: ' + event.error + '. Try again.', 'error');
+        }
+        stopVoice();
+      };
+
+      voiceRecognition.onend = () => { stopVoice(); };
+
+      voiceRecognition.start();
+    }
+
+    function stopVoice() {
+      isRecording = false;
+      if (voiceRecognition) { try { voiceRecognition.stop(); } catch(e) {} }
+      document.getElementById('voiceBtn').classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
+      document.getElementById('voiceBtn').classList.add('bg-white', 'border-purple-200', 'text-purple-700');
+      document.getElementById('voiceIcon').className = 'fas fa-microphone';
+      document.getElementById('voiceLabel').textContent = 'Voice Input';
+      document.getElementById('voiceStatus').textContent = 'Click to speak your complaint';
+      document.getElementById('voiceWave').classList.add('hidden');
+      document.getElementById('voiceWave').classList.remove('flex');
+    }
+
+    // ============================================
+    // COMPLAINT COMPARISON DIFF (Week 7)
+    // ============================================
+    function showDiff(original, improved) {
+      const diffSection = document.getElementById('diffSection');
+      diffSection.classList.remove('hidden');
+
+      // Simple word-level diff
+      const origWords = original.split(/\\s+/);
+      const impWords = improved.split(/\\s+/);
+      const origSet = new Set(origWords.map(w => w.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')));
+      const impSet = new Set(impWords.map(w => w.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')));
+
+      const diffHtml = impWords.map(w => {
+        const clean = w.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+        if (!origSet.has(clean) && clean.length > 2) {
+          return '<span class="bg-green-100 text-green-800 px-0.5 rounded font-semibold">' + w + '</span>';
+        }
+        return w;
+      }).join(' ');
+
+      const removedWords = origWords.filter(w => {
+        const clean = w.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+        return !impSet.has(clean) && clean.length > 2;
+      });
+
+      let html = '<div class="mb-3"><span class="text-xs font-semibold text-gray-500">AI IMPROVED VERSION (additions highlighted in green):</span></div>';
+      html += '<div class="text-sm text-gray-700 leading-relaxed bg-gray-50 dark:bg-dark-800 rounded-lg p-4 border border-gray-200 dark:border-dark-600">' + diffHtml + '</div>';
+      if (removedWords.length > 0) {
+        html += '<div class="mt-3"><span class="text-xs text-gray-400"><i class="fas fa-minus-circle text-red-400 mr-1"></i>Removed/replaced: <span class="line-through">' + removedWords.slice(0, 10).join(', ') + '</span>' + (removedWords.length > 10 ? ' + ' + (removedWords.length - 10) + ' more' : '') + '</span></div>';
+      }
+      html += '<div class="mt-2 flex gap-3 text-[10px]"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded"><i class="fas fa-plus mr-1"></i>' + impWords.filter(w => { const c = w.toLowerCase().replace(/[^a-zA-Z0-9]/g, ''); return !origSet.has(c) && c.length > 2; }).length + ' words added</span>' +
+        '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded"><i class="fas fa-minus mr-1"></i>' + removedWords.length + ' words removed</span>' +
+        '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded"><i class="fas fa-exchange mr-1"></i>' + Math.abs(impWords.length - origWords.length) + ' net change</span></div>';
+      document.getElementById('diffDisplay').innerHTML = html;
+    }
+
+    // ============================================
+    // SUCCESS PROBABILITY (Week 7)
+    // ============================================
+    async function loadSuccessProbability(department, qualityAfter) {
+      const section = document.getElementById('successProbSection');
+      section.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/analytics/success-probability?department=' + encodeURIComponent(department) + '&quality=' + qualityAfter);
+        const json = await res.json();
+        if (!json.success) return;
+        const d = json.data;
+
+        const color = d.probability >= 70 ? '#22c55e' : d.probability >= 50 ? '#f59e0b' : '#ef4444';
+        document.getElementById('probGauge').style.cssText = '--gauge-color:' + color + ';--gauge-percent:' + d.probability + '%';
+        document.getElementById('probPercent').textContent = d.probability;
+        document.getElementById('probPercent').style.color = color;
+        document.getElementById('probRating').textContent = d.rating + ' chance of resolution';
+
+        document.getElementById('probFactors').innerHTML = 
+          '<div class="bg-gray-50 dark:bg-dark-700 rounded-lg p-2 text-center"><div class="text-xs font-bold text-navy-700 dark:text-gray-200">' + d.factors.department_track_record + '%</div><div class="text-[9px] text-gray-400">Dept Record</div></div>' +
+          '<div class="bg-gray-50 dark:bg-dark-700 rounded-lg p-2 text-center"><div class="text-xs font-bold ' + (d.factors.quality_impact >= 0 ? 'text-ashoka-600' : 'text-red-500') + '">' + (d.factors.quality_impact >= 0 ? '+' : '') + d.factors.quality_impact + '</div><div class="text-[9px] text-gray-400">Quality Boost</div></div>' +
+          '<div class="bg-gray-50 dark:bg-dark-700 rounded-lg p-2 text-center"><div class="text-xs font-bold" style="color:' + color + '">' + d.factors.overall + '%</div><div class="text-[9px] text-gray-400">Overall</div></div>';
+
+        document.getElementById('probTips').innerHTML = d.tips.map(t => '<div class="flex items-start gap-2"><i class="fas fa-lightbulb text-saffron-500 mt-0.5 flex-shrink-0 text-[10px]"></i><span class="text-[11px] text-gray-600 dark:text-gray-300">' + t + '</span></div>').join('');
+      } catch(e) {}
+    }
+
+    // ============================================
+    // SIMILAR COMPLAINTS (Week 7)
+    // ============================================
+    async function loadSimilarComplaints(department) {
+      const section = document.getElementById('similarSection');
+      section.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/complaints/similar?department=' + encodeURIComponent(department));
+        const json = await res.json();
+        if (!json.success || !json.data.length) {
+          document.getElementById('similarContent').innerHTML = '<p class="text-xs text-gray-400 text-center py-3"><i class="fas fa-inbox mr-1"></i>No similar complaints found in database</p>';
+          return;
+        }
+
+        document.getElementById('similarContent').innerHTML = json.data.map(c => 
+          '<a href="/complaint-detail?id=' + c.id + '" class="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors border-b border-gray-50 dark:border-dark-700 last:border-0">' +
+            '<div class="w-8 h-8 bg-sky-100 dark:bg-sky-900 rounded-lg flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold text-sky-700 dark:text-sky-300">#' + c.id + '</span></div>' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">' + c.text_preview + '</p>' +
+              '<div class="flex items-center gap-2 mt-1">' +
+                '<span class="text-[10px] bg-navy-50 dark:bg-navy-900 text-navy-700 dark:text-navy-300 px-1.5 py-0.5 rounded">' + (c.department || 'Unknown').slice(0, 30) + '</span>' +
+                '<span class="text-[10px] text-gray-400">Score: ' + (c.quality_before || '?') + ' → ' + (c.quality_after || '?') + '</span>' +
+                '<span class="text-[10px] px-1.5 py-0.5 rounded ' + (c.status === 'resolved' ? 'bg-green-100 text-green-700' : c.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') + '">' + (c.status || 'draft') + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</a>'
+        ).join('');
+      } catch(e) {
+        document.getElementById('similarContent').innerHTML = '<p class="text-xs text-gray-400 text-center py-3">Could not load similar complaints</p>';
+      }
+    }
+
+    // ============================================
+    // ENHANCED RENDER RESULTS (Hook new features)
+    // ============================================
+    const _origRenderResults = renderResults;
+    renderResults = function(data, originalText) {
+      _origRenderResults(data, originalText);
+      
+      // Show diff view
+      if (data.improved_draft) {
+        showDiff(originalText, data.improved_draft);
+      }
+
+      // Load success probability
+      if (data.departments && data.departments[0]) {
+        loadSuccessProbability(data.departments[0].name, data.quality_score_after);
+      }
+
+      // Load similar complaints
+      if (data.departments && data.departments[0]) {
+        loadSimilarComplaints(data.departments[0].name);
+      }
+    };
 
     // Init wizard
     updateWizardStep(1);
