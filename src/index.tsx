@@ -66,6 +66,15 @@ app.get('/complaint-detail', (c) => c.html(complaintDetailPage()))
 app.get('/admin', (c) => c.html(adminPage()))
 
 // ============================================
+// FAVICON (prevent 404)
+// ============================================
+app.get('/favicon.ico', (c) => {
+  // Simple SVG favicon - balance scale icon in saffron/navy
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1a365d"/><text x="16" y="23" text-anchor="middle" font-size="20" fill="#ff9933">⚖</text></svg>`
+  return new Response(svg, { headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' } })
+})
+
+// ============================================
 // SEO ROUTES
 // ============================================
 app.get('/sitemap.xml', (c) => {

@@ -32,7 +32,7 @@ export function securityHeaders() {
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com",
       "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://unpkg.com",
       "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
-      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com",
+      "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com",
       "connect-src 'self' https://cdn.jsdelivr.net https://generativelanguage.googleapis.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
@@ -44,7 +44,7 @@ export function securityHeaders() {
     c.header('X-Frame-Options', 'DENY')
     c.header('X-XSS-Protection', '1; mode=block')
     c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
-    c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    c.header('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()') // microphone=(self) needed for voice input
     c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
 }

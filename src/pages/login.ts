@@ -278,7 +278,7 @@ export function loginPage(): string {
           // Show success
           document.getElementById('step-otp').classList.add('hidden');
           document.getElementById('step-success').classList.remove('hidden');
-          document.getElementById('authTitle').textContent = 'You\\'re In!';
+          document.getElementById('authTitle').textContent = "You're In!";
           document.getElementById('authSubtitle').textContent = 'Your account is ready';
           document.getElementById('welcomeName').textContent = 'Welcome, ' + (data.user?.name || currentEmail);
 

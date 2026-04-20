@@ -19,7 +19,7 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '7.0.0',
+    version: '7.0.1',
     week: 7,
     ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGeminiKey ? 'active' : 'fallback-only',
@@ -623,7 +623,7 @@ apiRoutes.get('/complaints/similar', async (c) => {
   const db = c.env.DB
   const dept = c.req.query('department') || ''
   try {
-    let query = "SELECT id, raw_text, department_predicted, quality_score_before, quality_score_after, confidence_score, status, created_at FROM complaints"
+    let query = "SELECT id, raw_text, department_predicted, quality_score_before, quality_score_after, department_confidence, status, created_at FROM complaints"
     let params: any[] = []
     if (dept) {
       query += " WHERE department_predicted LIKE ?"
@@ -640,7 +640,7 @@ apiRoutes.get('/complaints/similar', async (c) => {
         department: c.department_predicted,
         quality_before: c.quality_score_before,
         quality_after: c.quality_score_after,
-        confidence: c.confidence_score,
+        confidence: c.department_confidence,
         status: c.status,
         created: c.created_at
       }))
@@ -945,7 +945,7 @@ apiRoutes.get('/admin/system-health', async (c) => {
           active_sessions: sessions?.c || 0,
           total_feedbacks: feedbacks?.c || 0
         },
-        uptime: process.uptime ? process.uptime() : 'N/A',
+        uptime: typeof globalThis.process !== 'undefined' && globalThis.process?.uptime ? globalThis.process.uptime() : 'N/A',
         timestamp: new Date().toISOString()
       }
     })
