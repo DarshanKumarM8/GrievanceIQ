@@ -78,6 +78,80 @@ export function adminPage(): string {
         </div>
       </div>
 
+      <!-- Data Pipeline Status Panel -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden" id="pipeline-panel">
+        <div class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 flex items-center gap-2">
+          <i class="fas fa-rocket text-white" aria-hidden="true"></i>
+          <h2 class="font-bold text-white">Data Pipeline</h2>
+          <span class="ml-2 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">Live</span>
+          <div class="ml-auto flex items-center gap-2">
+            <input type="password" id="admin-key-input" placeholder="Admin Key" class="bg-white/20 text-white placeholder:text-white/50 text-xs px-3 py-1.5 rounded-lg border border-white/20 w-36 focus:outline-none focus:ring-1 focus:ring-white/50" />
+            <button onclick="loadPipelineStatus()" class="text-xs bg-white/20 hover:bg-white/30 text-white px-2 py-1.5 rounded-lg transition-colors">
+              <i class="fas fa-sync mr-1"></i>Refresh
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="border-b border-gray-200">
+                  <th class="text-left py-3 px-3 font-semibold text-gray-600">Job</th>
+                  <th class="text-left py-3 px-3 font-semibold text-gray-600">Last Run</th>
+                  <th class="text-left py-3 px-3 font-semibold text-gray-600">Status</th>
+                  <th class="text-left py-3 px-3 font-semibold text-gray-600">Rows</th>
+                  <th class="text-left py-3 px-3 font-semibold text-gray-600">Source</th>
+                  <th class="text-left py-3 px-3 font-semibold text-gray-600">Schedule</th>
+                  <th class="text-right py-3 px-3 font-semibold text-gray-600">Action</th>
+                </tr>
+              </thead>
+              <tbody id="pipeline-tbody">
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                  <td class="py-3 px-3 font-semibold text-gray-800"><i class="fas fa-file-pdf text-red-500 mr-2"></i>DARPG PDF Fetch</td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-darpg-last">&mdash;</td>
+                  <td class="py-3 px-3" id="pl-darpg-status"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pending</span></td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-darpg-rows">&mdash;</td>
+                  <td class="py-3 px-3 text-gray-500">darpg.gov.in</td>
+                  <td class="py-3 px-3 text-gray-400">Monthly (28th)</td>
+                  <td class="py-3 px-3 text-right"><button onclick="triggerPipeline('darpg')" class="bg-navy-600 hover:bg-navy-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors"><i class="fas fa-play mr-1"></i>Run</button></td>
+                </tr>
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                  <td class="py-3 px-3 font-semibold text-gray-800"><i class="fas fa-rss text-orange-500 mr-2"></i>RSS Monitor</td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-rss-last">&mdash;</td>
+                  <td class="py-3 px-3" id="pl-rss-status"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pending</span></td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-rss-rows">&mdash;</td>
+                  <td class="py-3 px-3 text-gray-500">5 RSS Feeds</td>
+                  <td class="py-3 px-3 text-gray-400">Daily (6 AM)</td>
+                  <td class="py-3 px-3 text-right"><button onclick="triggerPipeline('rss')" class="bg-navy-600 hover:bg-navy-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors"><i class="fas fa-play mr-1"></i>Run</button></td>
+                </tr>
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                  <td class="py-3 px-3 font-semibold text-gray-800"><i class="fas fa-brain text-purple-500 mr-2"></i>Aggregator</td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-agg-last">&mdash;</td>
+                  <td class="py-3 px-3" id="pl-agg-status"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pending</span></td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-agg-rows">&mdash;</td>
+                  <td class="py-3 px-3 text-gray-500">TF-IDF + Feedback</td>
+                  <td class="py-3 px-3 text-gray-400">Daily (2:30 AM)</td>
+                  <td class="py-3 px-3 text-right"><button onclick="triggerPipeline('aggregator')" class="bg-navy-600 hover:bg-navy-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors"><i class="fas fa-play mr-1"></i>Run</button></td>
+                </tr>
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                  <td class="py-3 px-3 font-semibold text-gray-800"><i class="fas fa-database text-blue-500 mr-2"></i>data.gov.in API</td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-dg-last">&mdash;</td>
+                  <td class="py-3 px-3" id="pl-dg-status"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pending</span></td>
+                  <td class="py-3 px-3 text-gray-500" id="pl-dg-rows">&mdash;</td>
+                  <td class="py-3 px-3 text-gray-500">data.gov.in</td>
+                  <td class="py-3 px-3 text-gray-400">Monthly (28th)</td>
+                  <td class="py-3 px-3 text-right"><button onclick="triggerPipeline('datagov')" class="bg-navy-600 hover:bg-navy-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors"><i class="fas fa-play mr-1"></i>Run</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-start gap-2">
+            <i class="fas fa-info-circle text-emerald-600 mt-0.5 flex-shrink-0"></i>
+            <p class="text-[10px] text-emerald-700">Pipeline jobs run on Render.com (Python/FastAPI). Cron triggers from Cloudflare warm the container then dispatch jobs. Enter your Admin Key to trigger manual runs during demos.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="grid lg:grid-cols-2 gap-6">
         <!-- Audit Log Viewer -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -356,7 +430,71 @@ export function adminPage(): string {
       }
     }
 
+    // --- Pipeline Status & Manual Trigger ---
+    async function loadPipelineStatus() {
+      try {
+        const res = await fetch('/api/admin/pipeline/status');
+        const json = await res.json();
+        if (!json.success || !json.data?.latest?.length) return;
+
+        const jobMap = { darpg_fetch: 'darpg', rss_monitor: 'rss', aggregator: 'agg', datagov_fetch: 'dg' };
+        const statusBadge = (s) => {
+          if (s === 'success') return '<span class="px-2 py-0.5 rounded-full bg-ashoka-100 text-ashoka-700 font-bold">\u2705 Success</span>';
+          if (s === 'failed') return '<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">\u274c Failed</span>';
+          if (s === 'running') return '<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">\u23f3 Running</span>';
+          return '<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pending</span>';
+        };
+
+        json.data.latest.forEach(run => {
+          const key = jobMap[run.job_name];
+          if (!key) return;
+          const lastEl = document.getElementById('pl-' + key + '-last');
+          const statusEl = document.getElementById('pl-' + key + '-status');
+          const rowsEl = document.getElementById('pl-' + key + '-rows');
+          if (lastEl) lastEl.textContent = run.last_run ? new Date(run.last_run).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '\u2014';
+          if (statusEl) statusEl.innerHTML = statusBadge(run.status);
+          if (rowsEl) rowsEl.textContent = run.rows_affected != null ? run.rows_affected : '\u2014';
+        });
+      } catch (e) { console.error('Pipeline status error:', e); }
+    }
+
+    async function triggerPipeline(job) {
+      const adminKey = document.getElementById('admin-key-input')?.value;
+      if (!adminKey) {
+        if (typeof showToast === 'function') showToast('Enter your Admin Key first', 'error');
+        else alert('Enter your Admin Key in the pipeline panel first.');
+        return;
+      }
+      const btn = event.target.closest('button');
+      const origHTML = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Running...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/admin/pipeline/trigger', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + adminKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job })
+        });
+        const json = await res.json();
+        if (json.success) {
+          if (typeof showToast === 'function') showToast('Pipeline ' + job + ' completed successfully!', 'success');
+          else alert('Pipeline ' + job + ' completed!');
+          loadPipelineStatus();
+        } else {
+          if (typeof showToast === 'function') showToast(json.error || 'Pipeline failed', 'error');
+          else alert(json.error || 'Pipeline failed');
+        }
+      } catch (e) {
+        if (typeof showToast === 'function') showToast('Pipeline request failed', 'error');
+        else alert('Pipeline request failed: ' + e.message);
+      } finally {
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+      }
+    }
+
     refreshAdmin();
+    loadPipelineStatus();
   </script>
   `
   return layout('Admin Analytics', content, 'admin', {

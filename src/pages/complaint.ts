@@ -52,17 +52,52 @@ export function complaintPage(): string {
       <!-- STEP 1: INPUT -->
       <div class="max-w-3xl mx-auto mb-8" id="inputSection">
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-100 gap-3">
             <h2 class="font-semibold text-gray-700 text-sm"><i class="fas fa-keyboard mr-2 text-saffron-500"></i><span data-i18n="step1_title">Step 1: Describe Your Problem</span></h2>
-            <select id="langSelect" class="text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 focus:outline-none focus:border-saffron-400">
-              <option value="en">English</option>
-              <option value="hi">हिन्दी (Hindi)</option>
-              <option value="ta">தமிழ் (Tamil)</option>
-              <option value="te">తెలుగు (Telugu)</option>
-              <option value="bn">বাংলা (Bengali)</option>
-              <option value="mr">मराठी (Marathi)</option>
-              <option value="kn">ಕನ್ನಡ (Kannada)</option>
-            </select>
+            <div class="flex items-center gap-2">
+              <select id="stateSelect" class="text-sm bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none focus:border-saffron-400 max-w-[140px] truncate">
+                <option value="">Select State (Optional)</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                <option value="Assam">Assam</option>
+                <option value="Bihar">Bihar</option>
+                <option value="Chhattisgarh">Chhattisgarh</option>
+                <option value="Goa">Goa</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Haryana">Haryana</option>
+                <option value="Himachal Pradesh">Himachal Pradesh</option>
+                <option value="Jharkhand">Jharkhand</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Kerala">Kerala</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Manipur">Manipur</option>
+                <option value="Meghalaya">Meghalaya</option>
+                <option value="Mizoram">Mizoram</option>
+                <option value="Nagaland">Nagaland</option>
+                <option value="Odisha">Odisha</option>
+                <option value="Punjab">Punjab</option>
+                <option value="Rajasthan">Rajasthan</option>
+                <option value="Sikkim">Sikkim</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Telangana">Telangana</option>
+                <option value="Tripura">Tripura</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="Uttarakhand">Uttarakhand</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Jammu & Kashmir">Jammu & Kashmir</option>
+              </select>
+              <select id="langSelect" class="text-sm bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none focus:border-saffron-400">
+                <option value="en">English</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              </select>
+            </div>
           </div>
           <textarea id="complaintInput" rows="6" placeholder="Write your complaint in plain language...&#10;&#10;Example: My PM-KISAN payment has not come for 3 months. I have done eKYC in November 2025 but still showing payment failed on the portal. My Aadhaar is linked to my State Bank account." class="w-full px-5 py-4 text-gray-800 placeholder-gray-400 resize-none focus:outline-none text-base leading-relaxed"></textarea>
           
@@ -509,7 +544,7 @@ export function complaintPage(): string {
         const res = await fetch('/api/complaints/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, language: lang })
+          body: JSON.stringify({ text, language: lang, state_name: document.getElementById('stateSelect').value || null })
         });
         const json = await res.json();
         

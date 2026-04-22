@@ -153,3 +153,10 @@ INSERT OR IGNORE INTO complaint_feedback (complaint_id, user_id, official_status
 
 (1, 1, 'Disposed', 'not_resolved', 1, 'They just sent a generic SMS saying complaint is resolved but I still have not received any PM-KISAN payment. Nothing has changed.', 1),
 (2, 2, 'Under Process', 'not_resolved', 2, 'At least they acknowledged it, but still no pension in my account after filing complaint 3 weeks ago.', 0);
+
+
+-- ============================================
+-- FLAG DEMO DATA — Isolate from live analytics
+-- ============================================
+
+UPDATE complaints SET is_demo = 1 WHERE id IN (1, 2, 3);

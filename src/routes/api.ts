@@ -1,12 +1,15 @@
 import { Hono } from 'hono'
 import { analyzeComplaint, generateRTI } from '../services/gemini'
 import { sanitizeInput } from '../services/auth'
-import { authMiddleware } from '../middleware/security'
+import { authMiddleware, sanitizeText } from '../middleware/security'
 
 type Bindings = {
   DB: D1Database
   GEMINI_API_KEY?: string
   RESEND_API_KEY?: string
+  PIPELINE_SERVICE_URL?: string
+  INTERNAL_API_KEY?: string
+  ADMIN_SECRET_KEY?: string
 }
 
 export const apiRoutes = new Hono<{ Bindings: Bindings }>()
@@ -148,6 +151,21 @@ apiRoutes.get('/stats', async (c) => {
     const trendingCount = await db.prepare('SELECT COUNT(*) as count FROM trending_issues WHERE is_flagged = 1').first()
     const complaintCount = await db.prepare('SELECT COUNT(*) as count FROM complaints').first()
 
+    // Data freshness — when were tables last synced?
+    let dataFreshness: any = {}
+    try {
+      const msFresh = await db.prepare("SELECT MAX(last_synced_at) as last_sync FROM ministry_stats WHERE last_synced_at IS NOT NULL").first()
+      const ssFresh = await db.prepare("SELECT MAX(last_synced_at) as last_sync FROM state_grievance_stats WHERE last_synced_at IS NOT NULL").first()
+      const tiFresh = await db.prepare("SELECT MAX(updated_at) as last_sync FROM trending_issues").first()
+      const scFresh = await db.prepare("SELECT MAX(captured_at) as last_sync FROM social_signals").first()
+      dataFreshness = {
+        ministry_stats: msFresh?.last_sync || null,
+        state_stats: ssFresh?.last_sync || null,
+        trending_issues: tiFresh?.last_sync || null,
+        social_signals: scFresh?.last_sync || null
+      }
+    } catch (e) { /* columns may not exist yet */ }
+
     return c.json({
       success: true,
       data: {
@@ -160,7 +178,8 @@ apiRoutes.get('/stats', async (c) => {
         states_tracked: stateCount?.count || 0,
         active_alerts: trendingCount?.count || 0,
         complaints_analyzed: complaintCount?.count || 0,
-        ministries_monitored: 92
+        ministries_monitored: 92,
+        data_freshness: dataFreshness
       }
     })
   } catch (e: any) {
@@ -264,14 +283,14 @@ apiRoutes.get('/social', async (c) => {
 // ============================================
 apiRoutes.post('/complaints/analyze', async (c) => {
   const body = await c.req.json()
-  const { text, language } = body
+  const { text, language, state_name } = body
 
   if (!text || text.trim().length < 10) {
     return c.json({ success: false, error: 'Complaint text must be at least 10 characters' }, 400)
   }
 
-  // Sanitize input
-  const sanitizedText = text.trim()
+  // Sanitize input — strip HTML to defeat stored XSS
+  const sanitizedText = sanitizeText(text)
 
   // Use Gemini AI with mock fallback
   const apiKey = c.env.GEMINI_API_KEY
@@ -284,9 +303,10 @@ apiRoutes.post('/complaints/analyze', async (c) => {
   const db = c.env.DB
   try {
     const d = analysis.data
+    const sanitizedState = state_name ? sanitizeText(state_name) : null
     const result = await db.prepare(`
-      INSERT INTO complaints (user_id, raw_text, language_detected, translated_text, department_predicted, department_confidence, department_2nd, department_2nd_confidence, department_3rd, department_3rd_confidence, department_reasoning, quality_score_before, quality_score_after, missing_elements, improved_draft, documents_checklist, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', datetime('now'))
+      INSERT INTO complaints (user_id, raw_text, language_detected, translated_text, department_predicted, department_confidence, department_2nd, department_2nd_confidence, department_3rd, department_3rd_confidence, department_reasoning, quality_score_before, quality_score_after, missing_elements, improved_draft, documents_checklist, status, state_name, is_demo, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, 0, datetime('now'))
     `).bind(
       userId,
       sanitizedText,
@@ -303,7 +323,8 @@ apiRoutes.post('/complaints/analyze', async (c) => {
       d.quality_score_after,
       JSON.stringify(d.missing_elements),
       d.improved_draft,
-      JSON.stringify(d.documents_checklist)
+      JSON.stringify(d.documents_checklist),
+      sanitizedState
     ).run()
 
     // Create notification
@@ -709,29 +730,61 @@ apiRoutes.get('/complaints/:id', async (c) => {
 apiRoutes.get('/analytics/timeseries', async (c) => {
   const db = c.env.DB
   try {
-    // Generate monthly simulated time-series data based on ministry stats
     const ministries = await db.prepare('SELECT * FROM ministry_stats ORDER BY complaints_received DESC LIMIT 10').all()
-    
-    // Simulate 12 months of data (Jan-Dec 2025 to Jan 2026)
-    const months = ['Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25', 'Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26']
-    
-    // Aggregate national data with seasonal variation
+
+    // --- Try real monthly_history data first ---
+    let useRealData = false
+    let realMonths: any[] = []
+    try {
+      const historyResult = await db.prepare(
+        'SELECT * FROM monthly_history ORDER BY month ASC LIMIT 15'
+      ).all()
+      if (historyResult.results && historyResult.results.length >= 6) {
+        realMonths = historyResult.results as any[]
+        useRealData = true
+      }
+    } catch (e) { /* monthly_history table may not exist yet */ }
+
     const totalBase = ministries.results.reduce((s: number, m: any) => s + m.complaints_received, 0)
     const seasonalFactors = [0.75, 0.72, 0.80, 0.85, 0.90, 0.88, 0.95, 0.92, 0.88, 0.98, 1.05, 1.10, 1.00, 0.95, 1.02]
-    const nationalTotal = months.map((_, i) => Math.round(totalBase * seasonalFactors[i]))
-    const nationalResolved = months.map((_, i) => Math.round(totalBase * seasonalFactors[i] * (0.72 + Math.random() * 0.08)))
-    const nationalFakeClosed = months.map((_, i) => Math.round(totalBase * seasonalFactors[i] * (0.08 + Math.random() * 0.04)))
-    const nationalPending = months.map((_, i) => nationalTotal[i] - nationalResolved[i] - nationalFakeClosed[i])
 
-    // Top 5 ministries time series
+    let months: string[]
+    let nationalTotal: number[]
+    let nationalResolved: number[]
+    let nationalFakeClosed: number[]
+    let nationalPending: number[]
+    let satisfactionTrend: number[]
+    let fakeClosureTrend: number[]
+
+    if (useRealData && realMonths.length > 0) {
+      const monthNames: Record<string, string> = { '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec' }
+      months = realMonths.map((r: any) => {
+        const parts = (r.month as string).split('-')
+        return (monthNames[parts[1]] || parts[1]) + ' ' + parts[0].slice(2)
+      })
+      nationalTotal = realMonths.map((r: any) => r.total_received || 0)
+      nationalResolved = realMonths.map((r: any) => r.total_disposed || 0)
+      nationalPending = realMonths.map((r: any) => r.total_pending || 0)
+      nationalFakeClosed = realMonths.map((r: any) => Math.round((r.total_disposed || 0) * 0.12))
+      satisfactionTrend = realMonths.map((r: any, i: number) => {
+        const rate = r.total_disposed && r.total_received ? Math.round((r.total_disposed / r.total_received) * 60) : 42
+        return Math.min(65, Math.max(30, rate + Math.round(i * 0.4)))
+      })
+      fakeClosureTrend = realMonths.map((_: any, i: number) => Math.round(35 - i * 0.3 + Math.random() * 2))
+    } else {
+      months = ['Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25', 'Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26']
+      nationalTotal = months.map((_, i) => Math.round(totalBase * seasonalFactors[i]))
+      nationalResolved = months.map((_, i) => Math.round(totalBase * seasonalFactors[i] * (0.72 + Math.random() * 0.08)))
+      nationalFakeClosed = months.map((_, i) => Math.round(totalBase * seasonalFactors[i] * (0.08 + Math.random() * 0.04)))
+      nationalPending = months.map((_, i) => nationalTotal[i] - nationalResolved[i] - nationalFakeClosed[i])
+      satisfactionTrend = months.map((_, i) => Math.round(38 + i * 0.7 + Math.random() * 3))
+      fakeClosureTrend = months.map((_, i) => Math.round(35 - i * 0.3 + Math.random() * 3))
+    }
+
     const topMinistries = ministries.results.slice(0, 5).map((m: any) => ({
       name: (m.ministry_name as string).replace('Ministry of ', '').replace('Department of ', ''),
-      data: months.map((_, i) => Math.round((m.complaints_received as number) * seasonalFactors[i] * (0.9 + Math.random() * 0.2)))
+      data: months.map((_, i) => Math.round((m.complaints_received as number) * seasonalFactors[i % seasonalFactors.length] * (0.9 + Math.random() * 0.2)))
     }))
-
-    // Satisfaction trend
-    const satisfactionTrend = months.map((_, i) => Math.round(38 + i * 0.7 + Math.random() * 3))
-    const fakeClosureTrend = months.map((_, i) => Math.round(35 - i * 0.3 + Math.random() * 3))
 
     return c.json({
       success: true,
@@ -740,7 +793,8 @@ apiRoutes.get('/analytics/timeseries', async (c) => {
         national: { total: nationalTotal, resolved: nationalResolved, fake_closed: nationalFakeClosed, pending: nationalPending },
         top_ministries: topMinistries,
         satisfaction_trend: satisfactionTrend,
-        fake_closure_trend: fakeClosureTrend
+        fake_closure_trend: fakeClosureTrend,
+        data_source: useRealData ? 'monthly_history' : 'simulated'
       }
     })
   } catch (e: any) {
@@ -958,6 +1012,123 @@ apiRoutes.get('/admin/system-health', async (c) => {
         error: e.message,
         timestamp: new Date().toISOString()
       }
+    })
+  }
+})
+
+// ============================================
+// PIPELINE MANAGEMENT — Manual trigger + status
+// ============================================
+
+// POST /admin/pipeline/trigger — Manually trigger a pipeline job
+// Protected by ADMIN_SECRET_KEY Bearer token
+apiRoutes.post('/admin/pipeline/trigger', async (c) => {
+  // Strict Bearer token authentication
+  const authHeader = c.req.header('Authorization') || ''
+  const adminKey = c.env.ADMIN_SECRET_KEY
+
+  if (!adminKey || !authHeader.startsWith('Bearer ') || authHeader.slice(7) !== adminKey) {
+    return c.json({ success: false, error: 'Unauthorized. Valid admin secret key required.' }, 401)
+  }
+
+  const body = await c.req.json().catch(() => ({}))
+  const job = (body as any).job as string
+  const validJobs = ['darpg', 'rss', 'aggregator', 'datagov']
+
+  if (!job || !validJobs.includes(job)) {
+    return c.json({ success: false, error: `Invalid job. Must be one of: ${validJobs.join(', ')}` }, 400)
+  }
+
+  const pipelineUrl = c.env.PIPELINE_SERVICE_URL || 'http://localhost:8000'
+  const internalKey = c.env.INTERNAL_API_KEY || ''
+  const db = c.env.DB
+
+  // Map job name to endpoint
+  const endpointMap: Record<string, string> = {
+    darpg: '/internal/fetch-darpg',
+    rss: '/internal/fetch-rss',
+    aggregator: '/internal/run-aggregator',
+    datagov: '/internal/fetch-datagov'
+  }
+  const jobNameMap: Record<string, string> = {
+    darpg: 'darpg_fetch',
+    rss: 'rss_monitor',
+    aggregator: 'aggregator',
+    datagov: 'datagov_fetch'
+  }
+
+  // Log start
+  try {
+    await db.prepare(
+      "INSERT INTO pipeline_runs (job_name, status, started_at, triggered_by) VALUES (?, 'running', datetime('now'), 'manual')"
+    ).bind(jobNameMap[job]).run()
+  } catch (e) { /* non-critical */ }
+
+  try {
+    // Ping first to warm container
+    try {
+      await fetch(`${pipelineUrl}/internal/ping`, { method: 'GET' })
+    } catch (e) { /* cold start */ }
+
+    const res = await fetch(`${pipelineUrl}${endpointMap[job]}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${internalKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    const result = await res.json() as any
+
+    // Update pipeline run log
+    try {
+      await db.prepare(
+        "UPDATE pipeline_runs SET status = ?, completed_at = datetime('now'), rows_affected = ? WHERE job_name = ? AND status = 'running' ORDER BY created_at DESC LIMIT 1"
+      ).bind(result.status || 'success', result.data?.rows_updated || result.data?.articles_inserted || result.data?.trending_issues_updated || result.data?.rows_inserted || 0, jobNameMap[job]).run()
+    } catch (e) { /* non-critical */ }
+
+    return c.json({ success: true, data: { job, status: result.status, details: result.data } })
+  } catch (e: any) {
+    // Log failure
+    try {
+      await db.prepare(
+        "UPDATE pipeline_runs SET status = 'failed', completed_at = datetime('now'), error_message = ? WHERE job_name = ? AND status = 'running' ORDER BY created_at DESC LIMIT 1"
+      ).bind(e.message, jobNameMap[job]).run()
+    } catch (e2) { /* non-critical */ }
+
+    return c.json({ success: false, error: `Pipeline ${job} failed: ${e.message}` }, 500)
+  }
+})
+
+// GET /admin/pipeline/status — Pipeline execution history
+apiRoutes.get('/admin/pipeline/status', async (c) => {
+  const db = c.env.DB
+  try {
+    const runs = await db.prepare(
+      "SELECT * FROM pipeline_runs ORDER BY created_at DESC LIMIT 20"
+    ).all()
+
+    // Get latest run per job
+    const latestPerJob = await db.prepare(
+      `SELECT job_name, status, completed_at, rows_affected, error_message, triggered_by,
+       MAX(created_at) as last_run
+       FROM pipeline_runs
+       GROUP BY job_name
+       ORDER BY last_run DESC`
+    ).all()
+
+    return c.json({
+      success: true,
+      data: {
+        latest: latestPerJob.results,
+        recent_runs: runs.results
+      }
+    })
+  } catch (e: any) {
+    // Table might not exist yet
+    return c.json({
+      success: true,
+      data: { latest: [], recent_runs: [] }
     })
   }
 })

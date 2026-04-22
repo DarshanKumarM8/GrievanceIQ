@@ -156,4 +156,20 @@ export function sanitizeMiddleware() {
   }
 }
 
+// ============================================
+// TEXT SANITIZATION (pre-DB-insertion XSS prevention)
+// Strips HTML characters before storing in D1
+// ============================================
+
+export function sanitizeText(input: string): string {
+  if (!input || typeof input !== 'string') return ''
+  return input
+    .replace(/&/g, '')
+    .replace(/</g, '')
+    .replace(/>/g, '')
+    .replace(/"/g, '')
+    .replace(/'/g, '')
+    .trim()
+}
+
 export { sanitizeInput }

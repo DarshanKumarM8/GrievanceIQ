@@ -17,7 +17,7 @@ export function dashboardPage(): string {
           </button>
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-ashoka-400 pulse-dot"></span>
-            <span class="text-xs text-gray-400 font-medium">Live data &bull; Updated March 2026</span>
+            <span class="text-xs text-gray-400 font-medium" id="badge-freshness">Live data &bull; Updated March 2026</span>
           </div>
         </div>
       </div>
@@ -343,6 +343,22 @@ export function dashboardPage(): string {
           document.getElementById('ds-pending').textContent = Number(d.total_pending).toLocaleString('en-IN');
           document.getElementById('ds-fake').textContent = d.avg_fake_closure_rate + '%';
           document.getElementById('ds-alerts').textContent = d.active_alerts;
+          
+          if (d.data_freshness && d.data_freshness.ministry_stats) {
+            const badge = document.getElementById('badge-freshness');
+            if (badge) {
+              const dt = new Date(d.data_freshness.ministry_stats);
+              const now = new Date();
+              const diffMs = now.getTime() - dt.getTime();
+              const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+              let timeText = dt.toLocaleString('en-IN', {month:'short', year:'numeric', day:'numeric'});
+              if (diffDays === 0 && diffHours < 24) timeText = diffHours + ' hours ago';
+              else if (diffDays === 1) timeText = 'yesterday';
+              else if (diffDays < 7 && diffDays > 1) timeText = diffDays + ' days ago';
+              badge.innerHTML = 'Live data &bull; Updated ' + timeText;
+            }
+          }
         }
       } catch(e) {}
 

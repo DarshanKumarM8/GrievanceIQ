@@ -1,5 +1,6 @@
 {
   "name": "grievanceiq",
+  "version": "8.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

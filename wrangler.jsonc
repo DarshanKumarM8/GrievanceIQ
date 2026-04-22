@@ -10,5 +10,15 @@
       "database_name": "grievanceiq-production",
       "database_id": "local-dev-placeholder"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": [
+      "0 20 28 * *",
+      "30 0 * * *",
+      "0 21 * * *"
+    ]
+  },
+  "vars": {
+    "PIPELINE_SERVICE_URL": "http://localhost:8000"
+  }
 }
