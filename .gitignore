@@ -39,3 +39,5 @@ python-pipeline/.venv/
 
 # misc
 .DS_Store
+venv/
+out.txt

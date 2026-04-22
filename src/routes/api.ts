@@ -759,8 +759,9 @@ apiRoutes.get('/analytics/timeseries', async (c) => {
     if (useRealData && realMonths.length > 0) {
       const monthNames: Record<string, string> = { '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec' }
       months = realMonths.map((r: any) => {
-        const parts = (r.month as string).split('-')
-        return (monthNames[parts[1]] || parts[1]) + ' ' + parts[0].slice(2)
+        const m = String(r.month).padStart(2, '0')
+        const y = String(r.year).slice(2)
+        return (monthNames[m] || m) + ' ' + y
       })
       nationalTotal = realMonths.map((r: any) => r.total_received || 0)
       nationalResolved = realMonths.map((r: any) => r.total_disposed || 0)

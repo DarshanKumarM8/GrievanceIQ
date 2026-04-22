@@ -320,6 +320,56 @@ export function homePage(): string {
       </div>
     </div>
   </section>
+  <!-- ============================================ -->
+  <!-- AI CIVIC INFRASTRUCTURE — Technical Pitch -->
+  <!-- ============================================ -->
+  <section class="py-16 sm:py-24 bg-navy-900 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div data-animate>
+          <span class="inline-flex items-center gap-1.5 bg-saffron-500/20 text-saffron-400 rounded-full px-4 py-1.5 text-xs font-semibold mb-4 border border-saffron-500/30">
+            <i class="fas fa-microchip"></i> TECHNICAL ARCHITECTURE
+          </span>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">Built as AI Civic Infrastructure</h2>
+          <p class="text-gray-300 text-lg leading-relaxed mb-8">
+            "Our platform is <strong>AI Civic Infrastructure</strong> because it uses machine learning at every step of the pipeline. 
+            We use NLP (MuRIL/Gemini) to route the complaint to the right department, an LLM (Gemini) to structure the legal text, 
+            and unsupervised ML clustering (TF-IDF) to detect systemic failures across thousands of tickets."
+          </p>
+          <p class="text-ashoka-400 font-medium text-lg italic">
+            "We aren't replacing the government; we are using AI to translate citizen frustration into data the government can actually process."
+          </p>
+        </div>
+        
+        <div class="grid sm:grid-cols-2 gap-4" data-animate>
+          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+            <div class="text-saffron-400 text-2xl mb-3"><i class="fas fa-diagram-project"></i></div>
+            <h4 class="text-white font-bold mb-2">Multilingual NLP</h4>
+            <p class="text-xs text-gray-400">Processing Hindi, Tamil, Telugu, and more using state-of-the-art cross-lingual embeddings for 92-department routing.</p>
+          </div>
+          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+            <div class="text-ashoka-400 text-2xl mb-3"><i class="fas fa-gavel"></i></div>
+            <h4 class="text-white font-bold mb-2">Legal LLMs</h4>
+            <p class="text-xs text-gray-400">Context-aware drafting of RTI applications and complaint improvements following Indian legal frameworks.</p>
+          </div>
+          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+            <div class="text-blue-400 text-2xl mb-3"><i class="fas fa-objects-column"></i></div>
+            <h4 class="text-white font-bold mb-2">ML Clustering</h4>
+            <p class="text-xs text-gray-400">TF-IDF based vectorization to identify emerging complaint clusters and systemic service failures in real-time.</p>
+          </div>
+          <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+            <div class="text-purple-400 text-2xl mb-3"><i class="fas fa-database"></i></div>
+            <h4 class="text-white font-bold mb-2">Pipeline Integrity</h4>
+            <p class="text-xs text-gray-400">Hybrid architecture combining D1 Edge Database with nightly NLP aggregation on Render.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 
   <!-- ============================================ -->
   <!-- HOW IT WORKS — Quick flow -->

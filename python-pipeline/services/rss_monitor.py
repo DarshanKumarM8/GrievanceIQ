@@ -175,7 +175,7 @@ def _extract_items(parsed: dict) -> list:
     return []
 
 
-def _get_text(item: dict, keys: list[str]) -> str | None:
+def _get_text(item: dict, keys: list[str]) -> str:
     """Get text value from an item dict, trying multiple possible keys."""
     for key in keys:
         value = item.get(key)
@@ -223,7 +223,7 @@ async def _check_duplicate(url: str) -> bool:
         return False
 
 
-def _parse_date(date_str: str | None) -> datetime | None:
+def _parse_date(date_str: str) -> datetime:
     """Parse various date formats commonly found in RSS feeds."""
     if not date_str:
         return None
