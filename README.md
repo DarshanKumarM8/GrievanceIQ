@@ -11,17 +11,22 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | **Live Preview** | https://3000-ijj8l21qjw9nnoh5yjcir-5c13a017.sandbox.novita.ai |
 | **GitHub** | https://github.com/DarshanKumarM8/GrievanceIQ |
 
-## Current Version: 7.0.0 (Week 7 — UX Excellence & Advanced Visualizations)
+## Current Version: 8.0.0 (Week 8 — The Killer Features Release)
 
-### Feature Summary (65 features)
+### Feature Summary (69 features)
+
+#### 🏆 "Killer Features" (NEW in v8.0.0)
+- **Complaint Template Library** — Solves the blank page problem with 8 professionally drafted, legally precise grievance templates (PM-KISAN, EPF, Passports, etc.)
+- **Grievance Impact Score** — Live homepage counter tracking total citizen money recovered, complaints resolved, and fake closures exposed.
+- **Constituency Grievance Report** — Maps 45 districts to Lok Sabha constituencies to hold local MPs accountable with downloadable PDF scorecards.
+- **Redesigned Complaint Tracker** — 4-section tracking UI with a visual 45-day legal timeline, context-aware "What To Do Today" instructions, and citizen self-reporting (Resolved vs Fake Closed).
 
 #### Citizen Tools
 - **AI Complaint Builder** — 7-step wizard with real-time validation, language detection, department routing (92 ministries), quality scoring (before/after), improved draft, document checklist
-- **Voice Input** (NEW) — Web Speech API for voice-to-text in 7 languages
-- **Success Probability Score** (NEW) — AI-predicted resolution probability with actionable tips
-- **Complaint Comparison Diff** (NEW) — Word-level diff between original and AI-improved text
-- **Similar Complaints** (NEW) — AI-suggested similar complaints from database
-- **Complaint Tracker** — CPGRAMS ID tracking with Day 15/25 countdown timer, computed timelines
+- **Voice Input** — Web Speech API for voice-to-text in 7 languages
+- **Success Probability Score** — AI-predicted resolution probability with actionable tips
+- **Complaint Comparison Diff** — Word-level diff between original and AI-improved text
+- **Similar Complaints** — AI-suggested similar complaints from database
 - **RTI Auto-Drafter** — AI-generated Right to Information applications with legal references
 - **My Complaints** — Full complaint history with advanced filters, pagination, and detail view
 - **Complaint Detail View** — Full-page analysis display with gauges, side-by-side drafts, timeline
@@ -29,9 +34,9 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 #### Public Dashboard
 - **India Choropleth Map** — GeoJSON heatmap of 36 states/UTs with 4 switchable metrics
 - **District Drill-Down** — Click any state to see 10-district breakdown table
-- **Resolution Funnel** (NEW) — 7-stage complaint pipeline visualization with dropoff metrics
-- **Complaint Heatmap Calendar** (NEW) — 12-month daily activity GitHub-style heatmap
-- **Department Network Graph** (NEW) — Canvas-based inter-ministry transfer network (15 nodes)
+- **Resolution Funnel** — 7-stage complaint pipeline visualization with dropoff metrics
+- **Complaint Heatmap Calendar** — 12-month daily activity GitHub-style heatmap
+- **Department Network Graph** — Canvas-based inter-ministry transfer network (15 nodes)
 - **15-Month Time-Series Charts** — National complaint trend, satisfaction vs fake closure
 - **Department Comparison Radar** — Multi-metric radar comparing 6 ministries
 - **State Sparklines** — 15-state grid with 6-month mini-trend charts
@@ -41,7 +46,7 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 - **Social Monitoring Feed** — Twitter/news signals with trend direction
 - **PDF Export** — One-click dashboard report generation
 
-#### UX & Performance (NEW - Week 7)
+#### UX & Performance
 - **Dark Mode** — System preference detection + manual toggle, persistent preference
 - **Notifications Center** — Bell icon, unread count badge, real-time polling (60s)
 - **Lazy Loading** — IntersectionObserver for dashboard visualizations
@@ -80,12 +85,12 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 #### Admin Dashboard
 - System Health Monitor, CPGRAMS Alerts, Audit Log Viewer, Email Queue, Department Performance Chart
 
-## API Endpoints (41+ total)
+## API Endpoints (46+ total)
 
-### Core APIs (18)
+### Core APIs (20)
 | Method | Path | Description |
 |---|---|---|
-| GET | `/api/health` | Service status, version, 65 features |
+| GET | `/api/health` | Service status, version, 69 features |
 | GET | `/api/stats` | Aggregate dashboard statistics |
 | GET | `/api/ministries` | Ministry scorecard (sort, limit) |
 | GET | `/api/ministries/:code` | Single ministry detail |
@@ -99,21 +104,26 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | POST | `/api/feedback` | Citizen outcome report |
 | POST | `/api/rti/generate` | Generate RTI application |
 | GET | `/api/complaints/search` | Advanced search/filter with pagination |
-| GET | `/api/complaints/similar` | Similar complaints by department (NEW) |
+| GET | `/api/complaints/similar` | Similar complaints by department |
 | GET | `/api/complaints/:id/detail` | Full complaint view |
 | GET | `/api/complaints/recent` | Recent complaints list |
 | GET | `/api/complaints/stats` | Complaint statistics |
+| POST | `/api/tracker/log` | Log complaint for tracking (v8.0) |
+| POST | `/api/tracker/feedback` | Self-report tracker status (v8.0) |
 
-### Analytics APIs (8)
+### Analytics APIs (10)
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/analytics/timeseries` | 15-month national trend data |
 | GET | `/api/analytics/comparison` | Radar chart metrics |
 | GET | `/api/analytics/sparklines` | State 6-month trends |
-| GET | `/api/analytics/heatmap` | 12-month daily heatmap calendar (NEW) |
-| GET | `/api/analytics/funnel` | Resolution pipeline funnel (NEW) |
-| GET | `/api/analytics/network` | Department interaction graph (NEW) |
-| GET | `/api/analytics/success-probability` | AI success prediction (NEW) |
+| GET | `/api/analytics/heatmap` | 12-month daily heatmap calendar |
+| GET | `/api/analytics/funnel` | Resolution pipeline funnel |
+| GET | `/api/analytics/network` | Department interaction graph |
+| GET | `/api/analytics/success-probability` | AI success prediction |
+| GET | `/api/analytics/impact` | Aggregate Grievance Impact Score (v8.0) |
+| GET | `/api/reports/constituency/:name` | Constituency Grievance Report (v8.0) |
+| GET | `/api/tracker/:id` | Fetch specific tracker timeline (v8.0) |
 
 ### CPGRAMS Integration APIs (4)
 | Method | Path | Description |
@@ -130,7 +140,7 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | GET | `/api/admin/email-queue` | Last 30 queued emails |
 | GET | `/api/admin/system-health` | Full system health check |
 
-### Notification APIs (3) — NEW
+### Notification APIs (3)
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/notifications` | User notifications with unread count |
@@ -157,12 +167,12 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 
 | Page | Path | Description |
 |---|---|---|
-| Home | `/` | Landing page with CTAs |
-| File Complaint | `/complaint` | 7-step AI wizard + voice input + diff + success score |
-| Track Complaint | `/tracker` | CPGRAMS tracker with countdown |
+| Home | `/` | Landing page with CTAs & Impact Score |
+| File Complaint | `/complaint` | 7-step AI wizard + Template Library |
+| Track Complaint | `/tracker` | 45-day legal tracker & instructions |
 | My Complaints | `/my-complaints` | Filtered complaint history |
 | Complaint Detail | `/complaint-detail?id=X` | Full AI analysis view |
-| Dashboard | `/dashboard` | Public analytics + funnel + heatmap + network |
+| Dashboard | `/dashboard` | Public analytics + constituency reports |
 | RTI Drafter | `/rti` | AI RTI application generator |
 | How It Works | `/how-it-works` | Platform guide |
 | About | `/about` | About page |
@@ -173,8 +183,8 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 ## Data Architecture
 
 ### Database: Cloudflare D1 (SQLite)
-- **13 tables**: users, complaints, complaint_feedback, ministry_stats, trending_issues, social_signals, state_grievance_stats, auth_otp, user_sessions, rate_limits, audit_log, email_queue, notifications
-- **Seed data**: 30 ministries, 36 states/UTs, 8 trending issues, 10+ social signals, 3 demo complaints
+- **15 tables**: users, complaints, complaint_feedback, ministry_stats, trending_issues, social_signals, state_grievance_stats, auth_otp, user_sessions, rate_limits, audit_log, email_queue, notifications, tracked_complaints, tracker_updates
+- **Seed data**: 30 ministries, 36 states/UTs, 45 constituencies, 8 trending issues, 10+ social signals, 3 demo complaints
 
 ## Tech Stack
 
@@ -183,7 +193,7 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | Runtime | Cloudflare Workers (Edge) |
 | Framework | Hono v4 (TypeScript) |
 | Database | Cloudflare D1 (SQLite) |
-| AI Engine | Google Gemini 2.0 Flash (with 17-category mock fallback) |
+| AI Engine | Groq API (Llama 3 70B) |
 | CSS | Tailwind CSS (CDN) |
 | Charts | Chart.js 4.4.0 |
 | Maps | Leaflet 1.9.4 + GeoJSON India |
@@ -202,7 +212,8 @@ AI-powered citizen grievance intelligence platform for India's CPGRAMS system. H
 | 4 | Security | Email OTP auth, JWT, CSP, rate limiting, XSS, audit log |
 | 5 | Analytics | Time-series, radar, sparklines, district drill-down, PDF, filters |
 | 6 | Platform | 7 regional languages, CPGRAMS, A11y, SEO, admin dashboard |
-| 7 | UX Excellence | Dark mode, notifications, funnel/heatmap/network, voice input, diff, success score, performance |
+| 7 | UX Excellence | Dark mode, notifications, funnel/heatmap/network, voice input, diff |
+| 8 | Killer Features | Template Library, Impact Score, Constituency Reports, Tracker Redesign |
 
 ## Quick Start
 
@@ -226,21 +237,21 @@ npm run deploy
 
 | Metric | Value |
 |---|---|
-| Version | 7.0.0 |
-| Features | 65 |
-| API Endpoints | 41+ |
+| Version | 8.0.0 |
+| Features | 69 |
+| API Endpoints | 46+ |
 | Pages | 12 |
-| Source Files | 19 TypeScript files |
-| Lines of Code | ~10,500 |
-| Bundle Size | 482 KB |
-| DB Tables | 13 |
-| DB Migrations | 4 |
+| Source Files | 21 TypeScript files |
+| Lines of Code | ~12,500 |
+| Bundle Size | 485 KB |
+| DB Tables | 15 |
+| DB Migrations | 10 |
 | Languages | 7 (EN, HI, TA, TE, BN, MR, KN) |
 
 ## Deployment
 
 - **Platform**: Cloudflare Pages
 - **Status**: Active (Development)
-- **Bundle**: 482 KB
+- **Bundle**: 485 KB
 - **Tech**: Hono + TypeScript + Tailwind CSS + Chart.js + Leaflet
-- **Last Updated**: April 15, 2026
+- **Last Updated**: May 2026
