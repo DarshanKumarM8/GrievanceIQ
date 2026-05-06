@@ -2,7 +2,7 @@ import { layout } from './layout'
 
 export function dashboardPage(): string {
   const content = `
-  <section class="py-8 sm:py-12 bg-gradient-to-b from-navy-800 to-navy-700">
+  <section class="py-8 sm:py-12 bg-gradient-to-b from-navy-800 to-navy-700 text-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -12,7 +12,7 @@ export function dashboardPage(): string {
           <p class="text-gray-300 text-sm" data-i18n="dashboard_subtitle">Real-time grievance intelligence for journalists, NGOs, and researchers. No login required.</p>
         </div>
         <div class="flex items-center gap-3">
-          <button onclick="exportDashboardPDF()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors">
+          <button onclick="exportDashboardPDF()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors dark:bg-gray-800 dark:border-gray-700">
             <i class="fas fa-file-pdf mr-1.5"></i>Export PDF
           </button>
           <div class="flex items-center gap-2">
@@ -28,11 +28,11 @@ export function dashboardPage(): string {
   <section class="py-6 bg-gray-50 border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-2 lg:grid-cols-5 gap-3" id="dashStats">
-        <div class="bg-white rounded-xl p-4 shadow-sm text-center"><div class="text-xl font-black text-navy-700" id="ds-total">&mdash;</div><div class="text-xs text-gray-500">Total Complaints</div></div>
-        <div class="bg-white rounded-xl p-4 shadow-sm text-center"><div class="text-xl font-black text-ashoka-600" id="ds-resolved">&mdash;</div><div class="text-xs text-gray-500">Resolved</div></div>
-        <div class="bg-white rounded-xl p-4 shadow-sm text-center"><div class="text-xl font-black text-saffron-600" id="ds-pending">&mdash;</div><div class="text-xs text-gray-500">Pending</div></div>
-        <div class="bg-white rounded-xl p-4 shadow-sm text-center"><div class="text-xl font-black text-red-600" id="ds-fake">&mdash;</div><div class="text-xs text-gray-500">Fake Closure Rate</div></div>
-        <div class="bg-white rounded-xl p-4 shadow-sm text-center col-span-2 lg:col-span-1"><div class="text-xl font-black text-purple-600" id="ds-alerts">&mdash;</div><div class="text-xs text-gray-500">Active Alerts</div></div>
+        <div class="bg-white rounded-xl p-4 shadow-sm text-center dark:bg-gray-800 dark:border-gray-700"><div class="text-xl font-black text-navy-700 dark:text-white" id="ds-total">&mdash;</div><div class="text-xs text-gray-500 dark:text-gray-300">Total Complaints</div></div>
+        <div class="bg-white rounded-xl p-4 shadow-sm text-center dark:bg-gray-800 dark:border-gray-700"><div class="text-xl font-black text-ashoka-600 dark:text-ashoka-400" id="ds-resolved">&mdash;</div><div class="text-xs text-gray-500 dark:text-gray-300">Resolved</div></div>
+        <div class="bg-white rounded-xl p-4 shadow-sm text-center dark:bg-gray-800 dark:border-gray-700"><div class="text-xl font-black text-saffron-600 dark:text-saffron-400" id="ds-pending">&mdash;</div><div class="text-xs text-gray-500 dark:text-gray-300">Pending</div></div>
+        <div class="bg-white rounded-xl p-4 shadow-sm text-center dark:bg-gray-800 dark:border-gray-700"><div class="text-xl font-black text-red-600 dark:text-red-400" id="ds-fake">&mdash;</div><div class="text-xs text-gray-500 dark:text-gray-300">Fake Closure Rate</div></div>
+        <div class="bg-white rounded-xl p-4 shadow-sm text-center col-span-2 lg:col-span-1 dark:bg-gray-800 dark:border-gray-700"><div class="text-xl font-black text-purple-600 dark:text-purple-400" id="ds-alerts">&mdash;</div><div class="text-xs text-gray-500 dark:text-gray-300">Active Alerts</div></div>
       </div>
     </div>
   </section>
@@ -40,35 +40,35 @@ export function dashboardPage(): string {
   <!-- India Choropleth Map with District Drill-Down -->
   <section class="py-8 sm:py-12" id="map-section">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 bg-gradient-to-r from-navy-600 to-navy-700 flex flex-wrap items-center justify-between gap-2">
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4 bg-gradient-to-r from-navy-600 to-navy-700 flex flex-wrap items-center justify-between gap-2 text-white">
           <div class="flex items-center gap-2">
             <i class="fas fa-map-location-dot text-white"></i>
-            <h2 class="font-bold text-white">India Grievance Intelligence Map</h2>
-            <span class="text-[10px] bg-ashoka-500/30 text-ashoka-200 px-2 py-0.5 rounded-full font-medium hidden sm:inline">GeoJSON + District Drill-Down</span>
+            <h2 class="font-bold text-white" data-i18n="dashboard_map_title">India Grievance Intelligence Map</h2>
+            <span class="text-[10px] bg-ashoka-500/30 text-ashoka-200 px-2 py-0.5 rounded-full font-medium hidden sm:inline" data-i18n="dashboard_map_subtitle">GeoJSON + District Drill-Down</span>
           </div>
           <div class="flex items-center gap-2">
-            <button id="backToIndiaBtn" onclick="backToIndiaMap()" class="hidden text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors">
-              <i class="fas fa-arrow-left mr-1"></i>Back to India
+            <button id="backToIndiaBtn" onclick="backToIndiaMap()" class="hidden text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-700">
+              <i class="fas fa-arrow-left mr-1"></i><span data-i18n="dashboard_map_back">Back to India</span>
             </button>
-            <select id="mapMetric" onchange="updateMapColors()" class="text-xs bg-white/20 border border-white/30 rounded-lg px-3 py-1.5 text-white focus:outline-none">
-              <option value="total_complaints">Total Complaints</option>
-              <option value="resolution_rate">Resolution Rate</option>
-              <option value="fake_closure_rate">Fake Closure Rate</option>
-              <option value="avg_resolution_days">Avg Resolution Days</option>
+            <select id="mapMetric" onchange="updateMapColors()" class="text-xs bg-white dark:bg-dark-800 text-gray-900 dark:text-white font-medium border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-1.5 focus:outline-none">
+              <option value="total_complaints" data-i18n="metric_total">Total Complaints</option>
+              <option value="resolution_rate" data-i18n="metric_resolution">Resolution Rate</option>
+              <option value="fake_closure_rate" data-i18n="metric_fake">Fake Closure Rate</option>
+              <option value="avg_resolution_days" data-i18n="metric_avg_days">Avg Resolution Days</option>
             </select>
           </div>
         </div>
         <div class="relative">
           <div id="indiaMap" style="height:580px;background:#f0f4ff;"></div>
-          <div id="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 z-[1000]">
+          <div id="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/80 z-[1000] dark:bg-gray-800 dark:border-gray-700">
             <div class="text-center">
               <div class="spinner mx-auto mb-2" style="width:32px;height:32px;border-width:3px;"></div>
-              <p class="text-xs text-gray-500">Loading India GeoJSON boundaries...</p>
+              <p class="text-xs text-gray-500 dark:text-gray-300">Loading India GeoJSON boundaries...</p>
             </div>
           </div>
-          <div class="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 z-[999]">
-            <p class="text-xs font-semibold text-gray-600 mb-2" id="legendTitle">Complaints Volume</p>
+          <div class="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 z-[999] dark:bg-gray-800 dark:border-gray-700">
+            <p class="text-xs font-semibold text-gray-600 mb-2 dark:text-gray-300" id="legendTitle">Complaints Volume</p>
             <div class="flex items-center gap-0.5" id="legendBar">
               <span class="w-5 h-3 rounded-sm" style="background:#fef3c7"></span>
               <span class="w-5 h-3 rounded-sm" style="background:#fcd34d"></span>
@@ -86,21 +86,21 @@ export function dashboardPage(): string {
         </div>
         <!-- District drill-down table -->
         <div id="districtPanel" class="hidden border-t border-gray-200">
-          <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-indigo-50 flex items-center gap-2">
-            <i class="fas fa-sitemap text-purple-600"></i>
-            <h3 class="font-bold text-purple-800 text-sm" id="districtTitle">District Breakdown</h3>
+          <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 flex items-center gap-2">
+            <i class="fas fa-sitemap text-purple-600 dark:text-purple-400"></i>
+            <h3 class="font-bold text-purple-800 text-sm dark:text-white" id="districtTitle">District Breakdown</h3>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead class="bg-gray-50"><tr>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500">#</th>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500">District</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Complaints</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Resolution</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Fake Closure</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Satisfaction</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Avg Days</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500">Trend</th>
+                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-300">#</th>
+                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-300">District</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-300">Complaints</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-300">Resolution</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-300">Fake Closure</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-300">Satisfaction</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-300">Avg Days</th>
+                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-300">Trend</th>
               </tr></thead>
               <tbody id="districtBody" class="divide-y divide-gray-100"></tbody>
             </table>
@@ -113,25 +113,25 @@ export function dashboardPage(): string {
   <!-- NEW: Time-Series Analysis -->
   <section class="py-8 sm:py-12 bg-gray-50" id="timeseries">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-chart-area text-saffron-500 mr-2"></i>Monthly Trends &mdash; 15-Month Analysis</h2>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-chart-area text-saffron-500 mr-2"></i><span data-i18n="dashboard_monthly">Monthly Trends — 15-Month Analysis</span></h2>
       <div class="grid lg:grid-cols-2 gap-6">
         <!-- National complaints time-series -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700">
-            <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-line mr-1.5"></i>National Complaints &mdash; Monthly Trend</h3>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700 text-white">
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-line mr-1.5"></i><span data-i18n="chart_national_trend"><span data-i18n="chart_national_trend">National Complaints &mdash; Monthly Trend</span></span></h3>
           </div>
           <div class="p-4" style="height:340px;"><canvas id="tsNationalChart"></canvas></div>
         </div>
         <!-- Satisfaction & Fake Closure Trend -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="px-5 py-3 bg-gradient-to-r from-ashoka-600 to-ashoka-700">
-            <h3 class="font-bold text-white text-sm"><i class="fas fa-face-smile mr-1.5"></i>Satisfaction vs Fake Closure Trend</h3>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-5 py-3 bg-gradient-to-r from-ashoka-600 to-ashoka-700 text-white">
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-face-smile mr-1.5"></i><span data-i18n="chart_sat_vs_fake"><span data-i18n="chart_sat_vs_fake">Satisfaction vs Fake Closure Trend</span></span></h3>
           </div>
           <div class="p-4" style="height:340px;"><canvas id="tsSatFakeChart"></canvas></div>
         </div>
         <!-- Top Ministry Comparison over time -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden lg:col-span-2">
-          <div class="px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden lg:col-span-2 dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
             <h3 class="font-bold text-white text-sm"><i class="fas fa-ranking-star mr-1.5"></i>Top 5 Ministries &mdash; Complaint Volume Over Time</h3>
           </div>
           <div class="p-4" style="height:360px;"><canvas id="tsMinistryChart"></canvas></div>
@@ -143,22 +143,22 @@ export function dashboardPage(): string {
   <!-- Charts Section (original 4 charts) -->
   <section class="py-8 sm:py-12" id="charts">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-chart-bar text-saffron-500 mr-2"></i>Analytics Overview</h2>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-chart-bar text-saffron-500 mr-2"></i><span data-i18n="dashboard_analytics">Analytics Overview</span></h2>
       <div class="grid lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700"><h3 class="font-bold text-white text-sm"><i class="fas fa-building-columns mr-1.5"></i>Top 10 Ministries &mdash; Complaint Volume</h3></div>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-building-columns mr-1.5"></i><span data-i18n="chart_top10"><span data-i18n="chart_top10">Top 10 Ministries &mdash; Complaint Volume</span></span></h3></div>
           <div class="p-4" style="height:340px;"><canvas id="ministryBarChart"></canvas></div>
         </div>
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="px-5 py-3 bg-gradient-to-r from-saffron-500 to-saffron-600"><h3 class="font-bold text-white text-sm"><i class="fas fa-chart-pie mr-1.5"></i>Resolution Status Distribution</h3></div>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-5 py-3 bg-gradient-to-r from-saffron-500 to-saffron-600 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-chart-pie mr-1.5"></i><span data-i18n="chart_dist"><span data-i18n="chart_dist">Resolution Status Distribution</span></span></h3></div>
           <div class="p-4 flex items-center justify-center" style="height:340px;"><canvas id="statusDoughnutChart"></canvas></div>
         </div>
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="px-5 py-3 bg-gradient-to-r from-red-600 to-red-700"><h3 class="font-bold text-white text-sm"><i class="fas fa-mask mr-1.5"></i>Fake Closure Rate &mdash; Top Offenders</h3></div>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-5 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-mask mr-1.5"></i><span data-i18n="chart_offenders"><span data-i18n="chart_offenders">Fake Closure Rate &mdash; Top Offenders</span></span></h3></div>
           <div class="p-4" style="height:340px;"><canvas id="fakeClosureChart"></canvas></div>
         </div>
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700"><h3 class="font-bold text-white text-sm"><i class="fas fa-clock mr-1.5"></i>Average Resolution Days</h3></div>
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-clock mr-1.5"></i><span data-i18n="chart_avg_res"><span data-i18n="chart_avg_res">Average Resolution Days</span></span></h3></div>
           <div class="p-4" style="height:340px;"><canvas id="resolutionDaysChart"></canvas></div>
         </div>
       </div>
@@ -168,9 +168,9 @@ export function dashboardPage(): string {
   <!-- NEW: Department Comparison Radar -->
   <section class="py-8 sm:py-12 bg-gray-50" id="radar">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-crosshairs text-saffron-500 mr-2"></i>Department Comparison Radar</h2>
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 flex items-center justify-between">
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-crosshairs text-saffron-500 mr-2"></i><span data-i18n="dashboard_radar">Department Comparison Radar</span></h2>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 flex items-center justify-betwee text-white">
           <h3 class="font-bold text-white text-sm"><i class="fas fa-radar mr-1.5"></i>Multi-Metric Comparison &mdash; Top 6 Ministries</h3>
         </div>
         <div class="p-6 flex justify-center" style="height:420px;"><canvas id="radarChart" style="max-width:600px;"></canvas></div>
@@ -181,7 +181,7 @@ export function dashboardPage(): string {
   <!-- NEW: State Sparklines -->
   <section class="py-8 sm:py-12" id="sparklines">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-wave-square text-saffron-500 mr-2"></i>State Sparklines &mdash; 6-Month Mini Trends</h2>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-wave-square text-saffron-500 mr-2"></i>State Sparklines &mdash; 6-Month Mini Trends</h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="sparklineGrid"></div>
     </div>
   </section>
@@ -189,10 +189,10 @@ export function dashboardPage(): string {
   <!-- NEW: Resolution Funnel (Week 7) -->
   <section class="py-8 sm:py-12" id="funnel" data-lazy>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-filter text-saffron-500 mr-2"></i>Resolution Funnel &mdash; National Pipeline</h2>
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-700">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-waterfall mr-1.5"></i>Complaint Journey: Filing to Resolution</h3>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-filter text-saffron-500 mr-2"></i><span data-i18n="funnel_title"><span data-i18n="funnel_title">Resolution Funnel &mdash; National Pipeline</span></span></h2>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-waterfall mr-1.5"></i><span data-i18n="funnel_sub"><span data-i18n="funnel_sub">Complaint Journey: Filing to Resolution</span></span></h3>
         </div>
         <div class="p-6" id="funnelContainer">
           <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading funnel data...</p></div>
@@ -204,18 +204,18 @@ export function dashboardPage(): string {
   <!-- NEW: Complaint Heatmap Calendar (Week 7) -->
   <section class="py-8 sm:py-12 bg-gray-50" id="heatmap" data-lazy>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-calendar-days text-saffron-500 mr-2"></i>Complaint Activity Heatmap &mdash; 12 Months</h2>
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 flex items-center justify-between">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-fire mr-1.5"></i>Daily Complaint Volume Heatmap</h3>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-calendar-days text-saffron-500 mr-2"></i><span data-i18n="heatmap_title"><span data-i18n="heatmap_title">Complaint Activity Heatmap &mdash; 12 Months</span></span></h2>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 flex items-center justify-betwee text-white">
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-fire mr-1.5"></i><span data-i18n="heatmap_sub"><span data-i18n="heatmap_sub">Daily Complaint Volume Heatmap</span></span></h3>
           <div class="flex items-center gap-1.5" id="heatLegend">
-            <span class="text-[10px] text-white/70">Less</span>
+            <span class="text-[10px] text-white/70" data-i18n="heatmap_less" data-i18n="heatmap_less">Less</span>
             <span class="w-3 h-3 rounded-sm" style="background:#ecfdf5"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#6ee7b7"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#10b981"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#047857"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#064e3b"></span>
-            <span class="text-[10px] text-white/70">More</span>
+            <span class="text-[10px] text-white/70" data-i18n="heatmap_more" data-i18n="heatmap_more">More</span>
           </div>
         </div>
         <div class="p-6 overflow-x-auto" id="heatmapContainer">
@@ -228,16 +228,16 @@ export function dashboardPage(): string {
   <!-- NEW: Department Network Graph (Week 7) -->
   <section class="py-8 sm:py-12" id="network" data-lazy>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6"><i class="fas fa-diagram-project text-saffron-500 mr-2"></i>Department Interaction Network</h2>
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-5 py-3 bg-gradient-to-r from-rose-600 to-pink-700">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-share-nodes mr-1.5"></i>Inter-Ministry Complaint Transfer Network &mdash; Top 15</h3>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-diagram-project text-saffron-500 mr-2"></i><span data-i18n="network_title"><span data-i18n="network_title">Department Interaction Network</span></span></h2>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-5 py-3 bg-gradient-to-r from-rose-600 to-pink-700 text-white">
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-share-nodes mr-1.5"></i><span data-i18n="network_sub"><span data-i18n="network_sub">Inter-Ministry Complaint Transfer Network &mdash; Top 15</span></span></h3>
         </div>
         <div class="p-4" id="networkContainer" style="height:500px; position:relative;">
           <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading network data...</p></div>
           <canvas id="networkCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
         </div>
-        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-3 text-[10px] text-gray-500">
+        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-3 text-[10px] text-gray-500 dark:text-gray-300">
           <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Good satisfaction</span>
           <span><span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1"></span>Average</span>
           <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Flagged</span>
@@ -251,27 +251,27 @@ export function dashboardPage(): string {
   <!-- Department Scorecard -->
   <section class="py-8 sm:py-12 bg-gray-50" id="scorecard">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-between">
-          <div class="flex items-center gap-2"><i class="fas fa-ranking-star text-white"></i><h2 class="font-bold text-white">Department Accountability Scorecard</h2></div>
-          <select id="scorecardSort" onchange="loadScorecard()" class="text-xs bg-white/20 border border-white/30 rounded-lg px-3 py-1.5 text-white focus:outline-none">
-            <option value="complaints_received">By Volume</option>
-            <option value="fake_closure_rate">By Fake Closure Rate</option>
-            <option value="citizen_satisfaction_rate">By Citizen Satisfaction</option>
-            <option value="avg_resolution_days">By Resolution Time</option>
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4 bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-betwee text-white">
+          <div class="flex items-center gap-2"><i class="fas fa-ranking-star text-white"></i><h2 class="font-bold text-white" data-i18n="dashboard_scorecard">Department Accountability Scorecard</h2></div>
+          <select id="scorecardSort" onchange="loadScorecard()" class="text-xs bg-white dark:bg-dark-800 text-gray-900 dark:text-white font-medium border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-1.5 focus:outline-none">
+            <option value="complaints_received" data-i18n="sort_volume">By Volume</option>
+            <option value="fake_closure_rate" data-i18n="sort_fake">By Fake Closure Rate</option>
+            <option value="citizen_satisfaction_rate" data-i18n="sort_sat">By Citizen Satisfaction</option>
+            <option value="avg_resolution_days" data-i18n="sort_time">By Resolution Time</option>
           </select>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50"><tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ministry</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Received</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Official Rate</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Citizen Rate</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Fake Closure</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Avg Days</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Flag</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">#</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">Ministry</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">Received</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">Official Rate</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">Citizen Rate</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">Fake Closure</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">Avg Days</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase dark:text-gray-300">Flag</th>
             </tr></thead>
             <tbody id="scorecardBody" class="divide-y divide-gray-100"></tbody>
           </table>
@@ -286,7 +286,7 @@ export function dashboardPage(): string {
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <span class="w-3 h-3 rounded-full bg-red-500 pulse-dot"></span>
-          <h2 class="text-xl sm:text-2xl font-bold text-navy-800">Systemic Issue Radar</h2>
+          <h2 class="text-xl sm:text-2xl font-bold text-navy-800 dark:text-white"><span data-i18n="radar_sys_title"><span data-i18n="radar_sys_title">Systemic Issue Radar</span></span></h2>
         </div>
         <span class="text-xs text-gray-400">Week of March 2026</span>
       </div>
@@ -297,7 +297,7 @@ export function dashboardPage(): string {
   <!-- Social Signals -->
   <section class="py-8 sm:py-12 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl font-bold text-navy-800 mb-6"><i class="fas fa-signal mr-2 text-saffron-500"></i>Social Monitoring Feed</h2>
+      <h2 class="text-xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-signal mr-2 text-saffron-500"></i><span data-i18n="social_feed_title"><span data-i18n="social_feed_title">Social Monitoring Feed</span></span></h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="socialGrid"></div>
     </div>
   </section>
@@ -385,39 +385,65 @@ export function dashboardPage(): string {
     // ============================================
     // INDIA MAP — GeoJSON CHOROPLETH + DISTRICT DRILL-DOWN
     // ============================================
+    
+    function normalizeStateName(name) {
+      if (!name) return '';
+      let n = name.toLowerCase().replace(/&/g, 'and');
+      n = n.replace(/[^a-z0-9]/g, '');
+      if (n === 'orissa') return 'odisha';
+      if (n === 'telengana') return 'telangana';
+      if (n === 'aandnislands' || n === 'andamanandnicobar') return 'andamanandnicobarislands';
+      if (n === 'dadraandnagarhavelianddamananddiu' || n === 'damananddiu') return 'dadraandnagarhaveli';
+      return n;
+    }
+
+    let normalizedStateData = {};
+
     async function initMap() {
       map = L.map('indiaMap', { center:[22.5,82], zoom:5, minZoom:4, maxZoom:7, zoomControl:true, attributionControl:false });
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {maxZoom:19}).addTo(map);
 
       try {
+        if (stateData && stateData.length > 0) {
+          stateData.forEach(s => {
+            normalizedStateData[normalizeStateName(s.state_name)] = s;
+          });
+        }
+
         const res = await fetch(GEOJSON_URL);
         const geojson = await res.json();
         
         geoLayer = L.geoJSON(geojson, {
           style: (feature) => getStateStyle(feature),
           onEachFeature: (feature, layer) => {
-            const code = stateNameToCode[feature.properties.name];
-            const state = stateData.find(s => s.state_code === code);
+            const geoName = normalizeStateName(feature.properties.name);
+            const state = normalizedStateData[geoName];
+            const tooltipContainer = '<div class="bg-white text-gray-900 shadow-lg border border-gray-200 rounded-md p-3 dark:bg-gray-800 dark:text-white dark:border-gray-700">';
             const tooltipContent = state 
-              ? '<strong>' + feature.properties.name + '</strong><br>' + Number(state.total_complaints).toLocaleString() + ' complaints<br>Resolution: ' + state.resolution_rate + '%<br>Fake Closure: ' + state.fake_closure_rate + '%'
-              : '<strong>' + feature.properties.name + '</strong><br>No data';
+              ? tooltipContainer + '<strong>' + feature.properties.name + '</strong><br><span class="font-bold text-blue-600 dark:text-blue-400">' + Number(state.total_complaints).toLocaleString() + '</span> complaints<br>Resolution: <span class="font-bold text-blue-600 dark:text-blue-400">' + state.resolution_rate + '%</span><br>Fake Closure: <span class="font-bold text-blue-600 dark:text-blue-400">' + state.fake_closure_rate + '%</span></div>'
+              : tooltipContainer + '<strong>' + feature.properties.name + '</strong><br><span class="font-bold text-blue-600 dark:text-blue-400">No data</span></div>';
             layer.bindTooltip(tooltipContent, {direction:'auto', className:'leaflet-tooltip-custom', sticky:true});
             layer.on('click', () => { if (state) { showStateInfo(state); loadDistrictData(state.state_code); } });
             layer.on('mouseover', (e) => { e.target.setStyle({weight:3, color:'#1a365d', fillOpacity:0.9}); e.target.bringToFront(); });
             layer.on('mouseout', (e) => { geoLayer.resetStyle(e.target); });
-            layer.stateCode = code;
             layer.stateDataRef = state;
           }
         }).addTo(map);
-        document.getElementById('mapLoading').style.display = 'none';
+        
+        if (!stateData || stateData.length === 0) {
+           // Provide fallback UI
+           document.getElementById('mapLoading').innerHTML = '<div class="text-center bg-white/90 p-4 rounded-xl shadow-lg border border-red-100 dark:bg-gray-800 dark:border-gray-700"><i class="fas fa-exclamation-triangle text-red-400 text-2xl mb-2"></i><p class="text-xs text-red-500 font-medium">State data currently unavailable.</p></div>';
+        } else {
+           document.getElementById('mapLoading').style.display = 'none';
+        }
       } catch(e) {
         document.getElementById('mapLoading').innerHTML = '<div class="text-center"><i class="fas fa-exclamation-triangle text-red-400 text-2xl mb-2"></i><p class="text-xs text-red-500">Map data unavailable.</p></div>';
       }
     }
 
     function getStateStyle(feature) {
-      const code = stateNameToCode[feature.properties.name];
-      const state = stateData.find(s => s.state_code === code);
+      const geoName = normalizeStateName(feature.properties.name);
+      const state = normalizedStateData[geoName];
       const metric = document.getElementById('mapMetric').value;
       return { fillColor: getChoroplethColor(state ? (state[metric]||0) : 0, metric), weight:1.5, opacity:1, color:'#94a3b8', fillOpacity:0.75 };
     }
@@ -444,7 +470,7 @@ export function dashboardPage(): string {
       const panel = document.getElementById('stateInfo');
       const topIssues = JSON.parse(state.top_issues||'[]');
       const topDepts = JSON.parse(state.top_departments||'[]');
-      document.getElementById('stateInfoContent').innerHTML = '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"><div><h3 class="font-bold text-lg text-navy-700 mb-1"><i class="fas fa-map-pin text-saffron-500 mr-1.5"></i>'+state.state_name+'</h3><p class="text-sm text-gray-500">Code: '+state.state_code+' &bull; Click for district data</p></div><div class="grid grid-cols-2 gap-3"><div><span class="text-lg font-bold text-navy-700">'+Number(state.total_complaints).toLocaleString()+'</span><br><span class="text-xs text-gray-500">Total</span></div><div><span class="text-lg font-bold text-ashoka-600">'+state.resolution_rate+'%</span><br><span class="text-xs text-gray-500">Resolution</span></div><div><span class="text-lg font-bold text-red-600">'+state.fake_closure_rate+'%</span><br><span class="text-xs text-gray-500">Fake Closure</span></div><div><span class="text-lg font-bold text-saffron-600">'+state.avg_resolution_days+'d</span><br><span class="text-xs text-gray-500">Avg Days</span></div></div><div><p class="text-xs font-semibold text-gray-500 mb-1.5">TOP ISSUES</p>'+topIssues.slice(0,3).map(i=>'<span class="inline-block text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded mr-1 mb-1">'+i+'</span>').join('')+'</div><div><p class="text-xs font-semibold text-gray-500 mb-1.5">TOP DEPARTMENTS</p>'+topDepts.slice(0,3).map(d=>'<span class="inline-block text-xs bg-navy-50 text-navy-700 px-2 py-0.5 rounded mr-1 mb-1">'+d+'</span>').join('')+'</div></div>';
+      document.getElementById('stateInfoContent').innerHTML = '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"><div><h3 class="font-bold text-lg text-navy-700 mb-1 dark:text-white"><i class="fas fa-map-pin text-saffron-500 mr-1.5"></i>'+state.state_name+'</h3><p class="text-sm text-gray-500 dark:text-gray-300">Code: '+state.state_code+' &bull; Click for district data</p></div><div class="grid grid-cols-2 gap-3"><div><span class="text-lg font-bold text-navy-700 dark:text-white">'+Number(state.total_complaints).toLocaleString()+'</span><br><span class="text-xs text-gray-500 dark:text-gray-300">Total</span></div><div><span class="text-lg font-bold text-ashoka-600 dark:text-ashoka-400">'+state.resolution_rate+'%</span><br><span class="text-xs text-gray-500 dark:text-gray-300">Resolution</span></div><div><span class="text-lg font-bold text-red-600 dark:text-red-400">'+state.fake_closure_rate+'%</span><br><span class="text-xs text-gray-500 dark:text-gray-300">Fake Closure</span></div><div><span class="text-lg font-bold text-saffron-600 dark:text-saffron-400">'+state.avg_resolution_days+'d</span><br><span class="text-xs text-gray-500 dark:text-gray-300">Avg Days</span></div></div><div><p class="text-xs font-semibold text-gray-500 mb-1.5 dark:text-gray-300">TOP ISSUES</p>'+topIssues.slice(0,3).map(i=>'<span class="inline-block text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded mr-1 mb-1 dark:text-white">'+i+'</span>').join('')+'</div><div><p class="text-xs font-semibold text-gray-500 mb-1.5 dark:text-gray-300">TOP DEPARTMENTS</p>'+topDepts.slice(0,3).map(d=>'<span class="inline-block text-xs bg-navy-50 text-navy-700 px-2 py-0.5 rounded mr-1 mb-1 dark:text-white">'+d+'</span>').join('')+'</div></div>';
       panel.classList.remove('hidden');
     }
 
@@ -463,7 +489,7 @@ export function dashboardPage(): string {
           document.getElementById('districtBody').innerHTML = json.data.districts.map((d, i) => 
             '<tr class="hover:bg-gray-50">' +
             '<td class="px-4 py-2 text-xs text-gray-400">' + (i+1) + '</td>' +
-            '<td class="px-4 py-2 font-medium text-sm text-gray-900">' + d.name + '</td>' +
+            '<td class="px-4 py-2 font-medium text-sm text-gray-900 dark:text-white">' + d.name + '</td>' +
             '<td class="px-4 py-2 text-center text-sm font-medium">' + d.total_complaints.toLocaleString() + '</td>' +
             '<td class="px-4 py-2 text-center"><span class="text-sm font-semibold ' + (d.resolution_rate>=75?'text-ashoka-600':d.resolution_rate>=60?'text-saffron-600':'text-red-600') + '">' + d.resolution_rate + '%</span></td>' +
             '<td class="px-4 py-2 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + (d.fake_closure_rate>=15?'bg-red-100 text-red-700':d.fake_closure_rate>=10?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700') + '">' + d.fake_closure_rate + '%</span></td>' +
@@ -490,6 +516,13 @@ export function dashboardPage(): string {
         const res = await fetch('/api/analytics/timeseries');
         const json = await res.json();
         if (!json.success) return;
+        if (!json.data || !json.data.labels || json.data.labels.length === 0) {
+          const loader = '<div class="text-center py-10 h-full flex flex-col justify-center"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-500 dark:text-gray-300">Fetching live government data...</p></div>';
+          document.getElementById('tsNationalChart').parentElement.innerHTML = loader;
+          document.getElementById('tsSatFakeChart').parentElement.innerHTML = loader;
+          document.getElementById('tsMinistryChart').parentElement.innerHTML = loader;
+          return;
+        }
         timeseriesData = json.data;
         Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
         Chart.defaults.font.size = 11;
@@ -551,6 +584,10 @@ export function dashboardPage(): string {
         const res = await fetch('/api/analytics/comparison');
         const json = await res.json();
         if (!json.success) return;
+        if (!json.data || json.data.length === 0) {
+            document.getElementById('radarChart').parentElement.innerHTML = '<div class="text-center py-10 h-full flex flex-col justify-center w-full"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-500 dark:text-gray-300">Fetching live government data...</p></div>';
+            return;
+        }
         radarData = json.data;
         const colors = ['rgba(26,54,93,0.6)','rgba(255,153,51,0.6)','rgba(34,197,94,0.6)','rgba(139,92,246,0.6)','rgba(239,68,68,0.6)','rgba(59,130,246,0.6)'];
         const bgColors = ['rgba(26,54,93,0.15)','rgba(255,153,51,0.15)','rgba(34,197,94,0.15)','rgba(139,92,246,0.15)','rgba(239,68,68,0.15)','rgba(59,130,246,0.15)'];
@@ -578,19 +615,23 @@ export function dashboardPage(): string {
         const res = await fetch('/api/analytics/sparklines');
         const json = await res.json();
         if (!json.success) return;
+        if (!json.data || json.data.length === 0) {
+            document.getElementById('sparklineGrid').innerHTML = '<div class="col-span-full text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-500 dark:text-gray-300">Fetching live government data...</p></div>';
+            return;
+        }
         sparklineData = json.data;
 
         document.getElementById('sparklineGrid').innerHTML = json.data.map((s, idx) => 
-          '<div class="bg-white rounded-xl border border-gray-200 p-4 card-hover">' +
+          '<div class="bg-white rounded-xl border border-gray-200 p-4 card-hover dark:bg-gray-800 dark:border-gray-700">' +
             '<div class="flex items-center justify-between mb-2">' +
-              '<h4 class="font-bold text-sm text-navy-700">' + s.state_name + '</h4>' +
+              '<h4 class="font-bold text-sm text-navy-700 dark:text-white">' + s.state_name + '</h4>' +
               '<span class="text-[10px] text-gray-400">' + s.state_code + '</span>' +
             '</div>' +
             '<div class="grid grid-cols-2 gap-2 mb-3">' +
-              '<div><span class="text-[10px] text-gray-500">Complaints</span><br><span class="text-sm font-bold text-navy-700">' + Number(s.current.total).toLocaleString('en-IN') + '</span></div>' +
-              '<div><span class="text-[10px] text-gray-500">Resolution</span><br><span class="text-sm font-bold ' + (s.current.resolution_rate>=75?'text-ashoka-600':'text-saffron-600') + '">' + s.current.resolution_rate + '%</span></div>' +
-              '<div><span class="text-[10px] text-gray-500">Fake Closure</span><br><span class="text-sm font-bold ' + (s.current.fake_closure>=15?'text-red-600':'text-gray-600') + '">' + s.current.fake_closure + '%</span></div>' +
-              '<div><span class="text-[10px] text-gray-500">Satisfaction</span><br><span class="text-sm font-bold text-blue-600">' + s.current.satisfaction + '%</span></div>' +
+              '<div><span class="text-[10px] text-gray-500 dark:text-gray-300">Complaints</span><br><span class="text-sm font-bold text-navy-700 dark:text-white">' + Number(s.current.total).toLocaleString('en-IN') + '</span></div>' +
+              '<div><span class="text-[10px] text-gray-500 dark:text-gray-300">Resolution</span><br><span class="text-sm font-bold ' + (s.current.resolution_rate>=75?'text-ashoka-600':'text-saffron-600') + '">' + s.current.resolution_rate + '%</span></div>' +
+              '<div><span class="text-[10px] text-gray-500 dark:text-gray-300">Fake Closure</span><br><span class="text-sm font-bold ' + (s.current.fake_closure>=15?'text-red-600':'text-gray-600') + '">' + s.current.fake_closure + '%</span></div>' +
+              '<div><span class="text-[10px] text-gray-500 dark:text-gray-300">Satisfaction</span><br><span class="text-sm font-bold text-blue-600 dark:text-blue-400">' + s.current.satisfaction + '%</span></div>' +
             '</div>' +
             '<div style="height:40px;"><canvas id="spark-' + idx + '"></canvas></div>' +
           '</div>'
@@ -625,7 +666,14 @@ export function dashboardPage(): string {
     // CHART.JS VISUALIZATIONS (Original)
     // ============================================
     function initCharts() {
-      if (!ministryData.length) return;
+      if (!ministryData.length) {
+        const loader = '<div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-500 dark:text-gray-300">Fetching live government data...</p></div>';
+        document.getElementById('ministryBarChart').parentElement.innerHTML = loader;
+        document.getElementById('statusDoughnutChart').parentElement.innerHTML = loader;
+        document.getElementById('fakeClosureChart').parentElement.innerHTML = loader;
+        document.getElementById('resolutionDaysChart').parentElement.innerHTML = loader;
+        return;
+      }
       Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
       Chart.defaults.font.size = 11;
 
@@ -668,8 +716,12 @@ export function dashboardPage(): string {
         const res = await fetch('/api/ministries?sort=' + sort + '&order=' + (sort==='citizen_satisfaction_rate'?'asc':'desc'));
         const json = await res.json();
         if (json.success) {
+          if (!json.data || json.data.length === 0) {
+            document.getElementById('scorecardBody').innerHTML = '<tr><td colspan="8" class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-500 dark:text-gray-300">Fetching live government data...</p></td></tr>';
+            return;
+          }
           document.getElementById('scorecardBody').innerHTML = json.data.map((m, i) => 
-            '<tr class="hover:bg-gray-50 '+(m.fake_closure_flag?'bg-red-50/50':'')+'"><td class="px-4 py-3 text-xs text-gray-400">'+(i+1)+'</td><td class="px-4 py-3"><div class="font-medium text-sm text-gray-900">'+m.ministry_name+'</div><span class="text-xs text-gray-400">'+m.ministry_code+'</span></td><td class="px-4 py-3 text-center text-sm font-medium">'+Number(m.complaints_received).toLocaleString()+'</td><td class="px-4 py-3 text-center"><span class="text-sm font-semibold '+(m.official_resolution_rate>=85?'text-ashoka-600':'text-gray-700')+'">'+m.official_resolution_rate+'%</span></td><td class="px-4 py-3 text-center"><span class="text-sm font-semibold '+(m.citizen_satisfaction_rate>=55?'text-ashoka-600':m.citizen_satisfaction_rate>=45?'text-saffron-600':'text-red-600')+'">'+m.citizen_satisfaction_rate+'%</span></td><td class="px-4 py-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold '+(m.fake_closure_rate>=35?'bg-red-100 text-red-700':m.fake_closure_rate>=25?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700')+'">'+m.fake_closure_rate+'%</span></td><td class="px-4 py-3 text-center text-sm '+(m.avg_resolution_days>40?'text-red-600 font-semibold':'text-gray-600')+'">'+m.avg_resolution_days+'d</td><td class="px-4 py-3 text-center">'+(m.fake_closure_flag?'<span class="text-red-600 text-xs font-bold"><i class="fas fa-flag"></i> FLAGGED</span>':'<span class="text-ashoka-500 text-xs"><i class="fas fa-check"></i></span>')+'</td></tr>'
+            '<tr class="hover:bg-gray-50 '+(m.fake_closure_flag?'bg-red-50/50':'')+'"><td class="px-4 py-3 text-xs text-gray-400">'+(i+1)+'</td><td class="px-4 py-3"><div class="font-medium text-sm text-gray-900 dark:text-white">'+m.ministry_name+'</div><span class="text-xs text-gray-400">'+m.ministry_code+'</span></td><td class="px-4 py-3 text-center text-sm font-medium">'+Number(m.complaints_received).toLocaleString()+'</td><td class="px-4 py-3 text-center"><span class="text-sm font-semibold '+(m.official_resolution_rate>=85?'text-ashoka-600':'text-gray-700')+'">'+m.official_resolution_rate+'%</span></td><td class="px-4 py-3 text-center"><span class="text-sm font-semibold '+(m.citizen_satisfaction_rate>=55?'text-ashoka-600':m.citizen_satisfaction_rate>=45?'text-saffron-600':'text-red-600')+'">'+m.citizen_satisfaction_rate+'%</span></td><td class="px-4 py-3 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold '+(m.fake_closure_rate>=35?'bg-red-100 text-red-700':m.fake_closure_rate>=25?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700')+'">'+m.fake_closure_rate+'%</span></td><td class="px-4 py-3 text-center text-sm '+(m.avg_resolution_days>40?'text-red-600 font-semibold':'text-gray-600')+'">'+m.avg_resolution_days+'d</td><td class="px-4 py-3 text-center">'+(m.fake_closure_flag?'<span class="text-red-600 text-xs font-bold dark:text-red-400"><i class="fas fa-flag"></i> FLAGGED</span>':'<span class="text-ashoka-500 text-xs"><i class="fas fa-check"></i></span>')+'</td></tr>'
           ).join('');
         }
       } catch(e) {}
@@ -683,10 +735,14 @@ export function dashboardPage(): string {
         const res = await fetch('/api/trending');
         const json = await res.json();
         if (json.success) {
+          if (!json.data || json.data.length === 0) {
+            document.getElementById('trendingGrid').innerHTML = '<div class="col-span-full text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-500 dark:text-gray-300">Fetching live government data...</p></div>';
+            return;
+          }
           document.getElementById('trendingGrid').innerHTML = json.data.map(issue => {
             const colors = {critical:'badge-critical',high:'badge-high',medium:'badge-medium',low:'badge-low'};
             const states=JSON.parse(issue.states_affected||'[]'), keywords=JSON.parse(issue.topic_keywords||'[]'), ministries=JSON.parse(issue.ministries_affected||'[]');
-            return '<div class="card-hover bg-white rounded-2xl border '+(issue.is_flagged?'border-red-200':'border-gray-200')+' p-6"><div class="flex items-start justify-between mb-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold '+colors[issue.severity]+'">'+issue.severity.toUpperCase()+'</span><span class="text-xs text-gray-400"><i class="fas fa-arrow-trend-up '+(issue.spike_factor>2?'text-red-500':'text-saffron-500')+' mr-1"></i>'+issue.spike_factor+'x</span></div><h3 class="font-bold text-gray-900 mb-2">'+issue.topic_name+'</h3><p class="text-sm text-gray-600 mb-3 line-clamp-2">'+issue.description+'</p><div class="flex flex-wrap gap-1 mb-3">'+keywords.slice(0,4).map(k=>'<span class="text-[10px] bg-navy-50 text-navy-600 px-1.5 py-0.5 rounded">'+k+'</span>').join('')+'</div><div class="flex flex-wrap gap-1 mb-3">'+states.map(s=>'<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">'+s+'</span>').join('')+'</div><div class="text-xs text-gray-400 pt-3 border-t border-gray-100"><i class="fas fa-building-columns mr-1"></i>'+(ministries[0]||'Multiple')+' <span class="float-right"><i class="fas fa-ticket mr-1"></i>'+issue.complaint_count.toLocaleString()+'</span></div></div>';
+            return '<div class="card-hover bg-white rounded-2xl border '+(issue.is_flagged?'border-red-200':'border-gray-200')+' p-6 dark:bg-gray-800 dark:border-gray-700"><div class="flex items-start justify-between mb-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold '+colors[issue.severity]+'">'+issue.severity.toUpperCase()+'</span><span class="text-xs text-gray-400"><i class="fas fa-arrow-trend-up '+(issue.spike_factor>2?'text-red-500':'text-saffron-500')+' mr-1"></i>'+issue.spike_factor+'x</span></div><h3 class="font-bold text-gray-900 mb-2 dark:text-white">'+issue.topic_name+'</h3><p class="text-sm text-gray-600 mb-3 line-clamp-2 dark:text-gray-300">'+issue.description+'</p><div class="flex flex-wrap gap-1 mb-3">'+keywords.slice(0,4).map(k=>'<span class="text-[10px] bg-navy-50 text-navy-600 px-1.5 py-0.5 rounded dark:text-gray-300">'+k+'</span>').join('')+'</div><div class="flex flex-wrap gap-1 mb-3">'+states.map(s=>'<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded dark:text-gray-300">'+s+'</span>').join('')+'</div><div class="text-xs text-gray-400 pt-3 border-t border-gray-100"><i class="fas fa-building-columns mr-1"></i>'+(ministries[0]||'Multiple')+' <span class="float-right"><i class="fas fa-ticket mr-1"></i>'+issue.complaint_count.toLocaleString()+'</span></div></div>';
           }).join('');
         }
       } catch(e) {}
@@ -697,12 +753,16 @@ export function dashboardPage(): string {
         const res = await fetch('/api/social');
         const json = await res.json();
         if (json.success) {
+          if (!json.data || json.data.length === 0) {
+            document.getElementById('socialGrid').innerHTML = '<div class="col-span-full text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-500 dark:text-gray-300">Fetching live government data...</p></div>';
+            return;
+          }
           document.getElementById('socialGrid').innerHTML = json.data.map(s => {
             const pi=s.platform==='twitter'?'fa-brands fa-x-twitter':'fa-solid fa-newspaper';
             const pc=s.platform==='twitter'?'bg-gray-900':'bg-blue-600';
             const dc={rising:'text-red-500',stable:'text-gray-500',falling:'text-ashoka-500'};
             const di={rising:'fa-arrow-trend-up',stable:'fa-minus',falling:'fa-arrow-trend-down'};
-            return '<div class="bg-white rounded-xl border border-gray-200 p-4 card-hover"><div class="flex items-center gap-2 mb-2"><span class="w-6 h-6 '+pc+' rounded-md flex items-center justify-center"><i class="'+pi+' text-white text-xs"></i></span><span class="text-xs font-semibold text-gray-700 truncate">'+s.keyword_matched+'</span>'+(s.spike_detected?'<span class="ml-auto w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>':'')+'</div><p class="text-xs text-gray-500 mb-2 truncate">'+s.source_title+'</p><div class="flex items-center justify-between text-xs"><span class="text-gray-400"><strong>'+s.post_count_24h+'</strong> /24h</span><span class="'+dc[s.trending_direction]+'"><i class="fas '+di[s.trending_direction]+' mr-1"></i>'+s.trending_direction+'</span></div></div>';
+            return '<div class="bg-white rounded-xl border border-gray-200 p-4 card-hover dark:bg-gray-800 dark:border-gray-700"><div class="flex items-center gap-2 mb-2"><span class="w-6 h-6 '+pc+' rounded-md flex items-center justify-center"><i class="'+pi+' text-white text-xs"></i></span><span class="text-xs font-semibold text-gray-700 truncate dark:text-white">'+s.keyword_matched+'</span>'+(s.spike_detected?'<span class="ml-auto w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>':'')+'</div><p class="text-xs text-gray-500 mb-2 truncate dark:text-gray-300">'+s.source_title+'</p><div class="flex items-center justify-between text-xs"><span class="text-gray-400"><strong>'+s.post_count_24h+'</strong> /24h</span><span class="'+dc[s.trending_direction]+'"><i class="fas '+di[s.trending_direction]+' mr-1"></i>'+s.trending_direction+'</span></div></div>';
           }).join('');
         }
       } catch(e) {}
@@ -781,7 +841,7 @@ export function dashboardPage(): string {
             const isDropoff = s.label === 'Fake Closed';
             return '<div class="relative group">' +
               '<div class="flex items-center gap-3">' +
-                '<div class="w-28 text-right"><span class="text-xs font-semibold text-gray-600">' + s.label + '</span></div>' +
+                '<div class="w-28 text-right"><span class="text-xs font-semibold text-gray-600 dark:text-gray-300">' + s.label + '</span></div>' +
                 '<div class="flex-1">' +
                   '<div class="relative h-10 rounded-lg overflow-hidden bg-gray-100 transition-all" style="width:' + width + '%;margin:0 auto 0 0;">' +
                     '<div class="absolute inset-0 rounded-lg transition-all duration-700" style="background:' + s.color + ';opacity:' + (isDropoff ? '0.8' : '0.9') + '"></div>' +
@@ -798,7 +858,7 @@ export function dashboardPage(): string {
           '<div class="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-3">' +
           Object.entries(json.data.dropoff).map(([k, v]) => {
             const label = k.replace(/_/g, ' → ').replace('to', '→');
-            return '<div class="text-center bg-gray-50 rounded-lg p-2"><div class="text-lg font-bold text-red-500">-' + v + '%</div><div class="text-[9px] text-gray-500">' + label + '</div></div>';
+            return '<div class="text-center bg-gray-50 rounded-lg p-2"><div class="text-lg font-bold text-red-500">-' + v + '%</div><div class="text-[9px] text-gray-500 dark:text-gray-300">' + label + '</div></div>';
           }).join('') +
           '</div>';
       } catch(e) { console.error('Funnel error:', e); }
@@ -841,7 +901,7 @@ export function dashboardPage(): string {
 
         Object.entries(months).forEach(([monthKey, days]) => {
           const monthNum = parseInt(monthKey.split('-')[1]);
-          html += '<div class="flex flex-col items-center"><div class="text-[9px] font-semibold text-gray-500 mb-1">' + monthNames[monthNum - 1] + '</div>';
+          html += '<div class="flex flex-col items-center"><div class="text-[9px] font-semibold text-gray-500 mb-1 dark:text-gray-300">' + monthNames[monthNum - 1] + '</div>';
           // Group days into weeks
           const firstDow = days[0].day_of_week;
           const grid = Array(42).fill(null);
@@ -863,11 +923,11 @@ export function dashboardPage(): string {
         html += '</div>';
 
         // Summary stats
-        html += '<div class="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">' +
-          '<span><strong class="text-navy-700">' + summary.total_days + '</strong> days tracked</span>' +
-          '<span>Avg: <strong class="text-navy-700">' + Number(summary.avg_daily).toLocaleString() + '</strong>/day</span>' +
-          '<span>Peak: <strong class="text-red-600">' + Number(summary.max_daily).toLocaleString() + '</strong>/day</span>' +
-          '<span>Low: <strong class="text-ashoka-600">' + Number(summary.min_daily).toLocaleString() + '</strong>/day</span>' +
+        html += '<div class="mt-4 flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-300">' +
+          '<span><strong class="text-navy-700 dark:text-white">' + summary.total_days + '</strong> days tracked</span>' +
+          '<span>Avg: <strong class="text-navy-700 dark:text-white">' + Number(summary.avg_daily).toLocaleString() + '</strong>/day</span>' +
+          '<span>Peak: <strong class="text-red-600 dark:text-red-400">' + Number(summary.max_daily).toLocaleString() + '</strong>/day</span>' +
+          '<span>Low: <strong class="text-ashoka-600 dark:text-ashoka-400">' + Number(summary.min_daily).toLocaleString() + '</strong>/day</span>' +
           '</div>';
 
         document.getElementById('heatmapContainer').innerHTML = html;
@@ -881,9 +941,20 @@ export function dashboardPage(): string {
       try {
         const res = await fetch('/api/analytics/network');
         const json = await res.json();
-        if (!json.success) return;
-        const { nodes, edges } = json.data;
         const container = document.getElementById('networkContainer');
+        
+        if (!json.success || !json.data || !json.data.nodes || json.data.nodes.length === 0) {
+            if (container) {
+                container.innerHTML = '<div class="text-center py-10 h-full flex flex-col justify-center"><i class="fas fa-diagram-project text-gray-300 dark:text-gray-600 text-3xl mb-3"></i><p class="text-sm text-gray-500 dark:text-gray-400 font-medium">No transfer network data available.</p></div>';
+            }
+            return;
+        }
+        
+        // Remove the spinner
+        const spinner = container.querySelector('.text-center');
+        if (spinner) spinner.style.display = 'none';
+
+        const { nodes, edges } = json.data;
         const canvas = document.getElementById('networkCanvas');
         if (!canvas || !container) return;
 
@@ -951,10 +1022,10 @@ export function dashboardPage(): string {
             tooltip.style.left = Math.min(mx + 12, W - 180) + 'px';
             tooltip.style.top = (my - 10) + 'px';
             tooltip.innerHTML = '<div class="font-bold text-gray-800 dark:text-gray-200 mb-1">' + hovered.full_name + '</div>' +
-              '<div class="text-gray-500">Complaints: <strong>' + Number(hovered.complaints).toLocaleString() + '</strong></div>' +
-              '<div class="text-gray-500">Resolution: <strong>' + hovered.resolution_rate + '%</strong></div>' +
-              '<div class="text-gray-500">Fake Closure: <strong class="text-red-500">' + hovered.fake_closure + '%</strong></div>' +
-              '<div class="text-gray-500">Satisfaction: <strong>' + hovered.satisfaction + '%</strong></div>';
+              '<div class="text-gray-500 dark:text-gray-300">Complaints: <strong>' + Number(hovered.complaints).toLocaleString() + '</strong></div>' +
+              '<div class="text-gray-500 dark:text-gray-300">Resolution: <strong>' + hovered.resolution_rate + '%</strong></div>' +
+              '<div class="text-gray-500 dark:text-gray-300">Fake Closure: <strong class="text-red-500">' + hovered.fake_closure + '%</strong></div>' +
+              '<div class="text-gray-500 dark:text-gray-300">Satisfaction: <strong>' + hovered.satisfaction + '%</strong></div>';
             canvas.style.cursor = 'pointer';
           } else {
             tooltip.classList.add('hidden');

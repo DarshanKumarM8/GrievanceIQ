@@ -9,7 +9,7 @@ import { authMiddleware, rateLimitMiddleware } from '../middleware/security'
 
 type Bindings = {
   DB: D1Database
-  GEMINI_API_KEY?: string
+  GROQ_API_KEY?: string
   RESEND_API_KEY?: string
 }
 

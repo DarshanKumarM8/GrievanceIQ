@@ -166,7 +166,7 @@ export function complaintDetailPage(): string {
 
         <!-- Actions -->
         <div class="bg-gradient-to-r from-saffron-50 to-ashoka-50 rounded-2xl border border-saffron-200 p-6">
-          <h3 class="font-bold text-gray-900 mb-4"><i class="fas fa-arrow-right-from-bracket text-saffron-600 mr-2"></i>Quick Actions</h3>
+          <h3 class="font-bold text-lg text-saffron-800 mb-4"><i class="fas fa-arrow-right-from-bracket text-saffron-600 mr-2"></i>Quick Actions</h3>
           <div class="flex flex-wrap gap-3" id="cd-actions"></div>
         </div>
       </div>

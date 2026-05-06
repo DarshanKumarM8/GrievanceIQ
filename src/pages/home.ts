@@ -124,6 +124,34 @@ export function homePage(): string {
   </section>
 
   <!-- ============================================ -->
+  <!-- IMPACT SCORE — Feature #2 -->
+  <!-- ============================================ -->
+  <section class="bg-gradient-to-r from-ashoka-600 to-ashoka-700 py-5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-center">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-coins text-saffron-300 text-lg"></i>
+          <span class="text-white/80 text-sm font-medium">Citizens recovered</span>
+          <span class="text-white text-xl font-black" id="impact-amount">₹0</span>
+          <span class="text-white/80 text-sm font-medium">this month</span>
+        </div>
+        <div class="hidden sm:block w-px h-6 bg-white/20"></div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-check-circle text-green-300 text-lg"></i>
+          <span class="text-white text-xl font-black" id="impact-resolved">0</span>
+          <span class="text-white/80 text-sm font-medium">complaints resolved</span>
+        </div>
+        <div class="hidden sm:block w-px h-6 bg-white/20"></div>
+        <div class="flex items-center gap-2">
+          <i class="fas fa-flag text-red-300 text-lg"></i>
+          <span class="text-white text-xl font-black" id="impact-fake">0</span>
+          <span class="text-white/80 text-sm font-medium">fake closures exposed</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
   <!-- THE PROBLEM — Why this exists -->
   <!-- ============================================ -->
   <section class="py-16 sm:py-24 bg-white">
@@ -565,9 +593,25 @@ export function homePage(): string {
       } catch (e) { console.error('Stats error:', e); }
     }
     
+    // Load impact score
+    async function loadImpact() {
+      try {
+        const res = await fetch('/api/analytics/impact');
+        const json = await res.json();
+        if (json.success) {
+          const d = json.data;
+          const amt = d.total_recovered || 0;
+          document.getElementById('impact-amount').textContent = '₹' + (amt >= 100000 ? (amt / 100000).toFixed(1) + 'L' : amt.toLocaleString('en-IN'));
+          document.getElementById('impact-resolved').textContent = d.resolved_count || '0';
+          document.getElementById('impact-fake').textContent = d.fake_closures || '0';
+        }
+      } catch (e) { /* silent */ }
+    }
+
     // Init
     loadTrending();
     loadStats();
+    loadImpact();
   </script>
   `
   return layout('Home', content, 'home', {

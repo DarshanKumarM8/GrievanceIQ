@@ -204,11 +204,16 @@ def _match_keywords(article: dict) -> list[str]:
     text = f"{article.get('title', '')} {article.get('description', '')}".lower()
     matched = []
 
-    for keyword in GRIEVANCE_KEYWORDS:
+    # Temporarily broaden the keyword list for testing
+    expanded_keywords = GRIEVANCE_KEYWORDS + [
+        "scheme", "delay", "fund", "government", "portal", "CPGRAMS", "pension"
+    ]
+
+    for keyword in expanded_keywords:
         if keyword.lower() in text:
             matched.append(keyword)
 
-    return matched
+    return list(set(matched))
 
 
 async def _check_duplicate(url: str) -> bool:

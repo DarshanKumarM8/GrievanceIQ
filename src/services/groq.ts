@@ -1,103 +1,87 @@
 // ============================================
-// GrievanceIQ — Gemini AI Service v2.0
-// Google Gemini API for all AI features
-// Smart fallback: gemini-2.0-flash → gemini-2.0-flash-lite → mock
-// Rate limit aware with exponential backoff
+// GrievanceIQ — Groq AI Service
+// Groq API (Llama 3) for all AI features
 // ============================================
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
-
-// Model priority: try flash first, then lite, then mock
-const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'] as const
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const MODELS = ['llama3-70b-8192']
 
 // ============================================
 // CORE API CALL WITH RETRY & MODEL FALLBACK
 // ============================================
 
-interface GeminiOptions {
+interface GroqOptions {
   json?: boolean
   maxTokens?: number
   temperature?: number
   retries?: number
 }
 
-async function callGemini(
+async function callGroq(
   apiKey: string,
   prompt: string,
-  options: GeminiOptions = {}
+  options: GroqOptions = {}
 ): Promise<{ text: string; model: string } | null> {
-  const { json = true, maxTokens = 4096, temperature = 0.3, retries = 2 } = options
+  const { json = true, maxTokens = 4096, temperature = 0.4, retries = 2 } = options
 
   for (const model of MODELS) {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const body: any = {
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature,
-            maxOutputTokens: maxTokens,
-            topP: 0.95,
-            topK: 40
-          }
+          model: model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: temperature,
+          max_tokens: maxTokens,
+          top_p: 0.95
         }
         if (json) {
-          body.generationConfig.responseMimeType = 'application/json'
+          body.response_format = { type: 'json_object' }
         }
 
         const controller = new AbortController()
         const timeout = setTimeout(() => controller.abort(), 30000) // 30s timeout
 
-        const res = await fetch(
-          `${GEMINI_URL}/${model}:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-            signal: controller.signal
-          }
-        )
+        const res = await fetch(GROQ_URL, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        })
         clearTimeout(timeout)
 
         const data: any = await res.json()
 
-        // Rate limit — try next model or wait
-        if (data.error?.code === 429) {
-          console.warn(`[Gemini] Rate limited on ${model}, attempt ${attempt + 1}`)
-          if (attempt < retries) {
-            const waitMs = Math.min(1000 * Math.pow(2, attempt), 8000)
-            await new Promise(r => setTimeout(r, waitMs))
-            continue
+        if (!res.ok) {
+          // Rate limit
+          if (res.status === 429) {
+            console.warn(`[Groq] Rate limited on ${model}, attempt ${attempt + 1}`)
+            if (attempt < retries) {
+              const waitMs = Math.min(1000 * Math.pow(2, attempt), 8000)
+              await new Promise(r => setTimeout(r, waitMs))
+              continue
+            }
           }
-          break // Try next model
-        }
-
-        // Other API error
-        if (data.error) {
-          console.error(`[Gemini] API error on ${model}:`, data.error.message)
-          break // Try next model
-        }
-
-        // Extract text
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-        if (text) {
-          console.log(`[Gemini] Success with ${model} (attempt ${attempt + 1})`)
-          return { text, model }
-        }
-
-        // Safety block or empty response
-        const finishReason = data.candidates?.[0]?.finishReason
-        if (finishReason === 'SAFETY') {
-          console.warn(`[Gemini] Safety blocked on ${model}`)
+          console.error(`[Groq] API error on ${model}:`, data.error?.message || res.statusText)
           break
         }
 
-        console.warn(`[Gemini] Empty response from ${model}`)
+        // Extract text
+        const text = data.choices?.[0]?.message?.content
+        if (text) {
+          console.log(`[Groq] Success with ${model} (attempt ${attempt + 1})`)
+          return { text, model }
+        }
+
+        console.warn(`[Groq] Empty response from ${model}`)
         break
       } catch (e: any) {
         if (e.name === 'AbortError') {
-          console.warn(`[Gemini] Timeout on ${model} (attempt ${attempt + 1})`)
+          console.warn(`[Groq] Timeout on ${model} (attempt ${attempt + 1})`)
         } else {
-          console.error(`[Gemini] Network error on ${model}:`, e.message)
+          console.error(`[Groq] Network error on ${model}:`, e.message)
         }
         if (attempt < retries) {
           await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
@@ -211,20 +195,52 @@ const MINISTRIES = `1. Ministry of Agriculture and Farmers Welfare
 // COMPLAINT ANALYSIS PROMPT (Enhanced v2)
 // ============================================
 
-const ANALYSIS_PROMPT = (text: string, lang: string) => `You are GrievanceIQ — India's AI-powered grievance intelligence system for CPGRAMS complaints.
+const ANALYSIS_PROMPT = (text: string, lang: string) => `You are an expert Indian administrative lawyer and legal drafter. Your SOLE PURPOSE is to COMPLETELY REWRITE and TRANSFORM a citizen's raw complaint into a formal, professional administrative grievance letter.
 
-SYSTEM RULES (STRICTLY FOLLOW):
-- You are a comprehension tool ONLY. NEVER provide legal advice. NEVER guarantee any outcome.
-- Write the "improved_draft" in the SAME LANGUAGE as the citizen's input text.
-- Choose departments ONLY from this official CPGRAMS ministry list below.
-- Be specific and practical — citizens using this are real people with real problems.
-- If complaint is in Hindi/Tamil/Telugu/Bengali, first translate to English internally for analysis, then write the improved draft in the original language.
-- All confidence scores must be realistic — don't inflate them.
+=== ABSOLUTE RULES (VIOLATION = FAILURE) ===
+1. NEVER copy-paste the citizen's original sentences. Every single sentence must be rewritten in formal legal prose.
+2. NEVER use the citizen's exact phrasing. Paraphrase EVERYTHING.
+3. One-line inputs MUST become 3+ paragraph formal letters.
+4. Short inputs (under 50 words) MUST be expanded to at least 150 words in the improved_draft.
+5. ALWAYS include: Subject line, formal greeting, 2-3 body paragraphs, specific relief requested, 30-day CPGRAMS deadline reference, RTI Act 2005 escalation warning, formal closing.
+
+=== FEW-SHOT EXAMPLE 1 ===
+RAW INPUT: "my pension has not come 3 months"
+
+CORRECT improved_draft OUTPUT:
+"Subject: Urgent — Non-Disbursement of Authorized Pension for Three Consecutive Months
+
+Respected Sir/Madam,
+
+I am writing to bring to your immediate attention a critical and unexplained disruption in the disbursement of my monthly pension. For the past three consecutive months, my designated bank account has not received the pension credit to which I am legally entitled. This prolonged cessation of payments has caused severe financial distress and has left me unable to meet essential living expenses.
+
+I wish to state that my pension was being credited regularly in prior months without interruption, and no communication whatsoever has been received from the Accounts Office regarding any hold, suspension, or discrepancy in my records. The absence of any explanation compounds the hardship significantly.
+
+I hereby request the concerned Accounts Office to: (a) immediately investigate the cause of this payment stoppage, (b) release all pending arrears for the three affected months, and (c) ensure uninterrupted monthly disbursement going forward. As per CPGRAMS guidelines, I expect resolution within 30 days. Failing this, I shall be compelled to file a formal application under the Right to Information Act, 2005 (Section 6) to ascertain the administrative reasons for this delay, and thereafter pursue remedies under Section 19 of the said Act.
+
+Yours faithfully"
+
+=== FEW-SHOT EXAMPLE 2 ===
+RAW INPUT: "pm kisan money not received 2 installments aadhaar linked"
+
+CORRECT improved_draft OUTPUT:
+"Subject: Non-Receipt of PM-KISAN Samman Nidhi Benefits — Two Consecutive Installments Pending Despite Valid eKYC
+
+Respected Sir/Madam,
+
+I respectfully submit this grievance regarding the non-disbursement of benefits under the Pradhan Mantri Kisan Samman Nidhi (PM-KISAN) scheme. I have not received the last two consecutive installments of the Rs. 2,000 quarterly benefit, despite being a verified and eligible beneficiary under the scheme.
+
+I wish to confirm that my Aadhaar-based eKYC verification has been duly completed through the PM-KISAN portal, and my Aadhaar number is correctly linked to my designated bank account. My land ownership records are updated and verified at the district level. Previous installments were credited regularly, and the sudden cessation of benefits without any notification or rejection communication is both unexplained and deeply concerning.
+
+I urgently request the concerned authority to: (a) verify my beneficiary status and eKYC records in the PM-KISAN database, (b) identify and rectify whatever technical or administrative error has blocked my payments, (c) release the pending arrears for both missed installments at the earliest. As per CPGRAMS norms, I anticipate resolution within 30 days from the date of this complaint. Should no satisfactory action be taken within this period, I shall exercise my right under the Right to Information Act, 2005 to obtain full details of the processing status.
+
+Yours faithfully"
+=== END EXAMPLES ===
 
 COMPLETE LIST OF 92 CPGRAMS MINISTRIES/DEPARTMENTS:
 ${MINISTRIES}
 
-CITIZEN'S COMPLAINT (input language hint: ${lang}):
+CITIZEN'S RAW COMPLAINT (input language hint: ${lang}):
 """
 ${text}
 """
@@ -250,7 +266,7 @@ Analyze this complaint and return STRICTLY this JSON structure:
       "reason": "Backup option"
     }
   ],
-  "department_reasoning": "2-3 sentences explaining the routing logic in simple terms. Mention which keywords/details in the complaint pointed to these departments.",
+  "department_reasoning": "2-3 sentences explaining the routing logic in simple terms.",
   "quality_score_before": 5,
   "quality_score_after": 9,
   "missing_elements": [
@@ -260,7 +276,7 @@ Analyze this complaint and return STRICTLY this JSON structure:
     "Financial amounts if applicable",
     "Previous complaint references"
   ],
-  "improved_draft": "FULL professionally rewritten complaint. MUST INCLUDE:\\n- Subject line with department name\\n- 'Respected Sir/Madam' greeting\\n- Clear problem statement with ALL details from original\\n- [Your Name], [Phone], [Email], [Address] placeholders for missing info\\n- Reference to specific government scheme/law if applicable\\n- Concrete resolution request with timeline\\n- Reference to 30-day CPGRAMS guideline\\n- RTI Act 2005 mention if unresolved\\n- Professional closing\\nMUST BE IN SAME LANGUAGE AS INPUT. If Hindi, write in Hindi. If Tamil, write in Tamil.",
+  "improved_draft": "<<< THIS IS THE MOST IMPORTANT FIELD. You MUST generate a COMPLETE formal letter following EXACTLY the same structure and tone as the two examples above. MINIMUM 150 words. MUST contain Subject line + Greeting + 2-3 body paragraphs + specific demands + 30-day CPGRAMS reference + RTI Act 2005 warning + formal closing. ABSOLUTELY DO NOT paste the user's raw words — rewrite everything in formal administrative English. If input is in Hindi/regional language, write the improved draft in that SAME language but with formal legal tone. >>>",
   "documents_checklist": [
     "Government photo ID (Aadhaar Card / Voter ID)",
     "Address proof",
@@ -325,18 +341,18 @@ Text:
 ${text}`
 
 // ============================================
-// GEMINI-POWERED COMPLAINT ANALYSIS
+// GROQ-POWERED COMPLAINT ANALYSIS
 // ============================================
 
-export async function analyzeWithGemini(
+export async function analyzeWithGroq(
   apiKey: string,
   text: string,
   lang: string
 ): Promise<any | null> {
-  const result = await callGemini(apiKey, ANALYSIS_PROMPT(text, lang), {
+  const result = await callGroq(apiKey, ANALYSIS_PROMPT(text, lang), {
     json: true,
     maxTokens: 4096,
-    temperature: 0.2
+    temperature: 0.6
   })
 
   if (!result) return null
@@ -346,7 +362,7 @@ export async function analyzeWithGemini(
 
     // Validate & sanitize response
     if (!p.departments || !Array.isArray(p.departments) || p.departments.length < 1) {
-      console.error('[Gemini] Invalid departments in response')
+      console.error('[Groq] Invalid departments in response')
       return null
     }
 
@@ -381,27 +397,27 @@ export async function analyzeWithGemini(
 
     // Attach model info
     p._ai_model = result.model
-    p._ai_source = 'gemini'
+    p._ai_source = 'groq'
 
     return p
   } catch (e) {
-    console.error('[Gemini] JSON parse failed:', e)
+    console.error('[Groq] JSON parse failed:', e)
     return null
   }
 }
 
 // ============================================
-// GEMINI-POWERED RTI GENERATION
+// GROQ-POWERED RTI GENERATION
 // ============================================
 
-export async function generateRTIWithGemini(
+export async function generateRTIWithGroq(
   apiKey: string,
   params: any
 ): Promise<{ content: string; model: string } | null> {
-  const result = await callGemini(apiKey, RTI_PROMPT(params), {
+  const result = await callGroq(apiKey, RTI_PROMPT(params), {
     json: false,
     maxTokens: 4096,
-    temperature: 0.2
+    temperature: 0.4
   })
 
   if (!result || result.text.length < 200) return null
@@ -720,7 +736,7 @@ This tool provides comprehension assistance only — not legal advice.`
 
 export interface AnalysisResult {
   data: any
-  source: 'gemini' | 'mock'
+  source: 'groq' | 'mock'
   model: string
   latency_ms: number
 }
@@ -732,20 +748,20 @@ export async function analyzeComplaint(
 ): Promise<AnalysisResult> {
   const start = Date.now()
 
-  // Try Gemini first
+  // Try Groq first
   if (apiKey && apiKey.length > 10) {
     try {
-      const result = await analyzeWithGemini(apiKey, text, lang)
+      const result = await analyzeWithGroq(apiKey, text, lang)
       if (result) {
         return {
           data: result,
-          source: 'gemini',
-          model: result._ai_model || 'gemini-2.0-flash',
+          source: 'groq',
+          model: result._ai_model || 'llama3-70b-8192',
           latency_ms: Date.now() - start
         }
       }
     } catch (e) {
-      console.error('[AI] Gemini analysis failed, falling back to mock:', e)
+      console.error('[AI] Groq analysis failed, falling back to mock:', e)
     }
   }
 
@@ -761,7 +777,7 @@ export async function analyzeComplaint(
 
 export interface RTIResult {
   content: string
-  source: 'gemini' | 'mock'
+  source: 'groq' | 'mock'
   model: string
   filing_options: { method: string; url?: string; instructions?: string; fee: string }[]
   legal_references: string[]
@@ -785,14 +801,14 @@ export async function generateRTI(
     'Section 20 — Penalty of Rs. 250/day (max Rs. 25,000) for non-compliance by CPIO'
   ]
 
-  // Try Gemini
+  // Try Groq
   if (apiKey && apiKey.length > 10) {
     try {
-      const result = await generateRTIWithGemini(apiKey, params)
+      const result = await generateRTIWithGroq(apiKey, params)
       if (result) {
         return {
           content: result.content,
-          source: 'gemini',
+          source: 'groq',
           model: result.model,
           filing_options: filingOptions,
           legal_references: legalRefs

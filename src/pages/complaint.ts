@@ -118,18 +118,53 @@ export function complaintPage(): string {
             </div>
           </div>
 
-          <!-- Quick Templates -->
-          <div class="px-5 py-3 bg-blue-50/50 border-t border-blue-100">
-            <p class="text-xs text-blue-600 font-semibold mb-2"><i class="fas fa-lightbulb mr-1"></i>Quick Templates — click to use:</p>
-            <div class="flex flex-wrap gap-1.5">
-              <button onclick="useTemplate('pension')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">Pension Delay</button>
-              <button onclick="useTemplate('pmkisan')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">PM-KISAN</button>
-              <button onclick="useTemplate('railway')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">Railway Issue</button>
-              <button onclick="useTemplate('passport')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">Passport Delay</button>
-              <button onclick="useTemplate('ration')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">Ration/PDS</button>
-              <button onclick="useTemplate('electricity')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">Electricity Bill</button>
-              <button onclick="useTemplate('epfo')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">EPFO/PF</button>
-              <button onclick="useTemplate('bank')" class="text-[10px] bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">Banking Issue</button>
+          <!-- Template Library (Feature #1) -->
+          <div class="px-5 py-4 bg-gradient-to-r from-saffron-50 to-amber-50 border-t border-saffron-100">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs text-saffron-700 font-bold"><i class="fas fa-book-open mr-1"></i>Template Library — Pick your issue, get a perfect complaint in 90 seconds</p>
+              <button onclick="document.getElementById('templateGrid').classList.toggle('hidden')" class="text-[10px] text-saffron-600 hover:underline font-medium">Show/Hide</button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="templateGrid">
+              <button onclick="useFullTemplate('pm-kisan')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">🌾</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">PM-KISAN Payment</span>
+                <span class="text-[9px] text-gray-400">Agriculture</span>
+              </button>
+              <button onclick="useFullTemplate('epf-withdrawal')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">💼</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">EPF/PF Withdrawal</span>
+                <span class="text-[9px] text-gray-400">Labour</span>
+              </button>
+              <button onclick="useFullTemplate('ration-card')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">🍚</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">Ration Card</span>
+                <span class="text-[9px] text-gray-400">Food & PDS</span>
+              </button>
+              <button onclick="useFullTemplate('passport-delay')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">🛂</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">Passport Delay</span>
+                <span class="text-[9px] text-gray-400">External Affairs</span>
+              </button>
+              <button onclick="useFullTemplate('pension-delay')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">👴</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">Pension Delay</span>
+                <span class="text-[9px] text-gray-400">Personnel</span>
+              </button>
+              <button onclick="useFullTemplate('electricity-billing')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">⚡</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">Electricity Bill</span>
+                <span class="text-[9px] text-gray-400">Power</span>
+              </button>
+              <button onclick="useFullTemplate('railway-refund')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">🚂</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">Railway Refund</span>
+                <span class="text-[9px] text-gray-400">Railways</span>
+              </button>
+              <button onclick="useFullTemplate('income-tax-refund')" class="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-saffron-200 hover:border-saffron-400 hover:shadow-md transition-all text-center group">
+                <span class="text-2xl group-hover:scale-110 transition-transform">💰</span>
+                <span class="text-[11px] font-semibold text-gray-700 leading-tight">IT Refund</span>
+                <span class="text-[9px] text-gray-400">Finance</span>
+              </button>
             </div>
           </div>
 
@@ -409,6 +444,29 @@ export function complaintPage(): string {
       updateValidation(templates[type]);
       document.getElementById('inputCharCount').textContent = templates[type].length + ' characters';
       document.getElementById('analyzeButton').disabled = false;
+    }
+
+    // Full Template Library (Feature #1)
+    const fullTemplates = {
+      'pm-kisan': "My PM-KISAN payment has not come for 3 installments. I completed eKYC verification on [Date] through the PM-KISAN portal. My Aadhaar is linked to my bank account. The portal shows payment failed status. My land records are updated. Previous payments were regular until [Month]. Beneficiary ID: [YOUR_BENEFICIARY_ID].",
+      'epf-withdrawal': "My EPF withdrawal claim has been stuck for over 60 days. UAN: [YOUR_UAN]. I submitted the claim on [Date] through the EPFO portal. My KYC documents are all verified. The claimed amount is Rs. [Amount]. Previous employer: [Company Name], [City].",
+      'ration-card': "I am not receiving my ration card despite completing the application on [Date]. Application Number: [YOUR_APPLICATION_NUMBER]. My family of [Number] members has been deprived of subsidized food grains under NFSA. The fair price shop at [Location, District, State] has no record of my application.",
+      'passport-delay': "My passport application has been pending for over 60 days. Application Reference: [YOUR_FILE_NUMBER]. I applied at [Passport Office] on [Date]. Police verification was completed on [Date]. The portal shows status as [Current Status]. The standard processing time has been exceeded.",
+      'pension-delay': "My government pension has not been credited for [Number] consecutive months. PPO Number: [YOUR_PPO_NUMBER]. I am a retired [Designation] from [Department]. Pension was regular until [Last Month Received]. My bank account at [Bank Name], [Branch] has not received any credit since then.",
+      'electricity-billing': "My electricity bill for [Month/Year] is excessively high at Rs. [Amount] despite normal usage. Consumer Number: [YOUR_CONSUMER_NUMBER]. My average monthly bill is Rs. [Normal Amount]. I suspect the meter reading is incorrect or estimated. Located at [Address, Pin Code].",
+      'railway-refund': "I have not received my railway ticket refund for PNR [YOUR_PNR_NUMBER]. Train [Train Number] on [Date] from [Origin] to [Destination] was cancelled. The refund of Rs. [Amount] has not been credited despite [Number] days passing. Payment was via [UPI/Card].",
+      'income-tax-refund': "My income tax refund for AY [Assessment Year] has been delayed. PAN: [YOUR_PAN]. As per Section 143(1) intimation, refund of Rs. [Amount] was determined. ITR filed on [Date], Ack No: [YOUR_ACK_NUMBER]. Refund status on portal shows [Current Status] for over [Number] months."
+    };
+
+    function useFullTemplate(id) {
+      const text = fullTemplates[id];
+      if (!text) return;
+      document.getElementById('complaintInput').value = text;
+      updateValidation(text);
+      document.getElementById('inputCharCount').textContent = text.length + ' characters';
+      document.getElementById('analyzeButton').disabled = false;
+      document.getElementById('complaintInput').focus();
+      showToast('Template loaded! Edit the [bracketed] fields with your details, then click Analyze.', 'info');
     }
 
     // ============================================

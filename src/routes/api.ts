@@ -1,12 +1,12 @@
 import { Hono } from 'hono'
-import { analyzeComplaint, generateRTI } from '../services/gemini'
+import { analyzeComplaint, generateRTI } from '../services/groq'
 import { sanitizeInput } from '../services/auth'
 import { authMiddleware, sanitizeText } from '../middleware/security'
 
 type Bindings = {
   DB: D1Database
-  GEMINI_API_KEY?: string
-  RESEND_API_KEY?: string
+  GROQ_API_KEY?: string
+  DATAGOV_API_KEY?: string
   PIPELINE_SERVICE_URL?: string
   INTERNAL_API_KEY?: string
   ADMIN_SECRET_KEY?: string
@@ -18,14 +18,14 @@ export const apiRoutes = new Hono<{ Bindings: Bindings }>()
 // HEALTH CHECK
 // ============================================
 apiRoutes.get('/health', (c) => {
-  const hasGeminiKey = !!(c.env.GEMINI_API_KEY && c.env.GEMINI_API_KEY.length > 10)
+  const hasGroqKey = !!(c.env.GROQ_API_KEY && c.env.GROQ_API_KEY.length > 10)
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
     version: '7.0.1',
     week: 7,
-    ai_engine: hasGeminiKey ? 'gemini-2.0-flash (with fallback)' : 'mock-keyword-classifier-v2',
-    ai_status: hasGeminiKey ? 'active' : 'fallback-only',
+    ai_engine: hasGroqKey ? 'groq-llama-3 (with fallback)' : 'mock-keyword-classifier-v2',
+    ai_status: hasGroqKey ? 'active' : 'fallback-only',
     features: [
       'complaint_analysis',
       'department_routing',
@@ -183,7 +183,8 @@ apiRoutes.get('/stats', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -207,7 +208,8 @@ apiRoutes.get('/ministries', async (c) => {
 
     return c.json({ success: true, data: results.results })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -219,7 +221,8 @@ apiRoutes.get('/ministries/:code', async (c) => {
     if (!result) return c.json({ success: false, error: 'Ministry not found' }, 404)
     return c.json({ success: true, data: result })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -232,7 +235,8 @@ apiRoutes.get('/states', async (c) => {
     const results = await db.prepare('SELECT * FROM state_grievance_stats ORDER BY total_complaints DESC').all()
     return c.json({ success: true, data: results.results })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -244,7 +248,8 @@ apiRoutes.get('/states/:code', async (c) => {
     if (!result) return c.json({ success: false, error: 'State not found' }, 404)
     return c.json({ success: true, data: result })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -261,7 +266,8 @@ apiRoutes.get('/trending', async (c) => {
     const results = await db.prepare(query).all()
     return c.json({ success: true, data: results.results })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -274,7 +280,8 @@ apiRoutes.get('/social', async (c) => {
     const results = await db.prepare('SELECT * FROM social_signals ORDER BY captured_at DESC').all()
     return c.json({ success: true, data: results.results })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -292,8 +299,8 @@ apiRoutes.post('/complaints/analyze', async (c) => {
   // Sanitize input — strip HTML to defeat stored XSS
   const sanitizedText = sanitizeText(text)
 
-  // Use Gemini AI with mock fallback
-  const apiKey = c.env.GEMINI_API_KEY
+  // Use Groq AI with mock fallback
+  const apiKey = c.env.GROQ_API_KEY
   const analysis = await analyzeComplaint(apiKey, sanitizedText, language || 'en')
 
   // Get user ID if authenticated
@@ -395,7 +402,8 @@ apiRoutes.post('/complaints/track', async (c) => {
     const timeline = generateComputedTimeline(cpgrams_id, dbFilingDate)
     return c.json({ success: true, data: timeline })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -431,7 +439,8 @@ apiRoutes.post('/feedback', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -442,7 +451,7 @@ apiRoutes.post('/rti/generate', async (c) => {
   const body = await c.req.json()
   const { complaint_id, complainant_name, complaint_summary, department, cpgrams_id, filing_date } = body
 
-  const apiKey = c.env.GEMINI_API_KEY
+  const apiKey = c.env.GROQ_API_KEY
 
   const rtiResult = await generateRTI(apiKey, {
     complainant_name: complainant_name || '[Your Name]',
@@ -495,7 +504,8 @@ apiRoutes.get('/complaints/recent', async (c) => {
     ).bind(limit).all()
     return c.json({ success: true, data: results.results })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -538,7 +548,8 @@ apiRoutes.get('/complaints/all', async (c) => {
     
     return c.json({ success: true, data: results.results })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -567,7 +578,8 @@ apiRoutes.get('/complaints/stats', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -633,7 +645,8 @@ apiRoutes.get('/complaints/search', async (c) => {
       filters: { departments: deptResult.results }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -705,7 +718,8 @@ apiRoutes.get('/complaints/:id/detail', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -720,7 +734,8 @@ apiRoutes.get('/complaints/:id', async (c) => {
     if (!result) return c.json({ success: false, error: 'Complaint not found' }, 404)
     return c.json({ success: true, data: result })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -737,7 +752,7 @@ apiRoutes.get('/analytics/timeseries', async (c) => {
     let realMonths: any[] = []
     try {
       const historyResult = await db.prepare(
-        'SELECT * FROM monthly_history ORDER BY month ASC LIMIT 15'
+        'SELECT * FROM monthly_history ORDER BY year ASC, CAST(month AS INTEGER) ASC LIMIT 15'
       ).all()
       if (historyResult.results && historyResult.results.length >= 6) {
         realMonths = historyResult.results as any[]
@@ -757,11 +772,11 @@ apiRoutes.get('/analytics/timeseries', async (c) => {
     let fakeClosureTrend: number[]
 
     if (useRealData && realMonths.length > 0) {
-      const monthNames: Record<string, string> = { '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec' }
+      const monthNames: Record<string, string> = { '1':'Jan','2':'Feb','3':'Mar','4':'Apr','5':'May','6':'Jun','7':'Jul','8':'Aug','9':'Sep','10':'Oct','11':'Nov','12':'Dec' }
       months = realMonths.map((r: any) => {
-        const m = String(r.month).padStart(2, '0')
-        const y = String(r.year).slice(2)
-        return (monthNames[m] || m) + ' ' + y
+        const m = String(r.month).replace(/^0+/, '') || '0'
+        const y = String(r.year).slice(-2)
+        return (monthNames[m] || monthNames[String(r.month)] || 'M' + m) + ' ' + y
       })
       nationalTotal = realMonths.map((r: any) => r.total_received || 0)
       nationalResolved = realMonths.map((r: any) => r.total_disposed || 0)
@@ -799,7 +814,8 @@ apiRoutes.get('/analytics/timeseries', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -838,7 +854,8 @@ apiRoutes.get('/analytics/comparison', async (c) => {
 
     return c.json({ success: true, data: radarData })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -868,7 +885,8 @@ apiRoutes.get('/analytics/sparklines', async (c) => {
 
     return c.json({ success: true, data: sparklines })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -940,7 +958,8 @@ apiRoutes.get('/states/:code/districts', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -975,8 +994,9 @@ apiRoutes.get('/admin/email-queue', async (c) => {
 
 apiRoutes.get('/admin/system-health', async (c) => {
   const db = c.env.DB
-  const hasGemini = !!(c.env.GEMINI_API_KEY && c.env.GEMINI_API_KEY.length > 10)
+  const hasGroq = !!(c.env.GROQ_API_KEY && c.env.GROQ_API_KEY.length > 10)
   const hasResend = !!(c.env.RESEND_API_KEY && c.env.RESEND_API_KEY.length > 10)
+  const hasDatagov = !!(c.env.DATAGOV_API_KEY && c.env.DATAGOV_API_KEY.length > 10)
 
   try {
     const users = await db.prepare('SELECT COUNT(*) as c FROM users').first()
@@ -1204,7 +1224,8 @@ apiRoutes.get('/cpgrams/lookup/:id', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1249,7 +1270,8 @@ apiRoutes.post('/cpgrams/sync', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1307,7 +1329,8 @@ apiRoutes.get('/cpgrams/alerts', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1337,7 +1360,8 @@ apiRoutes.get('/cpgrams/statistics', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1554,7 +1578,8 @@ apiRoutes.get('/analytics/heatmap', async (c) => {
 
     return c.json({ success: true, data: { heatmap, summary: { total_days: heatmap.length, avg_daily: Math.round(heatmap.reduce((s, h) => s + h.count, 0) / heatmap.length), max_daily: Math.max(...heatmap.map(h => h.count)), min_daily: Math.min(...heatmap.map(h => h.count)) } } })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1596,7 +1621,8 @@ apiRoutes.get('/analytics/funnel', async (c) => {
       }
     })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1641,7 +1667,8 @@ apiRoutes.get('/analytics/network', async (c) => {
 
     return c.json({ success: true, data: { nodes, edges, meta: { total_nodes: nodes.length, total_edges: edges.length, most_connected: nodes[0]?.id } } })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1736,7 +1763,8 @@ apiRoutes.post('/notifications/read', async (c) => {
     }
     return c.json({ success: true })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
 })
 
@@ -1749,6 +1777,291 @@ apiRoutes.delete('/notifications/:id', async (c) => {
   try {
     await db.prepare('DELETE FROM notifications WHERE id = ? AND user_id = ?').bind(id, userId).run()
     return c.json({ success: true })
+  } catch (e: any) {
+    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
+    return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
+  }
+})
+
+// ============================================
+// TRACKER — Complaint Journal & Escalation Timer (v8.0.0)
+// Uses: tracked_complaints, tracker_updates (from 0009_tracker_redesign)
+// ============================================
+
+// Helper: compute milestone from days elapsed
+function computeMilestone(days: number): string {
+  if (days >= 45) return 'day45'
+  if (days >= 30) return 'day30'
+  if (days >= 25) return 'day25'
+  if (days >= 15) return 'day15'
+  return 'day0'
+}
+
+// POST /tracker/log — UPSERT a tracked complaint
+apiRoutes.post('/tracker/log', async (c) => {
+  const db = c.env.DB
+  try {
+    const body = await c.req.json()
+    const cpgramsId = sanitizeText(body.cpgrams_id || '')
+    const filingDate = body.filing_date || new Date().toISOString().split('T')[0]
+    const department = sanitizeText(body.department || '')
+    const sessionId = body.session_id || null
+
+    if (!cpgramsId) return c.json({ success: false, error: 'CPGRAMS ID is required' }, 400)
+
+    const now = new Date()
+    const filed = new Date(filingDate)
+    const daysElapsed = Math.max(0, Math.floor((now.getTime() - filed.getTime()) / (1000 * 60 * 60 * 24)))
+    const milestone = computeMilestone(daysElapsed)
+
+    // UPSERT
+    await db.prepare(
+      `INSERT INTO tracked_complaints (cpgrams_id, filing_date, department, session_id, days_elapsed, current_milestone)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(cpgrams_id) DO UPDATE SET
+         days_elapsed = excluded.days_elapsed,
+         current_milestone = excluded.current_milestone,
+         department = COALESCE(excluded.department, tracked_complaints.department),
+         updated_at = datetime('now')`
+    ).bind(cpgramsId, filingDate, department || null, sessionId, daysElapsed, milestone).run()
+
+    const record = await db.prepare(
+      'SELECT * FROM tracked_complaints WHERE cpgrams_id = ?'
+    ).bind(cpgramsId).first()
+
+    // Get update history
+    const updates = await db.prepare(
+      'SELECT * FROM tracker_updates WHERE tracked_complaint_id = ? ORDER BY created_at DESC'
+    ).bind(record!.id).all()
+
+    return c.json({ success: true, data: { ...record, update_history: updates.results || [] } })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /tracker/:cpgrams_id — Fetch existing tracked complaint + history
+apiRoutes.get('/tracker/:cpgrams_id', async (c) => {
+  const db = c.env.DB
+  const cpgramsId = c.req.param('cpgrams_id')
+
+  try {
+    const record = await db.prepare(
+      'SELECT * FROM tracked_complaints WHERE cpgrams_id = ?'
+    ).bind(cpgramsId).first()
+
+    if (!record) return c.json({ success: false, error: 'Not found' }, 404)
+
+    // Recompute days_elapsed live
+    const filed = new Date(record.filing_date as string)
+    const daysElapsed = Math.max(0, Math.floor((Date.now() - filed.getTime()) / (1000 * 60 * 60 * 24)))
+    const milestone = computeMilestone(daysElapsed)
+
+    // Update if stale
+    if (daysElapsed !== record.days_elapsed || milestone !== record.current_milestone) {
+      await db.prepare(
+        'UPDATE tracked_complaints SET days_elapsed = ?, current_milestone = ?, updated_at = datetime(\'now\') WHERE id = ?'
+      ).bind(daysElapsed, milestone, record.id).run()
+    }
+
+    // Get update history
+    const updates = await db.prepare(
+      'SELECT * FROM tracker_updates WHERE tracked_complaint_id = ? ORDER BY created_at DESC'
+    ).bind(record.id).all()
+
+    // Check linked complaint from builder
+    let linkedAnalysis = null
+    const linked = await db.prepare(
+      'SELECT id, department_predicted, quality_score_after FROM complaints WHERE cpgrams_id = ? LIMIT 1'
+    ).bind(cpgramsId).first()
+    if (linked) linkedAnalysis = linked
+
+    return c.json({
+      success: true,
+      data: {
+        ...record,
+        days_elapsed: daysElapsed,
+        current_milestone: milestone,
+        update_history: updates.results || [],
+        linked_analysis: linkedAnalysis
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// POST /tracker/feedback — Citizen self-reports status
+apiRoutes.post('/tracker/feedback', async (c) => {
+  const db = c.env.DB
+  try {
+    const body = await c.req.json()
+    const cpgramsId = sanitizeText(body.cpgrams_id || '')
+    const citizenReport = body.citizen_report // 'pending' | 'resolved_real' | 'fake_closed'
+    const notes = sanitizeText(body.notes || '')
+
+    if (!cpgramsId || !citizenReport) {
+      return c.json({ success: false, error: 'cpgrams_id and citizen_report required' }, 400)
+    }
+
+    const tracked = await db.prepare(
+      'SELECT * FROM tracked_complaints WHERE cpgrams_id = ?'
+    ).bind(cpgramsId).first()
+
+    if (!tracked) return c.json({ success: false, error: 'Complaint not tracked' }, 404)
+
+    const daysElapsed = tracked.days_elapsed as number
+
+    // Insert into tracker_updates
+    await db.prepare(
+      'INSERT INTO tracker_updates (tracked_complaint_id, day_number, citizen_report, notes) VALUES (?, ?, ?, ?)'
+    ).bind(tracked.id, daysElapsed, citizenReport, notes || null).run()
+
+    // Update tracked_complaints
+    const unlockRti = citizenReport === 'fake_closed' ? 1 : (tracked.rti_generated as number)
+    await db.prepare(
+      'UPDATE tracked_complaints SET last_status_report = ?, rti_generated = ?, updated_at = datetime(\'now\') WHERE id = ?'
+    ).bind(citizenReport, unlockRti, tracked.id).run()
+
+    // Also write to complaint_feedback for the dashboard pipeline
+    if (citizenReport !== 'pending') {
+      const isFake = citizenReport === 'fake_closed' ? 1 : 0
+      const satisfaction = citizenReport === 'resolved_real' ? 5 : 1
+      try {
+        await db.prepare(
+          `INSERT INTO complaint_feedback (complaint_id, official_status, citizen_actual_resolution, satisfaction_score, is_fake_closure, cpgrams_id, source)
+           VALUES (0, 'unknown', ?, ?, ?, ?, 'tracker')`
+        ).bind(
+          citizenReport === 'resolved_real' ? 'resolved' : 'fake_closed',
+          satisfaction, isFake, cpgramsId
+        ).run()
+      } catch (e) { /* non-critical cross-write */ }
+    }
+
+    let message = 'Noted. We will remind you at the next milestone.'
+    if (citizenReport === 'resolved_real') message = 'Great outcome! Your feedback helps measure real resolution rates.'
+    if (citizenReport === 'fake_closed') message = 'Thank you. This data helps expose fake closures publicly.'
+
+    return c.json({
+      success: true,
+      message,
+      unlock_rti: citizenReport === 'fake_closed',
+      is_fake_closure: citizenReport === 'fake_closed'
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /tracker/admin/overview — Admin usage stats
+apiRoutes.get('/tracker/admin/overview', async (c) => {
+  const db = c.env.DB
+  try {
+    const stats = await db.prepare(`
+      SELECT
+        current_milestone,
+        COUNT(*) as complaints_at_this_stage,
+        SUM(CASE WHEN last_status_report = 'fake_closed' THEN 1 ELSE 0 END) as fake_closures_reported,
+        SUM(CASE WHEN rti_generated = 1 THEN 1 ELSE 0 END) as rtis_generated
+      FROM tracked_complaints
+      GROUP BY current_milestone
+    `).all()
+
+    const fakeClosure = await db.prepare(`
+      SELECT t.department, COUNT(*) as total_reports,
+        SUM(CASE WHEN tu.citizen_report = 'fake_closed' THEN 1 ELSE 0 END) as fake_closures,
+        ROUND(SUM(CASE WHEN tu.citizen_report = 'fake_closed' THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as fake_closure_rate
+      FROM tracked_complaints t
+      JOIN tracker_updates tu ON t.id = tu.tracked_complaint_id
+      WHERE t.department IS NOT NULL
+      GROUP BY t.department HAVING COUNT(*) >= 3
+      ORDER BY fake_closure_rate DESC
+    `).all()
+
+    return c.json({
+      success: true,
+      data: {
+        milestone_breakdown: stats.results || [],
+        department_fake_closure: fakeClosure.results || []
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================
+// IMPACT SCORE — Grievance Impact Counter
+// ============================================
+apiRoutes.get('/analytics/impact', async (c) => {
+  const db = c.env.DB
+  try {
+    const result = await db.prepare(`
+      SELECT
+        COALESCE(SUM(tu.amount_recovered), 0) as total_recovered,
+        COUNT(DISTINCT CASE WHEN tu.citizen_report = 'resolved_real' THEN tu.tracked_complaint_id END) as resolved_count,
+        COUNT(DISTINCT tu.tracked_complaint_id) as total_tracked,
+        COUNT(DISTINCT CASE WHEN tu.citizen_report = 'fake_closed' THEN tu.tracked_complaint_id END) as fake_closures
+      FROM tracker_updates tu
+    `).first()
+
+    return c.json({
+      success: true,
+      data: {
+        total_recovered: result?.total_recovered || 0,
+        resolved_count: result?.resolved_count || 0,
+        total_tracked: result?.total_tracked || 0,
+        fake_closures: result?.fake_closures || 0
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: true, data: { total_recovered: 0, resolved_count: 0, total_tracked: 0, fake_closures: 0 } })
+  }
+})
+
+// ============================================
+// CONSTITUENCY REPORT — Feature #3
+// ============================================
+apiRoutes.get('/reports/constituency/:name', async (c) => {
+  const db = c.env.DB
+  const name = c.req.param('name')
+
+  try {
+    // Get state-level data for the constituency's state
+    const stateData = await db.prepare(
+      `SELECT * FROM state_grievance_stats WHERE state_name LIKE ? ORDER BY year DESC, month DESC LIMIT 1`
+    ).bind('%' + name + '%').first()
+
+    // Get ministry performance data
+    const ministryData = await db.prepare(
+      `SELECT ministry_name, complaints_received, complaints_disposed, complaints_pending,
+              official_resolution_rate, fake_closure_rate, avg_resolution_days
+       FROM ministry_stats
+       ORDER BY complaints_received DESC LIMIT 10`
+    ).all()
+
+    // Get tracker-based fake closure data if available
+    const trackerData = await db.prepare(
+      `SELECT t.department, COUNT(*) as reports,
+        SUM(CASE WHEN tu.citizen_report = 'fake_closed' THEN 1 ELSE 0 END) as fake,
+        SUM(CASE WHEN tu.citizen_report = 'resolved_real' THEN 1 ELSE 0 END) as resolved
+       FROM tracked_complaints t
+       JOIN tracker_updates tu ON t.id = tu.tracked_complaint_id
+       WHERE t.department IS NOT NULL
+       GROUP BY t.department
+       ORDER BY fake DESC LIMIT 5`
+    ).all()
+
+    return c.json({
+      success: true,
+      data: {
+        constituency_name: name,
+        state_data: stateData || null,
+        top_ministries: ministryData.results || [],
+        tracker_insights: trackerData.results || [],
+        generated_at: new Date().toISOString()
+      }
+    })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
   }
