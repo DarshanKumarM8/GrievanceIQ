@@ -103,15 +103,47 @@ async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionCon
   const apiKey = env.INTERNAL_API_KEY || ''
   const db = env.DB
 
+  // ── Keep-Alive Ping (every 14 minutes) ──
+  if (event.cron === '*/14 * * * *') {
+    try {
+      await fetch(`${pipelineUrl}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(8000)
+      })
+      console.log('[Keep-Alive] Ping sent to Render — container is warm')
+    } catch (e) {
+      console.log('[Keep-Alive] Ping failed — container was sleeping, now waking')
+    }
+    return
+  }
+
   // Helper to call Render internal endpoints
   async function callPipeline(endpoint: string): Promise<any> {
-    const res = await fetch(`${pipelineUrl}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    })
+    const url = `${pipelineUrl}${endpoint}`
+    const headers = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+
+    // First: ping the health endpoint to wake the container (safety net)
+    try {
+      await fetch(`${pipelineUrl}/health`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(10000) // 10s timeout for wake-up
+      });
+    } catch {
+      // Ignore timeout — container is waking up
+    }
+    
+    // Wait 5 seconds for full wake-up (reduced from 15s since keep-alive keeps it warm)
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Now make the actual call with longer timeout
+    const res = await fetch(url, { 
+      method: 'POST', 
+      headers,
+      signal: AbortSignal.timeout(55000) // 55s for actual work (increased from 25s)
+    });
     return res.json()
   }
 
@@ -123,14 +155,6 @@ async function scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionCon
       ).bind(jobName, status, rowsAffected, error || null).run()
     } catch (e) { /* non-critical */ }
   }
-
-  // Step 1: Ping Render to warm up the container
-  try {
-    await fetch(`${pipelineUrl}/internal/ping`, { method: 'GET' })
-  } catch (e) { /* Container might still be cold */ }
-
-  // Wait 5 seconds for container to warm up
-  await new Promise(resolve => setTimeout(resolve, 5000))
 
   // Step 2: Determine which job to run based on cron schedule
   const trigger = event.cron

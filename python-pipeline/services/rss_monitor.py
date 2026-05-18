@@ -13,7 +13,7 @@ import httpx
 import xmltodict
 
 from config import RSS_FEEDS, GRIEVANCE_KEYWORDS
-from services.d1_client import d1
+from services.db_client import db
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ async def fetch_rss_signals() -> dict[str, Any]:
 
                 # Insert into social_signals
                 try:
-                    await d1.execute(
+                    await db.execute(
                         """INSERT INTO social_signals
                             (platform, keyword_matched, source_url, source_title,
                              post_count_24h, post_count_7d, trending_direction, spike_detected, captured_at)
@@ -81,7 +81,7 @@ async def fetch_rss_signals() -> dict[str, Any]:
     # Log to audit
     now = datetime.now(timezone.utc).isoformat()
     try:
-        await d1.execute(
+        await db.execute(
             "INSERT INTO audit_log (event_type, event_detail, created_at) VALUES (?, ?, ?)",
             [
                 "pipeline_run",
@@ -219,7 +219,7 @@ def _match_keywords(article: dict) -> list[str]:
 async def _check_duplicate(url: str) -> bool:
     """Check if a social_signals entry with this URL already exists today."""
     try:
-        rows = await d1.query(
+        rows = await db.query(
             "SELECT id FROM social_signals WHERE source_url = ? LIMIT 1",
             [url],
         )

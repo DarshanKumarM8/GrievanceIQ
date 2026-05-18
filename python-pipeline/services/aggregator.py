@@ -7,39 +7,104 @@ Runs on Render to avoid Cloudflare's 10ms CPU limit for NLP work.
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from collections import Counter
 from typing import Any
 
-from services.d1_client import d1
+from services.db_client import db
 
 logger = logging.getLogger(__name__)
 
-# --- Stop words for TF-IDF preprocessing ---
-STOP_WORDS = {
-    "the", "is", "are", "was", "were", "be", "been", "being", "have", "has",
-    "had", "do", "does", "did", "will", "would", "could", "should", "shall",
-    "may", "might", "can", "must", "a", "an", "and", "or", "but", "in", "on",
-    "at", "to", "for", "of", "with", "by", "from", "up", "about", "into",
-    "through", "during", "before", "after", "above", "below", "between",
-    "out", "off", "over", "under", "again", "further", "then", "once",
-    "here", "there", "when", "where", "why", "how", "all", "each", "every",
-    "both", "few", "more", "most", "other", "some", "such", "no", "nor",
-    "not", "only", "own", "same", "so", "than", "too", "very", "just",
-    "because", "as", "until", "while", "this", "that", "these", "those",
-    "it", "its", "i", "me", "my", "we", "our", "you", "your", "he", "him",
-    "his", "she", "her", "they", "them", "their", "what", "which", "who",
-    "whom", "sir", "madam", "please", "kindly", "respected", "dear",
-    # Hindi transliterated stop words
-    "mera", "meri", "mere", "hai", "hain", "ka", "ki", "ke", "se", "ko",
-    "ne", "par", "ya", "aur", "nahi", "nahin", "kya", "yeh", "woh",
-}
+async def log_pipeline_run(job: str, status: str, rows: int, error: str = None, extra: dict = None):
+    details = {"job": job, "status": status, "rows_updated": rows}
+    if error:
+        details["error"] = error
+    if extra:
+        details.update(extra)
+    
+    try:
+        await db.execute(
+            "INSERT INTO audit_log (event_type, event_detail, created_at) VALUES (?,?,?)",
+            ["pipeline_run", json.dumps(details), datetime.now(timezone.utc).isoformat()]
+        )
+    except Exception:
+        pass
+
+
+def simple_tfidf(texts: list[str], top_n: int = 10) -> list[dict]:
+    """
+    Lightweight TF-IDF that runs in <1 second on up to 500 documents.
+    No scikit-learn dependency needed.
+    """
+    STOP_WORDS = {
+        'the','a','an','is','are','was','were','be','been','being',
+        'have','has','had','do','does','did','will','would','could',
+        'should','may','might','shall','can','need','dare','ought',
+        'used','to','of','in','on','at','by','for','with','about',
+        'against','between','into','through','during','before','after',
+        'above','below','from','up','down','out','off','over','under',
+        'again','further','then','once','here','there','when','where',
+        'why','how','all','both','each','few','more','most','other',
+        'some','such','no','nor','not','only','own','same','so','than',
+        'too','very','just','but','if','or','because','as','until',
+        'while','i','me','my','myself','we','our','you','your','he',
+        'him','his','she','her','they','them','their','this','that',
+        'these','those','what','which','who','whom','and','it','its',
+        'please','sir','madam','dear','respected','kindly','request',
+        'complaint','grievance','issue','problem','matter','regarding',
+        'mera', 'meri', 'mere', 'hai', 'hain', 'ka', 'ki', 'ke', 'se', 'ko',
+        'ne', 'par', 'ya', 'aur', 'nahi', 'nahin', 'kya', 'yeh', 'woh'
+    }
+    
+    if not texts:
+        return []
+    
+    # Tokenize all documents
+    def tokenize(text: str) -> list[str]:
+        text = str(text).lower()
+        tokens = re.findall(r'\b[a-z]{3,}\b', text)
+        return [t for t in tokens if t not in STOP_WORDS]
+    
+    # Also extract bigrams (two-word phrases)
+    def get_bigrams(tokens: list[str]) -> list[str]:
+        return [f"{tokens[i]} {tokens[i+1]}" for i in range(len(tokens)-1)]
+    
+    # Count document frequency for IDF
+    doc_freq = Counter()
+    all_doc_tokens = []
+    
+    for text in texts:
+        tokens = tokenize(text)
+        bigrams = get_bigrams(tokens)
+        all_terms = tokens + bigrams
+        all_doc_tokens.append(all_terms)
+        doc_freq.update(set(all_terms))  # unique terms per doc for IDF
+    
+    # Count total term frequency
+    total_tf = Counter()
+    for doc_terms in all_doc_tokens:
+        total_tf.update(doc_terms)
+    
+    n_docs = len(texts)
+    
+    # Compute TF-IDF score
+    scores = {}
+    for term, tf in total_tf.items():
+        if doc_freq[term] < 2:  # must appear in at least 2 docs
+            continue
+        idf = n_docs / doc_freq[term]
+        scores[term] = tf * idf
+    
+    # Return top N
+    top_terms = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    return [{"term": t, "score": round(s, 2), 
+             "frequency": total_tf[t], 
+             "doc_count": doc_freq[t]} for t, s in top_terms]
 
 
 async def run_aggregator() -> dict[str, Any]:
     """
     Main entry point: runs all aggregation tasks.
-    Returns summary of what was computed and updated.
     """
     result = {
         "trending_issues_updated": 0,
@@ -47,14 +112,100 @@ async def run_aggregator() -> dict[str, Any]:
         "state_stats_updated": 0,
         "errors": [],
     }
-
-    # Part A + B: Trending Issues from complaints + RSS
-    try:
-        trending_count = await _compute_trending_issues()
-        result["trending_issues_updated"] = trending_count
-    except Exception as e:
-        result["errors"].append(f"Trending issues error: {str(e)}")
-        logger.exception("Trending issues computation failed")
+    
+    # Try real user complaints first
+    week_ago = (datetime.now() - timedelta(days=7)).isoformat()
+    complaints_result = await db.query(
+        "SELECT raw_text FROM complaints WHERE created_at > ? AND (is_demo = 0 OR is_demo IS NULL) LIMIT 200",
+        [week_ago]
+    )
+    texts = [r["raw_text"] for r in complaints_result if r.get("raw_text")]
+    corpus_source = "user_complaints"
+    
+    # Fallback 1: supplement with RSS signals if < 10 complaints
+    if len(texts) < 10:
+        signals_result = await db.query(
+            "SELECT source_title as content FROM social_signals WHERE captured_at > ? LIMIT 100",
+            [week_ago]
+        )
+        rss_texts = [r["content"] for r in signals_result if r.get("content")]
+        texts = texts + rss_texts
+        corpus_source = "rss_supplement"
+    
+    # Fallback 2: use last 30 days of RSS if still < 5
+    if len(texts) < 5:
+        month_ago = (datetime.now() - timedelta(days=30)).isoformat()
+        signals_result = await db.query(
+            "SELECT source_title as content FROM social_signals WHERE captured_at > ? LIMIT 100",
+            [month_ago]
+        )
+        rss_texts = [r["content"] for r in signals_result if r.get("content")]
+        texts = [r["content"] for r in signals_result if r.get("content")]
+        corpus_source = "rss_30day_fallback"
+    
+    # Never skip — always run with whatever we have
+    if len(texts) == 0:
+        await log_pipeline_run("aggregator", "failed", 0, error="No text corpus available")
+        result["errors"].append("No text corpus available")
+        return result
+    
+    # Run TF-IDF
+    top_terms = simple_tfidf(texts, top_n=8)
+    
+    # Update trending_issues
+    updated = 0
+    now = datetime.now(timezone.utc)
+    week_start = now.strftime("%Y-%m-%d")
+    
+    for i, term_data in enumerate(top_terms):
+        try:
+            cluster_id = f"TI-{now.year}-{now.isocalendar()[1]:02d}-{i + 1}"
+            topic_name = str(term_data["term"]).title()
+            severity = "critical" if term_data["score"] >= 8 else "high" if term_data["score"] >= 4 else "medium"
+            
+            existing = await db.query(
+                "SELECT id FROM trending_issues WHERE topic_name LIKE ? LIMIT 1",
+                [f"%{term_data['term'][:20]}%"]
+            )
+            
+            if existing:
+                await db.execute(
+                    """UPDATE trending_issues SET
+                        complaint_count = ?, previous_week_count = 0,
+                        spike_factor = ?, is_flagged = ?,
+                        severity = ?, week_start = ?, updated_at = datetime('now')
+                    WHERE id = ?""",
+                    [
+                        term_data["frequency"],
+                        round(term_data["score"], 2),
+                        1 if term_data["score"] > 5 else 0,
+                        severity, week_start, existing[0]["id"]
+                    ]
+                )
+            else:
+                await db.execute(
+                    """INSERT INTO trending_issues 
+                        (cluster_id, topic_name, topic_keywords, description,
+                         complaint_count, previous_week_count, spike_factor, 
+                         states_affected, ministries_affected, is_flagged,
+                         severity, week_start)
+                    VALUES (?, ?, ?, ?, ?, 0, ?, '[]', '[]', ?, ?, ?)""",
+                    [
+                        cluster_id, topic_name,
+                        json.dumps([term_data["term"]]),
+                        f"Detected spike in '{term_data['term']}' mentions: {term_data['frequency']} occurrences.",
+                        term_data["frequency"],
+                        round(term_data["score"], 2),
+                        1 if term_data["score"] > 5 else 0,
+                        severity, week_start
+                    ]
+                )
+            updated += 1
+        except Exception as e:
+            logger.error(f"Failed to upsert trending topic '{term_data['term']}': {e}")
+            result["errors"].append(str(e))
+            
+    result["trending_issues_updated"] = updated
 
     # Part D: Fake Closure Aggregation
     try:
@@ -72,259 +223,10 @@ async def run_aggregator() -> dict[str, Any]:
         result["errors"].append(f"State stats error: {str(e)}")
         logger.exception("State stats computation failed")
 
-    # Log to audit
-    now = datetime.now(timezone.utc).isoformat()
-    try:
-        await d1.execute(
-            "INSERT INTO audit_log (event_type, event_detail, created_at) VALUES (?, ?, ?)",
-            [
-                "pipeline_run",
-                json.dumps({
-                    "job": "aggregator",
-                    "status": "success",
-                    "trending": result["trending_issues_updated"],
-                    "fake_closures": result["fake_closure_ministries_updated"],
-                    "states": result["state_stats_updated"],
-                }),
-                now,
-            ],
-        )
-    except Exception:
-        pass
-
+    await log_pipeline_run("aggregator", "success", updated,
+        extra={"corpus_size": len(texts), "corpus_source": corpus_source})
+    
     return result
-
-
-async def _compute_trending_issues() -> int:
-    """
-    Part A + B: Compute trending issues from complaint text (TF-IDF)
-    and merge with RSS signal counts.
-    """
-    # Get complaints from last 7 days (excluding demo)
-    current_complaints = await d1.query(
-        """SELECT raw_text, translated_text, department_predicted, state_name
-        FROM complaints
-        WHERE created_at > datetime('now', '-7 days')
-        AND (is_demo = 0 OR is_demo IS NULL)""",
-    )
-
-    # Get complaints from 8-14 days ago (baseline)
-    baseline_complaints = await d1.query(
-        """SELECT raw_text, translated_text
-        FROM complaints
-        WHERE created_at > datetime('now', '-14 days')
-        AND created_at <= datetime('now', '-7 days')
-        AND (is_demo = 0 OR is_demo IS NULL)""",
-    )
-
-    # Get RSS signals from last 7 days
-    rss_signals = await d1.query(
-        """SELECT keyword_matched, source_title
-        FROM social_signals
-        WHERE captured_at > datetime('now', '-7 days')""",
-    )
-
-    # Tokenize and count current week
-    current_counts = _count_keywords(current_complaints)
-    baseline_counts = _count_keywords(baseline_complaints)
-
-    # Merge with RSS keyword counts
-    for signal in rss_signals:
-        keywords = (signal.get("keyword_matched") or "").split(", ")
-        for kw in keywords:
-            kw = kw.strip().lower()
-            if kw:
-                current_counts[kw] = current_counts.get(kw, 0) + 1
-
-    # Try TF-IDF clustering if we have enough data
-    tfidf_terms = []
-    if len(current_complaints) >= 5:
-        try:
-            tfidf_terms = _run_tfidf(current_complaints)
-        except Exception as e:
-            logger.warning(f"TF-IDF failed (not critical): {e}")
-
-    # Compute spike factors
-    trending_topics = []
-    all_terms = set(list(current_counts.keys()) + tfidf_terms)
-
-    for term in all_terms:
-        current = current_counts.get(term, 0)
-        baseline = baseline_counts.get(term, 0)
-
-        if current < 3:  # Minimum threshold
-            continue
-
-        spike = current / max(baseline, 1)
-
-        if spike >= 1.5 or current >= 10:
-            # Find affected states and ministries
-            states = _find_affected_states(term, current_complaints)
-            ministries = _find_affected_ministries(term, current_complaints)
-
-            trending_topics.append({
-                "term": term,
-                "count": current,
-                "baseline": baseline,
-                "spike": round(spike, 2),
-                "states": states,
-                "ministries": ministries,
-            })
-
-    # Sort by spike factor
-    trending_topics.sort(key=lambda t: t["spike"], reverse=True)
-
-    # Update trending_issues table (top 10)
-    updated = 0
-    now = datetime.now(timezone.utc)
-    week_start = now.strftime("%Y-%m-%d")
-
-    for topic in trending_topics[:10]:
-        cluster_id = f"TI-{now.year}-{now.isocalendar()[1]:02d}-{updated + 1}"
-        topic_name = topic["term"].title()
-        severity = "critical" if topic["spike"] >= 4 else "high" if topic["spike"] >= 2 else "medium"
-
-        try:
-            # Try to update existing topic with overlapping keywords
-            existing = await d1.query(
-                "SELECT id, cluster_id FROM trending_issues WHERE topic_name LIKE ? LIMIT 1",
-                [f"%{topic['term'][:20]}%"],
-            )
-
-            if existing:
-                await d1.execute(
-                    """UPDATE trending_issues SET
-                        complaint_count = ?, previous_week_count = ?,
-                        spike_factor = ?, states_affected = ?,
-                        ministries_affected = ?, is_flagged = ?,
-                        severity = ?, week_start = ?, updated_at = datetime('now')
-                    WHERE id = ?""",
-                    [
-                        topic["count"], topic["baseline"],
-                        topic["spike"], json.dumps(topic["states"]),
-                        json.dumps(topic["ministries"]),
-                        1 if topic["spike"] >= 2 else 0,
-                        severity, week_start, existing[0]["id"],
-                    ],
-                )
-            else:
-                await d1.execute(
-                    """INSERT INTO trending_issues
-                        (cluster_id, topic_name, topic_keywords, description,
-                         complaint_count, previous_week_count, spike_factor,
-                         states_affected, ministries_affected, is_flagged,
-                         severity, week_start)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    [
-                        cluster_id, topic_name,
-                        json.dumps([topic["term"]]),
-                        f"Detected spike in '{topic['term']}' mentions: {topic['count']} this week vs {topic['baseline']} last week ({topic['spike']}x increase).",
-                        topic["count"], topic["baseline"], topic["spike"],
-                        json.dumps(topic["states"]),
-                        json.dumps(topic["ministries"]),
-                        1 if topic["spike"] >= 2 else 0,
-                        severity, week_start,
-                    ],
-                )
-            updated += 1
-        except Exception as e:
-            logger.error(f"Failed to upsert trending topic '{topic['term']}': {e}")
-
-    return updated
-
-
-def _count_keywords(complaints: list[dict]) -> dict[str, int]:
-    """Tokenize complaint texts and count significant words/bigrams."""
-    counts: Counter = Counter()
-
-    for complaint in complaints:
-        text = f"{complaint.get('raw_text', '')} {complaint.get('translated_text', '')}"
-        tokens = _tokenize(text)
-
-        # Unigrams
-        for token in tokens:
-            if len(token) >= 3 and token not in STOP_WORDS:
-                counts[token] += 1
-
-        # Bigrams
-        for i in range(len(tokens) - 1):
-            if tokens[i] not in STOP_WORDS and tokens[i + 1] not in STOP_WORDS:
-                bigram = f"{tokens[i]} {tokens[i + 1]}"
-                if len(bigram) >= 7:
-                    counts[bigram] += 1
-
-    return dict(counts)
-
-
-def _tokenize(text: str) -> list[str]:
-    """Simple tokenizer: lowercase, remove punctuation, split."""
-    if not text:
-        return []
-    text = text.lower()
-    text = re.sub(r"[^\w\s]", " ", text)
-    text = re.sub(r"\s+", " ", text)
-    return [t for t in text.split() if len(t) >= 2]
-
-
-def _run_tfidf(complaints: list[dict]) -> list[str]:
-    """Run TF-IDF vectorization and extract top terms."""
-    from sklearn.feature_extraction.text import TfidfVectorizer
-
-    documents = []
-    for c in complaints:
-        text = f"{c.get('raw_text', '')} {c.get('translated_text', '')}"
-        text = re.sub(r"[^\w\s]", " ", text.lower())
-        documents.append(text)
-
-    if len(documents) < 2:
-        return []
-
-    vectorizer = TfidfVectorizer(
-        max_features=50,
-        stop_words=list(STOP_WORDS),
-        ngram_range=(1, 2),
-        min_df=2,
-        max_df=0.8,
-    )
-
-    try:
-        tfidf_matrix = vectorizer.fit_transform(documents)
-        feature_names = vectorizer.get_feature_names_out()
-
-        # Get terms with highest average TF-IDF score
-        avg_scores = tfidf_matrix.mean(axis=0).A1
-        top_indices = avg_scores.argsort()[-20:][::-1]
-
-        return [feature_names[i] for i in top_indices if avg_scores[i] > 0.05]
-    except Exception as e:
-        logger.warning(f"TF-IDF extraction error: {e}")
-        return []
-
-
-def _find_affected_states(term: str, complaints: list[dict]) -> list[str]:
-    """Find which states are affected by a trending term."""
-    states = set()
-    term_lower = term.lower()
-    for c in complaints:
-        text = f"{c.get('raw_text', '')} {c.get('translated_text', '')}".lower()
-        if term_lower in text:
-            state = c.get("state_name")
-            if state:
-                states.add(state)
-    return list(states)[:5]
-
-
-def _find_affected_ministries(term: str, complaints: list[dict]) -> list[str]:
-    """Find which ministries are affected by a trending term."""
-    ministries = set()
-    term_lower = term.lower()
-    for c in complaints:
-        text = f"{c.get('raw_text', '')} {c.get('translated_text', '')}".lower()
-        if term_lower in text:
-            dept = c.get("department_predicted")
-            if dept:
-                ministries.add(dept)
-    return list(ministries)[:3]
 
 
 async def _compute_fake_closures() -> int:
@@ -332,7 +234,7 @@ async def _compute_fake_closures() -> int:
     Part D: Compute fake closure rates from complaint feedback
     and update ministry_stats.
     """
-    rows = await d1.query(
+    rows = await db.query(
         """SELECT
             c.department_predicted as ministry,
             COUNT(*) as total_with_feedback,
@@ -363,7 +265,7 @@ async def _compute_fake_closures() -> int:
         sat_rate = round((satisfaction or 3) * 20, 1)  # Scale 1-5 to 20-100
 
         try:
-            await d1.execute(
+            await db.execute(
                 """UPDATE ministry_stats SET
                     fake_closure_rate = ?,
                     citizen_satisfaction_rate = ?,
@@ -390,7 +292,7 @@ async def _compute_state_stats() -> int:
     """
     Part E: Compute state-level stats from real platform complaints.
     """
-    rows = await d1.query(
+    rows = await db.query(
         """SELECT
             state_name,
             COUNT(*) as total_complaints,
@@ -420,7 +322,7 @@ async def _compute_state_stats() -> int:
         fake_rate = round((fake_closed / max(total, 1)) * 100, 1)
 
         try:
-            await d1.execute(
+            await db.execute(
                 """UPDATE state_grievance_stats SET
                     total_complaints = total_complaints + ?,
                     complaints_resolved = complaints_resolved + ?,

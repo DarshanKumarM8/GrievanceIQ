@@ -11,7 +11,11 @@ load_dotenv()
 # --- Internal Authentication ---
 INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "")
 
-# --- Cloudflare D1 REST API ---
+# --- Supabase (Primary database for pipeline) ---
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")           # e.g. https://xxxx.supabase.co
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")  # service_role key (server-side only)
+
+# --- Cloudflare D1 REST API (Legacy — kept for local dev fallback) ---
 CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID", "")
 CF_D1_DATABASE_ID = os.getenv("CF_D1_DATABASE_ID", "")
 CF_D1_API_TOKEN = os.getenv("CF_D1_API_TOKEN", "")

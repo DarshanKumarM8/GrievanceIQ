@@ -104,7 +104,7 @@ export function homePage(): string {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="statsBar">
         <div class="text-center p-4 stat-glow rounded-xl bg-white shadow-sm" data-animate>
-          <div class="text-2xl sm:text-3xl font-black text-navy-700" data-count-target="475000" id="stat-complaints">0</div>
+          <div class="text-2xl sm:text-3xl font-black text-white" data-count-target="475000" id="stat-complaints">0</div>
           <div class="text-xs text-gray-500 mt-1 font-medium uppercase tracking-wider">Complaints Tracked</div>
         </div>
         <div class="text-center p-4 stat-glow rounded-xl bg-white shadow-sm" data-animate>
@@ -160,13 +160,13 @@ export function homePage(): string {
         <span class="inline-flex items-center gap-1.5 bg-red-50 text-red-700 rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
           <i class="fas fa-triangle-exclamation"></i> THE PROBLEM
         </span>
-        <h2 class="text-3xl sm:text-4xl font-bold text-navy-800">India's Grievance System is Broken</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white">India's Grievance System is Broken</h2>
         <p class="text-gray-500 mt-3 max-w-2xl mx-auto">CPGRAMS connects 92 ministries and has processed 70+ lakh complaints. On paper it works. In reality, three things are broken.</p>
       </div>
       
       <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
         <!-- Problem 1 -->
-        <div class="card-hover bg-gradient-to-br from-red-50 to-white rounded-2xl p-8 border border-red-100" data-animate>
+        <div class="card-hover bg-gradient-to-br from-red-50 to-white dark:from-dark-800 dark:to-dark-800 rounded-2xl p-8 border border-red-100 dark:border-dark-700" data-animate>
           <div class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mb-5">
             <i class="fas fa-shuffle text-red-600 text-xl"></i>
           </div>
@@ -182,7 +182,7 @@ export function homePage(): string {
         </div>
         
         <!-- Problem 2 -->
-        <div class="card-hover bg-gradient-to-br from-amber-50 to-white rounded-2xl p-8 border border-amber-100" data-animate>
+        <div class="card-hover bg-gradient-to-br from-amber-50 to-white dark:from-dark-800 dark:to-dark-800 rounded-2xl p-8 border border-amber-100 dark:border-dark-700" data-animate>
           <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mb-5">
             <i class="fas fa-mask text-amber-600 text-xl"></i>
           </div>
@@ -198,7 +198,7 @@ export function homePage(): string {
         </div>
         
         <!-- Problem 3 -->
-        <div class="card-hover bg-gradient-to-br from-purple-50 to-white rounded-2xl p-8 border border-purple-100" data-animate>
+        <div class="card-hover bg-gradient-to-br from-purple-50 to-white dark:from-dark-800 dark:to-dark-800 rounded-2xl p-8 border border-purple-100 dark:border-dark-700" data-animate>
           <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-5">
             <i class="fas fa-eye-slash text-purple-600 text-xl"></i>
           </div>
@@ -225,7 +225,7 @@ export function homePage(): string {
         <span class="inline-flex items-center gap-1.5 bg-ashoka-50 text-ashoka-700 rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
           <i class="fas fa-lightbulb"></i> THE SOLUTION
         </span>
-        <h2 class="text-3xl sm:text-4xl font-bold text-navy-800">Two Products. One Mission.</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white">Two Products. One Mission.</h2>
         <p class="text-gray-500 mt-3 max-w-2xl mx-auto">GrievanceIQ builds the intelligence layer between citizens and the government's complaint inbox.</p>
       </div>
       
@@ -297,7 +297,7 @@ export function homePage(): string {
               </div>
               <div>
                 <h3 class="text-xl font-bold text-white">Public Accountability Dashboard</h3>
-                <p class="text-navy-200 text-sm">For journalists, NGOs, researchers</p>
+                <p class="text-white text-sm">For journalists, NGOs, researchers</p>
               </div>
             </div>
           </div>
@@ -305,7 +305,7 @@ export function homePage(): string {
             <div class="space-y-4">
               <div class="flex items-start gap-3">
                 <div class="w-8 h-8 bg-navy-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i class="fas fa-map-location-dot text-navy-600 text-xs"></i>
+                  <i class="fas fa-map-location-dot text-white text-xs"></i>
                 </div>
                 <div>
                   <h4 class="font-semibold text-sm text-gray-900">India Grievance Map</h4>
@@ -314,7 +314,7 @@ export function homePage(): string {
               </div>
               <div class="flex items-start gap-3">
                 <div class="w-8 h-8 bg-navy-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i class="fas fa-ranking-star text-navy-600 text-xs"></i>
+                  <i class="fas fa-ranking-star text-white text-xs"></i>
                 </div>
                 <div>
                   <h4 class="font-semibold text-sm text-gray-900">Department Scorecard</h4>
@@ -323,7 +323,7 @@ export function homePage(): string {
               </div>
               <div class="flex items-start gap-3">
                 <div class="w-8 h-8 bg-navy-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i class="fas fa-radar text-navy-600 text-xs"></i>
+                  <i class="fas fa-radar text-white text-xs"></i>
                 </div>
                 <div>
                   <h4 class="font-semibold text-sm text-gray-900">Systemic Issue Radar</h4>
@@ -332,7 +332,7 @@ export function homePage(): string {
               </div>
               <div class="flex items-start gap-3">
                 <div class="w-8 h-8 bg-navy-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i class="fas fa-bolt text-navy-600 text-xs"></i>
+                  <i class="fas fa-bolt text-white text-xs"></i>
                 </div>
                 <div>
                   <h4 class="font-semibold text-sm text-gray-900">Fake Closure Detector</h4>
@@ -405,10 +405,10 @@ export function homePage(): string {
   <section class="py-16 sm:py-24 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-16" data-animate>
-        <span class="inline-flex items-center gap-1.5 bg-navy-50 text-navy-700 rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
+        <span class="inline-flex items-center gap-1.5 bg-navy-50 text-white rounded-full px-4 py-1.5 text-xs font-semibold mb-4">
           <i class="fas fa-route"></i> HOW IT WORKS
         </span>
-        <h2 class="text-3xl sm:text-4xl font-bold text-navy-800">From Problem to Resolution in 4 Steps</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white">From Problem to Resolution in 4 Steps</h2>
       </div>
       
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -425,7 +425,7 @@ export function homePage(): string {
           <div class="w-16 h-16 bg-gradient-to-br from-navy-500 to-navy-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <i class="fas fa-brain text-white text-xl"></i>
           </div>
-          <div class="w-8 h-8 bg-navy-100 rounded-full flex items-center justify-center mx-auto -mt-6 mb-3 text-sm font-bold text-navy-700 border-2 border-white shadow">2</div>
+          <div class="w-8 h-8 bg-navy-100 rounded-full flex items-center justify-center mx-auto -mt-6 mb-3 text-sm font-bold text-white border-2 border-white shadow">2</div>
           <h4 class="font-bold text-gray-900 mb-2">AI Analyzes</h4>
           <p class="text-sm text-gray-500">Routes to the correct department, scores quality, identifies missing details, and rewrites your complaint.</p>
         </div>
@@ -461,7 +461,7 @@ export function homePage(): string {
           <span class="inline-flex items-center gap-1.5 bg-red-50 text-red-700 rounded-full px-3 py-1 text-xs font-semibold mb-2">
             <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot"></span> LIVE ALERTS
           </span>
-          <h2 class="text-2xl sm:text-3xl font-bold text-navy-800">Systemic Issues This Week</h2>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white">Systemic Issues This Week</h2>
         </div>
         <a href="/dashboard#trending" class="text-sm text-saffron-600 font-semibold hover:text-saffron-700">
           View all on Dashboard <i class="fas fa-arrow-right ml-1"></i>

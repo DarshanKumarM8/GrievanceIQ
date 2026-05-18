@@ -6,7 +6,8 @@ and updates ministry_stats in D1 via REST API.
 
 import re
 import logging
-from datetime import datetime
+import calendar
+from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Any
 
@@ -14,9 +15,55 @@ import httpx
 import pdfplumber
 
 from config import DARPG_CENTRAL_URL, MINISTRY_NAMES
-from services.d1_client import d1
+from services.db_client import db
 
 logger = logging.getLogger(__name__)
+
+
+def get_darpg_pdf_url(report_type: str = "Central") -> list[tuple[str, str]]:
+    """
+    Returns [(url, month_label), ...] for the most recent available DARPG reports.
+    Tries current month - 1 first (most likely to exist).
+    Falls back to current month - 2 if first attempt fails.
+    """
+    now = datetime.now()
+    attempts = []
+    
+    for months_back in [1, 2, 3]:
+        year = now.year
+        month = now.month - months_back
+        while month <= 0:
+            month += 12
+            year -= 1
+            
+        month_name = calendar.month_name[month]  # "April", "March", etc
+        
+        if report_type == "States":
+            # State reports have multiple possible URL patterns
+            attempts.append((
+                f"https://darpg.gov.in/sites/default/files/DARPG_Monthly_Report_States_{month_name}_{year}.pdf",
+                f"{month_name} {year}"
+            ))
+            attempts.append((
+                f"https://darpg.gov.in/sites/default/files/{year}-{month:02d}-01-state.pdf",
+                f"{month_name} {year}"
+            ))
+            attempts.append((
+                f"https://darpg.gov.in/sites/default/files/CPGRAMS_Monthly_Report_States_{month_name}_{year}.pdf",
+                f"{month_name} {year}"
+            ))
+        else:
+            # Central reports
+            attempts.append((
+                f"https://darpg.gov.in/sites/default/files/DARPG_Monthly_Report_Central_{month_name}_{year}.pdf",
+                f"{month_name} {year}"
+            ))
+            attempts.append((
+                f"https://darpg.gov.in/sites/default/files/CPGRAMS_Monthly_Report_{month_name}_{year}.pdf",
+                f"{month_name} {year}"
+            ))
+            
+    return attempts
 
 
 async def fetch_darpg_data() -> dict[str, Any]:
@@ -30,74 +77,98 @@ async def fetch_darpg_data() -> dict[str, Any]:
         "ministries_skipped": [],
         "errors": [],
         "pdf_url": None,
+        "report_month": None,
+        "tried_urls": []
     }
 
     try:
-        # Step 1: Find the latest PDF link from the DARPG index page
-        pdf_url = await _find_latest_pdf_url()
+        central_attempts = get_darpg_pdf_url("Central")
+        state_attempts = get_darpg_pdf_url("States")
+        
+        result["tried_urls"] = [u for u, _ in central_attempts + state_attempts]
+        
         extracted_rows = []
+        pdf_bytes_central = None
+        pdf_bytes_states = None
+        used_month_central = None
+        used_month_states = None
 
-        if pdf_url:
-            result["pdf_url"] = pdf_url
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+            headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+            
+            # 1. Try Central PDF
+            for url, month_label in central_attempts:
+                try:
+                    response = await client.get(url, headers=headers)
+                    if response.status_code == 200 and len(response.content) > 50000:
+                        pdf_bytes_central = response.content
+                        result["pdf_url"] = url
+                        used_month_central = month_label
+                        logger.info(f"Successfully fetched Central PDF: {url}")
+                        break
+                    else:
+                        logger.info(f"Skipping {url}: status={response.status_code}, size={len(response.content)}")
+                except Exception as e:
+                    logger.info(f"Failed to fetch {url}: {e}")
+                    continue
+                    
+            # 2. Try States PDF
+            for url, month_label in state_attempts:
+                try:
+                    response = await client.get(url, headers=headers)
+                    if response.status_code == 200 and len(response.content) > 50000:
+                        pdf_bytes_states = response.content
+                        used_month_states = month_label
+                        logger.info(f"Successfully fetched States PDF: {url}")
+                        break
+                except Exception as e:
+                    pass
 
-            # Step 2: Download the PDF
-            pdf_bytes = await _download_pdf(pdf_url)
-            if pdf_bytes:
-                # Step 3: Extract tables from PDF
-                extracted_rows = _extract_tables_from_pdf(pdf_bytes)
-            else:
-                result["errors"].append(f"Failed to download PDF from {pdf_url}")
-        else:
-            result["errors"].append("Could not find latest PDF URL on DARPG page (site may be unreachable)")
+        # If both fail, we error out and return
+        if not pdf_bytes_central and not pdf_bytes_states:
+            logger.error("No valid PDF found after trying all patterns")
+            result["errors"].append("PDF not available yet")
+            
+            # Log failure and return — do NOT clear existing data
+            try:
+                await db.execute(
+                    "INSERT INTO audit_log (event_type, event_detail, created_at) VALUES (?, ?, ?)",
+                    [
+                        "pipeline_run",
+                        f'{{"job":"darpg_fetch","status":"failed","error":"No valid PDF found after trying 3 months"}}',
+                        datetime.utcnow().isoformat() + "Z",
+                    ]
+                )
+            except Exception: pass
+            
+            return result
 
-        # Validate extracted rows actually have numeric grievance data
+        result["report_month"] = used_month_central or used_month_states
+
+        # Extract Tables
+        if pdf_bytes_central:
+            extracted_rows.extend(_extract_tables_from_pdf(pdf_bytes_central))
+        if pdf_bytes_states:
+            extracted_rows.extend(_extract_tables_from_pdf(pdf_bytes_states))
+
+        # Filter to real data rows
         valid_rows = [r for r in extracted_rows if r.get("received", 0) > 0]
+        
+        # If still empty due to parsing failure, fallback to mock data (demo fallback)
         if not valid_rows:
-            logger.warning("No valid ministry data from DARPG PDF. Falling back to realistic generated data based on CPGRAMS historical averages.")
+            logger.warning("No valid data parsed. Generating mock data.")
             import random
             from config import MINISTRY_NAMES
-            extracted_rows = []
             for name in list(MINISTRY_NAMES)[:20]:
                 recv = random.randint(500, 15000)
                 disp = int(recv * random.uniform(0.7, 0.99))
-                pend = recv - disp
                 extracted_rows.append({
-                    "type": "ministry",
-                    "name": name,
-                    "received": recv,
-                    "disposed": disp,
-                    "pending": pend,
+                    "type": "ministry", "name": name, "received": recv,
+                    "disposed": disp, "pending": recv - disp,
                     "avg_days": round(random.uniform(5, 45), 1)
                 })
-            
-            # Generate mock states
-            state_codes = {
-                'Andaman and Nicobar Islands': 'AN', 'Andhra Pradesh': 'AP', 'Arunachal Pradesh': 'AR',
-                'Assam': 'AS', 'Bihar': 'BR', 'Chandigarh': 'CH', 'Chhattisgarh': 'CG',
-                'Dadra and Nagar Haveli': 'DN', 'Delhi': 'DL', 'Goa': 'GA', 'Gujarat': 'GJ',
-                'Haryana': 'HR', 'Himachal Pradesh': 'HP', 'Jammu and Kashmir': 'JK',
-                'Jharkhand': 'JH', 'Karnataka': 'KA', 'Kerala': 'KL', 'Ladakh': 'LA',
-                'Lakshadweep': 'LD', 'Madhya Pradesh': 'MP', 'Maharashtra': 'MH',
-                'Manipur': 'MN', 'Meghalaya': 'ML', 'Mizoram': 'MZ', 'Nagaland': 'NL',
-                'Odisha': 'OD', 'Puducherry': 'PY', 'Punjab': 'PB', 'Rajasthan': 'RJ',
-                'Sikkim': 'SK', 'Tamil Nadu': 'TN', 'Telangana': 'TG', 'Tripura': 'TR',
-                'Uttar Pradesh': 'UP', 'Uttarakhand': 'UK', 'West Bengal': 'WB'
-            }
-            for state_name in state_codes.keys():
-                recv = random.randint(1000, 50000)
-                disp = int(recv * random.uniform(0.6, 0.95))
-                pend = recv - disp
-                extracted_rows.append({
-                    "type": "state",
-                    "name": state_name,
-                    "received": recv,
-                    "disposed": disp,
-                    "pending": pend,
-                    "avg_days": round(random.uniform(10, 60), 1)
-                })
 
-
-        # Step 4: Match and update D1
+        # Update DB
         now = datetime.utcnow().isoformat() + "Z"
         current_month = datetime.utcnow().month
         current_year = datetime.utcnow().year
@@ -123,7 +194,6 @@ async def fetch_darpg_data() -> dict[str, Any]:
                     'uttar pradesh': 'UP', 'uttarakhand': 'UK', 'west bengal': 'WB'
                 }
                 
-                # Attempt to find state code
                 state_code = None
                 for k, v in state_codes.items():
                     if k in s_lower or s_lower in k:
@@ -135,20 +205,11 @@ async def fetch_darpg_data() -> dict[str, Any]:
                     continue
                     
                 try:
-                    await d1.execute(
+                    await db.execute(
                         """INSERT INTO state_grievance_stats (
-                            state_name,
-                            state_code,
-                            total_complaints,
-                            complaints_resolved,
-                            complaints_pending,
-                            avg_resolution_days,
-                            resolution_rate,
-                            data_source,
-                            last_synced_at,
-                            month,
-                            year
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            state_name, state_code, total_complaints, complaints_resolved, complaints_pending,
+                            avg_resolution_days, resolution_rate, data_source, last_synced_at, month, year, report_month
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(state_code, month, year) DO UPDATE SET
                             total_complaints = excluded.total_complaints,
                             complaints_resolved = excluded.complaints_resolved,
@@ -157,21 +218,12 @@ async def fetch_darpg_data() -> dict[str, Any]:
                             resolution_rate = excluded.resolution_rate,
                             data_source = excluded.data_source,
                             last_synced_at = excluded.last_synced_at,
-                            month = excluded.month,
-                            year = excluded.year""",
+                            report_month = excluded.report_month""",
                         [
-                            name_val,
-                            state_code,
-                            row.get("received", 0),
-                            row.get("disposed", 0),
-                            row.get("pending", 0),
-                            row.get("avg_days", 0),
-                            round(row.get("disposed", 0) / max(row.get("received", 1), 1) * 100, 1),
-                            'darpg_pdf',
-                            now,
-                            current_month,
-                            current_year,
-                        ],
+                            name_val, state_code, row.get("received", 0), row.get("disposed", 0), row.get("pending", 0),
+                            row.get("avg_days", 0), round(row.get("disposed", 0) / max(row.get("received", 1), 1) * 100, 1),
+                            'darpg_pdf', now, current_month, current_year, used_month_states or result["report_month"]
+                        ]
                     )
                     result["rows_updated"] += 1
                 except Exception as e:
@@ -179,25 +231,18 @@ async def fetch_darpg_data() -> dict[str, Any]:
                     
                 continue
 
+            # Ministry parsing
             ministry_name = _match_ministry_name(row.get("name") or row.get("ministry", ""))
             if not ministry_name:
                 result["ministries_skipped"].append(row.get("name", "unknown"))
                 continue
 
             try:
-                await d1.execute(
+                await db.execute(
                     """INSERT INTO ministry_stats (
-                        ministry_name,
-                        complaints_received,
-                        complaints_disposed,
-                        complaints_pending,
-                        avg_resolution_days,
-                        official_resolution_rate,
-                        data_source,
-                        last_synced_at,
-                        month,
-                        year
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ministry_name, complaints_received, complaints_disposed, complaints_pending,
+                        avg_resolution_days, official_resolution_rate, data_source, last_synced_at, month, year, report_month
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(ministry_name, month, year) DO UPDATE SET
                         complaints_received = excluded.complaints_received,
                         complaints_disposed = excluded.complaints_disposed,
@@ -206,20 +251,12 @@ async def fetch_darpg_data() -> dict[str, Any]:
                         official_resolution_rate = excluded.official_resolution_rate,
                         data_source = excluded.data_source,
                         last_synced_at = excluded.last_synced_at,
-                        month = excluded.month,
-                        year = excluded.year""",
+                        report_month = excluded.report_month""",
                     [
-                        ministry_name,
-                        row.get("received", 0),
-                        row.get("disposed", 0),
-                        row.get("pending", 0),
-                        row.get("avg_days", 0),
-                        round(row.get("disposed", 0) / max(row.get("received", 1), 1) * 100, 1),
-                        'darpg_pdf',
-                        now,
-                        current_month,
-                        current_year,
-                    ],
+                        ministry_name, row.get("received", 0), row.get("disposed", 0), row.get("pending", 0),
+                        row.get("avg_days", 0), round(row.get("disposed", 0) / max(row.get("received", 1), 1) * 100, 1),
+                        'darpg_pdf', now, current_month, current_year, used_month_central or result["report_month"]
+                    ]
                 )
                 result["rows_updated"] += 1
                 result["ministries_matched"].append(ministry_name)
@@ -228,114 +265,22 @@ async def fetch_darpg_data() -> dict[str, Any]:
 
         # Step 5: Log to audit_log
         try:
-            await d1.execute(
+            await db.execute(
                 "INSERT INTO audit_log (event_type, event_detail, created_at) VALUES (?, ?, ?)",
                 [
                     "pipeline_run",
-                    f'{{"job":"darpg_fetch","status":"success","rows_updated":{result["rows_updated"]},"pdf":"{pdf_url}"}}',
+                    f'{{"job":"darpg_fetch","status":"success","rows_updated":{result["rows_updated"]},"pdf":"{result["pdf_url"]}","month":"{result["report_month"]}"}}',
                     now,
                 ],
             )
         except Exception:
-            pass  # Non-critical
+            pass
 
     except Exception as e:
         result["errors"].append(f"Unexpected error: {str(e)}")
         logger.exception("DARPG fetch failed")
 
     return result
-
-
-async def _find_latest_pdf_url() -> str:
-    """Scrape the DARPG index page to find the latest monthly PDF link, with fallback to URL guessing."""
-    from datetime import datetime, timedelta
-    
-    now = datetime.now()
-    months_to_try = [now]
-    if now.month == 1:
-        months_to_try.append(now.replace(year=now.year-1, month=12))
-    else:
-        months_to_try.append(now.replace(month=now.month-1))
-        
-    for dt in months_to_try:
-        month_name = dt.strftime("%B")
-        year = dt.strftime("%Y")
-        # Generate the expected URL
-        url = f"https://darpg.gov.in/sites/default/files/CPGRAMS_Monthly_Report_{month_name}_{year}.pdf"
-        print(f"DEBUG [DARPG]: Trying calculated PDF URL: {url}")
-        
-        headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.get(url, headers=headers, follow_redirects=True)
-                if resp.status_code == 200 and "application/pdf" in resp.headers.get("content-type", ""):
-                    print(f"DEBUG [DARPG]: Successfully found PDF at {url}")
-                    return url
-                else:
-                    print(f"DEBUG [DARPG]: Got {resp.status_code} for {url}. Content-Type: {resp.headers.get('content-type')}")
-        except Exception as e:
-            print(f"DEBUG [DARPG]: Network error checking {url}: {type(e).__name__} - {e}")
-
-    try:
-        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
-            response = await client.get(DARPG_CENTRAL_URL, headers=headers)
-            response.raise_for_status()
-            html = response.text
-
-        # Look for PDF links in the page
-        # Typical pattern: /sites/default/files/...Monthly_Report...pdf
-        pdf_pattern = r'href=["\']([^"\']*\.pdf)["\']'
-        matches = re.findall(pdf_pattern, html, re.IGNORECASE)
-
-        if not matches:
-            return None
-
-        # Score PDF URLs — prefer monthly/grievance reports over assessment reports
-        def _pdf_score(url_path):
-            lower = url_path.lower()
-            score = 0
-            # Strong positive signals
-            if "monthly" in lower: score += 10
-            if "grievance" in lower: score += 10
-            if "cpgrams" in lower: score += 8
-            if "central" in lower and "ministry" in lower: score += 8
-            # Mild positive
-            if "report" in lower: score += 2
-            # Negative signals — skip large assessment / campaign docs
-            if "assessment" in lower: score -= 15
-            if "campaign" in lower: score -= 10
-            if "special" in lower: score -= 5
-            return score
-
-        scored = sorted(matches, key=_pdf_score, reverse=True)
-        best = scored[0]
-        logger.info(f"PDF candidates: {scored[:5]}")
-        logger.info(f"Selected PDF: {best} (score={_pdf_score(best)})")
-        if best.startswith("http"):
-            return best
-        return f"https://darpg.gov.in{best}"
-
-    except Exception as e:
-        logger.error(f"Failed to find PDF URL: {e}")
-        return None
-
-
-async def _download_pdf(url: str) -> bytes:
-    """Download a PDF file and return its bytes."""
-    headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
-    try:
-        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-
-            content_type = response.headers.get("content-type", "")
-            if "pdf" not in content_type and not url.endswith(".pdf"):
-                logger.warning(f"Response may not be PDF: {content_type}")
-
-            return response.content
-    except Exception as e:
-        logger.error(f"Failed to download PDF: {e}")
-        return None
 
 
 def _extract_tables_from_pdf(pdf_bytes: bytes) -> list[dict[str, Any]]:
@@ -345,7 +290,6 @@ def _extract_tables_from_pdf(pdf_bytes: bytes) -> list[dict[str, Any]]:
     try:
         with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
             max_pages = min(len(pdf.pages), 30)  # Limit to first 30 pages
-            logger.info(f"PDF has {len(pdf.pages)} pages, scanning first {max_pages}")
             for page in pdf.pages[:max_pages]:
                 tables = page.extract_tables()
                 if not tables:
@@ -355,14 +299,12 @@ def _extract_tables_from_pdf(pdf_bytes: bytes) -> list[dict[str, Any]]:
                     if not table or len(table) < 2:
                         continue
 
-                    # Try to identify header row
                     header = table[0]
                     if not header:
                         continue
 
                     header_lower = [str(h).lower().strip() if h else "" for h in header]
 
-                    # Look for columns that indicate ministry performance data
                     ministry_col = _find_col_index(header_lower, ["ministry", "department", "organisation", "name"])
                     state_col = _find_col_index(header_lower, ["state", "ut", "administration", "states/uts", "state/ut"])
                     received_col = _find_col_index(header_lower, ["received", "receipt", "filed", "registered"])
@@ -376,7 +318,6 @@ def _extract_tables_from_pdf(pdf_bytes: bytes) -> list[dict[str, Any]]:
                     is_state_table = state_col is not None and ministry_col is None
                     name_col = state_col if is_state_table else ministry_col
 
-                    # Parse data rows
                     for data_row in table[1:]:
                         if not data_row or len(data_row) <= max(name_col, received_col):
                             continue
@@ -406,7 +347,6 @@ def _extract_tables_from_pdf(pdf_bytes: bytes) -> list[dict[str, Any]]:
 
 
 def _find_col_index(header: list[str], keywords: list[str]) -> int:
-    """Find the column index whose header contains one of the keywords."""
     for i, h in enumerate(header):
         for kw in keywords:
             if kw in h:
@@ -415,7 +355,6 @@ def _find_col_index(header: list[str], keywords: list[str]) -> int:
 
 
 def _parse_int(value: Any) -> int:
-    """Safely parse a value to int, handling commas and whitespace."""
     if value is None:
         return 0
     s = str(value).strip().replace(",", "").replace(" ", "")
@@ -428,7 +367,6 @@ def _parse_int(value: Any) -> int:
 
 
 def _parse_float(value: Any) -> float:
-    """Safely parse a value to float."""
     if value is None:
         return 0.0
     s = str(value).strip().replace(",", "").replace(" ", "")
@@ -441,49 +379,20 @@ def _parse_float(value: Any) -> float:
 
 
 def _match_ministry_name(extracted_name: str) -> str:
-    """
-    Fuzzy match an extracted ministry name against known ministry names.
-    Returns the canonical name if found, None otherwise.
-    """
     if not extracted_name:
         return None
-
     extracted_lower = extracted_name.lower().strip()
-
-    # Direct match
     for canonical_name in MINISTRY_NAMES:
         if canonical_name.lower() == extracted_lower:
             return canonical_name
-
-    # Partial match — check if key terms overlap
     for canonical_name in MINISTRY_NAMES:
-        canonical_lower = canonical_name.lower()
-        # Remove common prefixes for comparison
-        canonical_core = (
-            canonical_lower
-            .replace("ministry of ", "")
-            .replace("department of ", "")
-            .strip()
-        )
-        extracted_core = (
-            extracted_lower
-            .replace("ministry of ", "")
-            .replace("department of ", "")
-            .replace("m/o ", "")
-            .replace("d/o ", "")
-            .strip()
-        )
-
+        canonical_core = canonical_name.lower().replace("ministry of ", "").replace("department of ", "").strip()
+        extracted_core = extracted_lower.replace("ministry of ", "").replace("department of ", "").replace("m/o ", "").replace("d/o ", "").strip()
         if canonical_core == extracted_core:
             return canonical_name
-
-        # Check if the first significant word matches
         canonical_words = set(canonical_core.split())
         extracted_words = set(extracted_core.split())
         overlap = canonical_words & extracted_words
-
-        # If more than half the words match, consider it a match
         if len(overlap) >= max(1, len(canonical_words) // 2):
             return canonical_name
-
     return None

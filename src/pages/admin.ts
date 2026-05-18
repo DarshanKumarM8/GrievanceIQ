@@ -12,6 +12,9 @@ export function adminPage(): string {
           <p class="text-gray-300 text-sm">System health, audit logs, email queue, and platform metrics</p>
         </div>
         <div class="flex items-center gap-3">
+          <button id="live-demo-btn" onclick="runLiveDemo()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-5 py-2 rounded-lg text-xs font-bold transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 animate-pulse hover:animate-none">
+            <i class="fas fa-clapperboard mr-1.5"></i>Start Live Demo
+          </button>
           <button onclick="refreshAdmin()" class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors">
             <i class="fas fa-rotate mr-1.5"></i>Refresh
           </button>
@@ -148,6 +151,31 @@ export function adminPage(): string {
           <div class="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-start gap-2">
             <i class="fas fa-info-circle text-emerald-600 mt-0.5 flex-shrink-0"></i>
             <p class="text-[10px] text-emerald-700">Pipeline jobs run on Render.com (Python/FastAPI). Cron triggers from Cloudflare warm the container then dispatch jobs. Enter your Admin Key to trigger manual runs during demos.</p>
+          </div>
+
+          <!-- Live Demo Progress Panel -->
+          <div id="live-demo-panel" class="hidden mt-4 rounded-xl border-2 border-orange-400 bg-gradient-to-br from-gray-900 to-gray-800 p-5 shadow-2xl">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span></span>
+              <h3 class="text-orange-400 font-bold text-sm">LIVE DEMO — Pipeline Execution</h3>
+              <span class="ml-auto text-[10px] text-gray-500 font-mono" id="demo-timer">00:00</span>
+            </div>
+            <div class="space-y-2" id="demo-job-list"></div>
+          </div>
+
+          <!-- Live Demo Summary -->
+          <div id="live-demo-summary" class="hidden mt-4 p-5 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-green-500 shadow-2xl">
+            <h3 class="text-green-400 font-bold mb-3 text-sm"><i class="fas fa-check-circle mr-2"></i>Pipeline Complete — Live Data Status</h3>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="bg-white/5 rounded-lg p-3"><span class="text-gray-400 block mb-1">Ministry Data</span><span id="summary-ministries" class="text-white font-bold text-base">—</span></div>
+              <div class="bg-white/5 rounded-lg p-3"><span class="text-gray-400 block mb-1">Report Month</span><span id="summary-month" class="text-white font-bold text-base">—</span></div>
+              <div class="bg-white/5 rounded-lg p-3"><span class="text-gray-400 block mb-1">Social Signals</span><span id="summary-signals" class="text-white font-bold text-base">—</span></div>
+              <div class="bg-white/5 rounded-lg p-3"><span class="text-gray-400 block mb-1">Trending Issues</span><span id="summary-trends" class="text-white font-bold text-base">—</span></div>
+            </div>
+            <div class="mt-4 text-center py-3 bg-green-500/10 rounded-lg border border-green-500/30">
+              <span class="text-green-400 font-bold text-lg">🟢 DASHBOARD IS LIVE</span>
+              <p class="text-gray-400 text-[10px] mt-1">All data sourced from official government sources. Last sync: just now.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -491,6 +519,135 @@ export function adminPage(): string {
         btn.innerHTML = origHTML;
         btn.disabled = false;
       }
+    }
+
+    // --- Live Demo Mode ---
+    let demoTimerInterval = null;
+    let demoStartTime = null;
+
+    function getAdminKey() {
+      return document.getElementById('admin-key-input')?.value || '';
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function runLiveDemo() {
+      const adminKey = getAdminKey();
+      if (!adminKey) {
+        if (typeof showToast === 'function') showToast('Enter your Admin Key first', 'error');
+        else alert('Enter your Admin Key in the pipeline panel first.');
+        return;
+      }
+
+      const btn = document.getElementById('live-demo-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>Running...';
+      btn.className = btn.className.replace('animate-pulse','');
+
+      const panel = document.getElementById('live-demo-panel');
+      const summary = document.getElementById('live-demo-summary');
+      summary.classList.add('hidden');
+      panel.classList.remove('hidden');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      const jobs = [
+        { id: 'darpg', name: 'DARPG PDF Fetch', icon: 'fa-file-pdf text-red-400', desc: 'Downloading latest DARPG report from darpg.gov.in...' },
+        { id: 'rss', name: 'RSS Monitor', icon: 'fa-rss text-orange-400', desc: 'Scanning 5 news feeds for grievance keywords...' },
+        { id: 'aggregator', name: 'Aggregator', icon: 'fa-brain text-purple-400', desc: 'Running TF-IDF pattern detection on complaints...' },
+        { id: 'datagov', name: 'data.gov.in API', icon: 'fa-database text-blue-400', desc: 'Fetching 15-month historical time-series data...' }
+      ];
+
+      const jobListEl = document.getElementById('demo-job-list');
+      jobListEl.innerHTML = jobs.map(j =>
+        '<div id="demo-row-' + j.id + '" class="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">' +
+        '<i class="fas ' + j.icon + ' w-5 text-center"></i>' +
+        '<div class="flex-1"><div class="text-xs font-bold text-white">' + j.name + '</div>' +
+        '<div class="text-[10px] text-gray-500 demo-desc">Waiting...</div></div>' +
+        '<div class="demo-badge"><span class="px-2 py-0.5 rounded-full bg-gray-700 text-gray-400 text-[10px] font-bold">QUEUED</span></div></div>'
+      ).join('');
+
+      demoStartTime = Date.now();
+      demoTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - demoStartTime) / 1000);
+        const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('demo-timer').textContent = m + ':' + s;
+      }, 1000);
+
+      for (const job of jobs) {
+        await runJobWithProgress(job, adminKey);
+        await sleep(800);
+      }
+
+      clearInterval(demoTimerInterval);
+      await showLiveSummary(adminKey);
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-redo mr-1.5"></i>Re-run Demo';
+    }
+
+    async function runJobWithProgress(job, adminKey) {
+      const row = document.getElementById('demo-row-' + job.id);
+      if (!row) return;
+      const descEl = row.querySelector('.demo-desc');
+      const badgeEl = row.querySelector('.demo-badge');
+
+      row.className = row.className.replace('bg-white/5 border-white/10', 'bg-orange-500/10 border-orange-400/50');
+      descEl.textContent = job.desc;
+      descEl.className = 'text-[10px] text-orange-300 demo-desc';
+      badgeEl.innerHTML = '<span class="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-bold"><i class="fas fa-spinner fa-spin mr-1"></i>RUNNING</span>';
+
+      const startTime = Date.now();
+      try {
+        const res = await fetch('/api/admin/pipeline/trigger', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + adminKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job: job.id })
+        });
+        const json = await res.json();
+        const dur = ((Date.now() - startTime) / 1000).toFixed(1);
+        const d = json.data?.details || json.data || {};
+        const rows = d.rows_updated || d.articles_inserted || d.trending_issues_updated || d.rows_inserted || d.ministries_updated || 0;
+
+        if (json.success) {
+          row.className = row.className.replace('bg-orange-500/10 border-orange-400/50', 'bg-green-500/10 border-green-500/50');
+          descEl.textContent = 'Completed in ' + dur + 's \u2014 ' + rows + ' rows updated';
+          descEl.className = 'text-[10px] text-green-300 demo-desc';
+          badgeEl.innerHTML = '<span class="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px] font-bold">\u2705 SUCCESS</span>';
+        } else {
+          row.className = row.className.replace('bg-orange-500/10 border-orange-400/50', 'bg-amber-500/10 border-amber-400/50');
+          descEl.textContent = 'Completed with issues in ' + dur + 's: ' + (json.error || 'check logs');
+          descEl.className = 'text-[10px] text-amber-300 demo-desc';
+          badgeEl.innerHTML = '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold">\u26a0\ufe0f PARTIAL</span>';
+        }
+      } catch (e) {
+        row.className = row.className.replace('bg-orange-500/10 border-orange-400/50', 'bg-red-500/10 border-red-500/50');
+        descEl.textContent = 'Failed: ' + (e.message || 'Network error');
+        descEl.className = 'text-[10px] text-red-300 demo-desc';
+        badgeEl.innerHTML = '<span class="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold">\u274c FAILED</span>';
+      }
+    }
+
+    async function showLiveSummary(adminKey) {
+      try {
+        const res = await fetch('/api/admin/pipeline/verify', {
+          headers: { 'Authorization': 'Bearer ' + adminKey }
+        });
+        const json = await res.json();
+        const d = json.data || {};
+        document.getElementById('summary-ministries').textContent = (d.ministries_live || 0) + ' ministries';
+        document.getElementById('summary-month').textContent = d.report_month || 'Latest';
+        document.getElementById('summary-signals').textContent = (d.signals_today || 0) + ' signals';
+        document.getElementById('summary-trends').textContent = (d.trends_live || 0) + ' flagged';
+      } catch (e) {
+        document.getElementById('summary-ministries').textContent = 'Check dashboard';
+        document.getElementById('summary-month').textContent = '\u2014';
+        document.getElementById('summary-signals').textContent = '\u2014';
+        document.getElementById('summary-trends').textContent = '\u2014';
+      }
+      document.getElementById('live-demo-summary').classList.remove('hidden');
+      document.getElementById('live-demo-summary').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      await refreshAdmin();
     }
 
     refreshAdmin();

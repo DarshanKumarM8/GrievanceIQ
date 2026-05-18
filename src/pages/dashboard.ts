@@ -113,19 +113,28 @@ export function dashboardPage(): string {
   <!-- NEW: Time-Series Analysis -->
   <section class="py-8 sm:py-12 bg-gray-50" id="timeseries">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-chart-area text-saffron-500 mr-2"></i><span data-i18n="dashboard_monthly">Monthly Trends — 15-Month Analysis</span></h2>
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h2 class="text-xl sm:text-2xl font-bold text-navy-800 dark:text-white"><i class="fas fa-chart-area text-saffron-500 mr-2"></i><span data-i18n="dashboard_monthly">Monthly Trends Analysis</span></h2>
+        <select id="timeRangeFilter" onchange="window.renderTimeseries(this.value)" class="mt-3 sm:mt-0 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-navy-500 focus:border-navy-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-navy-500 dark:focus:border-navy-500 shadow-sm">
+          <option value="3">Last 3 Months</option>
+          <option value="6">Last 6 Months</option>
+          <option value="12">Last 12 Months</option>
+          <option value="15" selected>Last 15 Months</option>
+          <option value="36">All Time</option>
+        </select>
+      </div>
       <div class="grid lg:grid-cols-2 gap-6">
         <!-- National complaints time-series -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
           <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700 text-white">
-            <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-line mr-1.5"></i><span data-i18n="chart_national_trend"><span data-i18n="chart_national_trend">National Complaints &mdash; Monthly Trend</span></span></h3>
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-line mr-1.5"></i><span data-i18n="chart_national_trend"><span data-i18n="chart_national_trend"><span data-i18n="chart_national_trend">National Complaints &mdash; Monthly Trend</span></span></span></h3>
           </div>
           <div class="p-4" style="height:340px;"><canvas id="tsNationalChart"></canvas></div>
         </div>
         <!-- Satisfaction & Fake Closure Trend -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
           <div class="px-5 py-3 bg-gradient-to-r from-ashoka-600 to-ashoka-700 text-white">
-            <h3 class="font-bold text-white text-sm"><i class="fas fa-face-smile mr-1.5"></i><span data-i18n="chart_sat_vs_fake"><span data-i18n="chart_sat_vs_fake">Satisfaction vs Fake Closure Trend</span></span></h3>
+            <h3 class="font-bold text-white text-sm"><i class="fas fa-face-smile mr-1.5"></i><span data-i18n="chart_sat_vs_fake"><span data-i18n="chart_sat_vs_fake"><span data-i18n="chart_sat_vs_fake">Satisfaction vs Fake Closure Trend</span></span></span></h3>
           </div>
           <div class="p-4" style="height:340px;"><canvas id="tsSatFakeChart"></canvas></div>
         </div>
@@ -146,19 +155,19 @@ export function dashboardPage(): string {
       <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-chart-bar text-saffron-500 mr-2"></i><span data-i18n="dashboard_analytics">Analytics Overview</span></h2>
       <div class="grid lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-          <div class="px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-building-columns mr-1.5"></i><span data-i18n="chart_top10"><span data-i18n="chart_top10">Top 10 Ministries &mdash; Complaint Volume</span></span></h3></div>
+          <div class="px-5 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-building-columns mr-1.5"></i><span data-i18n="chart_top10"><span data-i18n="chart_top10"><span data-i18n="chart_top10">Top 10 Ministries &mdash; Complaint Volume</span></span></span></h3></div>
           <div class="p-4" style="height:340px;"><canvas id="ministryBarChart"></canvas></div>
         </div>
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-          <div class="px-5 py-3 bg-gradient-to-r from-saffron-500 to-saffron-600 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-chart-pie mr-1.5"></i><span data-i18n="chart_dist"><span data-i18n="chart_dist">Resolution Status Distribution</span></span></h3></div>
+          <div class="px-5 py-3 bg-gradient-to-r from-saffron-500 to-saffron-600 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-chart-pie mr-1.5"></i><span data-i18n="chart_dist"><span data-i18n="chart_dist"><span data-i18n="chart_dist">Resolution Status Distribution</span></span></span></h3></div>
           <div class="p-4 flex items-center justify-center" style="height:340px;"><canvas id="statusDoughnutChart"></canvas></div>
         </div>
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-          <div class="px-5 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-mask mr-1.5"></i><span data-i18n="chart_offenders"><span data-i18n="chart_offenders">Fake Closure Rate &mdash; Top Offenders</span></span></h3></div>
+          <div class="px-5 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-mask mr-1.5"></i><span data-i18n="chart_offenders"><span data-i18n="chart_offenders"><span data-i18n="chart_offenders">Fake Closure Rate &mdash; Top Offenders</span></span></span></h3></div>
           <div class="p-4" style="height:340px;"><canvas id="fakeClosureChart"></canvas></div>
         </div>
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-          <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-clock mr-1.5"></i><span data-i18n="chart_avg_res"><span data-i18n="chart_avg_res">Average Resolution Days</span></span></h3></div>
+          <div class="px-5 py-3 bg-gradient-to-r from-navy-600 to-navy-700 text-white"><h3 class="font-bold text-white text-sm"><i class="fas fa-clock mr-1.5"></i><span data-i18n="chart_avg_res"><span data-i18n="chart_avg_res"><span data-i18n="chart_avg_res">Average Resolution Days</span></span></span></h3></div>
           <div class="p-4" style="height:340px;"><canvas id="resolutionDaysChart"></canvas></div>
         </div>
       </div>
@@ -189,10 +198,10 @@ export function dashboardPage(): string {
   <!-- NEW: Resolution Funnel (Week 7) -->
   <section class="py-8 sm:py-12" id="funnel" data-lazy>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-filter text-saffron-500 mr-2"></i><span data-i18n="funnel_title"><span data-i18n="funnel_title">Resolution Funnel &mdash; National Pipeline</span></span></h2>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-filter text-saffron-500 mr-2"></i><span data-i18n="funnel_title"><span data-i18n="funnel_title"><span data-i18n="funnel_title">Resolution Funnel &mdash; National Pipeline</span></span></span></h2>
       <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-waterfall mr-1.5"></i><span data-i18n="funnel_sub"><span data-i18n="funnel_sub">Complaint Journey: Filing to Resolution</span></span></h3>
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-waterfall mr-1.5"></i><span data-i18n="funnel_sub"><span data-i18n="funnel_sub"><span data-i18n="funnel_sub">Complaint Journey: Filing to Resolution</span></span></span></h3>
         </div>
         <div class="p-6" id="funnelContainer">
           <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading funnel data...</p></div>
@@ -204,18 +213,18 @@ export function dashboardPage(): string {
   <!-- NEW: Complaint Heatmap Calendar (Week 7) -->
   <section class="py-8 sm:py-12 bg-gray-50" id="heatmap" data-lazy>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-calendar-days text-saffron-500 mr-2"></i><span data-i18n="heatmap_title"><span data-i18n="heatmap_title">Complaint Activity Heatmap &mdash; 12 Months</span></span></h2>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-calendar-days text-saffron-500 mr-2"></i><span data-i18n="heatmap_title"><span data-i18n="heatmap_title"><span data-i18n="heatmap_title">Complaint Activity Heatmap &mdash; 12 Months</span></span></span></h2>
       <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div class="px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 flex items-center justify-betwee text-white">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-fire mr-1.5"></i><span data-i18n="heatmap_sub"><span data-i18n="heatmap_sub">Daily Complaint Volume Heatmap</span></span></h3>
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-fire mr-1.5"></i><span data-i18n="heatmap_sub"><span data-i18n="heatmap_sub"><span data-i18n="heatmap_sub">Daily Complaint Volume Heatmap</span></span></span></h3>
           <div class="flex items-center gap-1.5" id="heatLegend">
-            <span class="text-[10px] text-white/70" data-i18n="heatmap_less" data-i18n="heatmap_less">Less</span>
+            <span class="text-[10px] text-white/70" data-i18n="heatmap_less" data-i18n="heatmap_less" data-i18n="heatmap_less">Less</span>
             <span class="w-3 h-3 rounded-sm" style="background:#ecfdf5"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#6ee7b7"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#10b981"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#047857"></span>
             <span class="w-3 h-3 rounded-sm" style="background:#064e3b"></span>
-            <span class="text-[10px] text-white/70" data-i18n="heatmap_more" data-i18n="heatmap_more">More</span>
+            <span class="text-[10px] text-white/70" data-i18n="heatmap_more" data-i18n="heatmap_more" data-i18n="heatmap_more">More</span>
           </div>
         </div>
         <div class="p-6 overflow-x-auto" id="heatmapContainer">
@@ -228,10 +237,10 @@ export function dashboardPage(): string {
   <!-- NEW: Department Network Graph (Week 7) -->
   <section class="py-8 sm:py-12" id="network" data-lazy>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-diagram-project text-saffron-500 mr-2"></i><span data-i18n="network_title"><span data-i18n="network_title">Department Interaction Network</span></span></h2>
+      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-diagram-project text-saffron-500 mr-2"></i><span data-i18n="network_title"><span data-i18n="network_title"><span data-i18n="network_title">Department Interaction Network</span></span></span></h2>
       <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div class="px-5 py-3 bg-gradient-to-r from-rose-600 to-pink-700 text-white">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-share-nodes mr-1.5"></i><span data-i18n="network_sub"><span data-i18n="network_sub">Inter-Ministry Complaint Transfer Network &mdash; Top 15</span></span></h3>
+          <h3 class="font-bold text-white text-sm"><i class="fas fa-share-nodes mr-1.5"></i><span data-i18n="network_sub"><span data-i18n="network_sub"><span data-i18n="network_sub">Inter-Ministry Complaint Transfer Network &mdash; Top 15</span></span></span></h3>
         </div>
         <div class="p-4" id="networkContainer" style="height:500px; position:relative;">
           <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading network data...</p></div>
@@ -286,7 +295,7 @@ export function dashboardPage(): string {
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <span class="w-3 h-3 rounded-full bg-red-500 pulse-dot"></span>
-          <h2 class="text-xl sm:text-2xl font-bold text-navy-800 dark:text-white"><span data-i18n="radar_sys_title"><span data-i18n="radar_sys_title">Systemic Issue Radar</span></span></h2>
+          <h2 class="text-xl sm:text-2xl font-bold text-navy-800 dark:text-white"><span data-i18n="radar_sys_title"><span data-i18n="radar_sys_title"><span data-i18n="radar_sys_title">Systemic Issue Radar</span></span></span></h2>
         </div>
         <span class="text-xs text-gray-400">Week of March 2026</span>
       </div>
@@ -297,7 +306,7 @@ export function dashboardPage(): string {
   <!-- Social Signals -->
   <section class="py-8 sm:py-12 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-signal mr-2 text-saffron-500"></i><span data-i18n="social_feed_title"><span data-i18n="social_feed_title">Social Monitoring Feed</span></span></h2>
+      <h2 class="text-xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-signal mr-2 text-saffron-500"></i><span data-i18n="social_feed_title"><span data-i18n="social_feed_title"><span data-i18n="social_feed_title">Social Monitoring Feed</span></span></span></h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4" id="socialGrid"></div>
     </div>
   </section>
@@ -377,7 +386,8 @@ export function dashboardPage(): string {
       loadScorecard();
       loadTrendingDash();
       loadSocial();
-      loadTimeSeries();
+      window.renderTimeseries = (months) => loadTimeSeries(months);
+      loadTimeSeries(15);
       loadRadarChart();
       loadSparklines();
     }
@@ -511,9 +521,13 @@ export function dashboardPage(): string {
     // ============================================
     // TIME-SERIES CHARTS (Week 5)
     // ============================================
-    async function loadTimeSeries() {
+    let tsNationalChartObj = null;
+    let tsSatFakeChartObj = null;
+    let tsMinistryChartObj = null;
+
+    async function loadTimeSeries(months = 15) {
       try {
-        const res = await fetch('/api/analytics/timeseries');
+        const res = await fetch('/api/analytics/timeseries?months=' + months);
         const json = await res.json();
         if (!json.success) return;
         if (!json.data || !json.data.labels || json.data.labels.length === 0) {
@@ -527,8 +541,12 @@ export function dashboardPage(): string {
         Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
         Chart.defaults.font.size = 11;
 
+        if (tsNationalChartObj) tsNationalChartObj.destroy();
+        if (tsSatFakeChartObj) tsSatFakeChartObj.destroy();
+        if (tsMinistryChartObj) tsMinistryChartObj.destroy();
+
         // National trend line chart
-        new Chart(document.getElementById('tsNationalChart'), {
+        tsNationalChartObj = new Chart(document.getElementById('tsNationalChart'), {
           type: 'line',
           data: {
             labels: json.data.labels,
@@ -542,7 +560,7 @@ export function dashboardPage(): string {
         });
 
         // Satisfaction vs Fake Closure dual-axis
-        new Chart(document.getElementById('tsSatFakeChart'), {
+        tsSatFakeChartObj = new Chart(document.getElementById('tsSatFakeChart'), {
           type: 'line',
           data: {
             labels: json.data.labels,
@@ -556,7 +574,7 @@ export function dashboardPage(): string {
 
         // Top 5 ministries stacked area
         const ministryColors = ['#1a365d','#ff9933','#22c55e','#8b5cf6','#ef4444'];
-        new Chart(document.getElementById('tsMinistryChart'), {
+        tsMinistryChartObj = new Chart(document.getElementById('tsMinistryChart'), {
           type: 'line',
           data: {
             labels: json.data.labels,

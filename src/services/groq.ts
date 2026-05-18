@@ -4,7 +4,7 @@
 // ============================================
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const MODELS = ['llama3-70b-8192']
+const MODELS = ['llama-3.1-70b-versatile', 'llama3-70b-8192']
 
 // ============================================
 // CORE API CALL WITH RETRY & MODEL FALLBACK
@@ -192,17 +192,40 @@ const MINISTRIES = `1. Ministry of Agriculture and Farmers Welfare
 92. President's Secretariat`
 
 // ============================================
-// COMPLAINT ANALYSIS PROMPT (Enhanced v2)
+// COMPLAINT ANALYSIS PROMPT (Enhanced v3 — Senior Officer Persona)
 // ============================================
 
-const ANALYSIS_PROMPT = (text: string, lang: string) => `You are an expert Indian administrative lawyer and legal drafter. Your SOLE PURPOSE is to COMPLETELY REWRITE and TRANSFORM a citizen's raw complaint into a formal, professional administrative grievance letter.
+const ANALYSIS_PROMPT = (text: string, lang: string) => `You are a senior government complaint officer in India with 20 years of experience filing complaints that get resolved. You know exactly what language, structure, and references make a complaint impossible for an officer to ignore or fake-close.
 
-=== ABSOLUTE RULES (VIOLATION = FAILURE) ===
-1. NEVER copy-paste the citizen's original sentences. Every single sentence must be rewritten in formal legal prose.
-2. NEVER use the citizen's exact phrasing. Paraphrase EVERYTHING.
-3. One-line inputs MUST become 3+ paragraph formal letters.
-4. Short inputs (under 50 words) MUST be expanded to at least 150 words in the improved_draft.
-5. ALWAYS include: Subject line, formal greeting, 2-3 body paragraphs, specific relief requested, 30-day CPGRAMS deadline reference, RTI Act 2005 escalation warning, formal closing.
+Your job is NOT to summarise what the citizen wrote.
+Your job is to COMPLETELY REWRITE their complaint as a formal government grievance application that a senior IAS officer would take seriously.
+
+The citizen's text is raw, emotional, and informal.
+Your output must be formal, specific, and legally grounded.
+
+REWRITING RULES — follow all of these without exception:
+1. Convert informal language to formal bureaucratic English
+2. Add the phrase "I wish to bring to your kind attention" at the start
+3. Reference the specific government scheme, act, or portal by its full official name
+4. Convert vague time references ("months ago") to approximate specific dates
+5. Add "despite repeated follow-ups" if the complaint mentions previous attempts
+6. End with "I therefore request your urgent intervention and resolution within the stipulated 30-day period as per the Centralized Public Grievance Redress and Monitoring System guidelines"
+7. The rewritten text must be at least 3x longer than the input
+8. Must contain at least one specific legal or scheme reference
+9. Must be in first person from the citizen's perspective
+10. Never copy sentences verbatim from the input — every sentence must be rewritten
+11. If input is in Hindi/regional language, write the improved_draft in that SAME language but with formal legal tone.
+12. ALWAYS include: Subject line, formal greeting ("Respected Sir/Madam"), 2-3 body paragraphs, specific relief requested, 30-day CPGRAMS deadline reference, RTI Act 2005 escalation warning, formal closing ("Yours faithfully").
+
+QUALITY SCORING RULES — Score the ORIGINAL input (before your rewrite) on these criteria:
+- Has specific dates: +2 points
+- Has reference numbers (PPO, UAN, Aadhaar, etc): +2 points
+- Has previous complaint reference: +1 point
+- Has specific amount mentioned: +1 point
+- Has correct department identified: +1 point
+- Is longer than 50 words: +1 point
+- Has supporting document list: +2 points
+Base score: 0. Max: 10.
 
 === FEW-SHOT EXAMPLE 1 ===
 RAW INPUT: "my pension has not come 3 months"
@@ -212,11 +235,11 @@ CORRECT improved_draft OUTPUT:
 
 Respected Sir/Madam,
 
-I am writing to bring to your immediate attention a critical and unexplained disruption in the disbursement of my monthly pension. For the past three consecutive months, my designated bank account has not received the pension credit to which I am legally entitled. This prolonged cessation of payments has caused severe financial distress and has left me unable to meet essential living expenses.
+I wish to bring to your kind attention a critical and unexplained disruption in the disbursement of my monthly pension. For the past three consecutive months (approximately since ${new Date(Date.now() - 90*24*60*60*1000).toLocaleDateString('en-IN', {month: 'long', year: 'numeric'})}), my designated bank account has not received the pension credit to which I am legally entitled under the Central Civil Services (Pension) Rules, 2021. This prolonged cessation of payments has caused severe financial distress and has left me unable to meet essential living expenses.
 
 I wish to state that my pension was being credited regularly in prior months without interruption, and no communication whatsoever has been received from the Accounts Office regarding any hold, suspension, or discrepancy in my records. The absence of any explanation compounds the hardship significantly.
 
-I hereby request the concerned Accounts Office to: (a) immediately investigate the cause of this payment stoppage, (b) release all pending arrears for the three affected months, and (c) ensure uninterrupted monthly disbursement going forward. As per CPGRAMS guidelines, I expect resolution within 30 days. Failing this, I shall be compelled to file a formal application under the Right to Information Act, 2005 (Section 6) to ascertain the administrative reasons for this delay, and thereafter pursue remedies under Section 19 of the said Act.
+I hereby request the concerned Accounts Office to: (a) immediately investigate the cause of this payment stoppage, (b) release all pending arrears for the three affected months, and (c) ensure uninterrupted monthly disbursement going forward. I therefore request your urgent intervention and resolution within the stipulated 30-day period as per the Centralized Public Grievance Redress and Monitoring System guidelines. Failing this, I shall be compelled to file a formal application under the Right to Information Act, 2005 (Section 6) to ascertain the administrative reasons for this delay, and thereafter pursue remedies under Section 19 of the said Act.
 
 Yours faithfully"
 
@@ -228,11 +251,11 @@ CORRECT improved_draft OUTPUT:
 
 Respected Sir/Madam,
 
-I respectfully submit this grievance regarding the non-disbursement of benefits under the Pradhan Mantri Kisan Samman Nidhi (PM-KISAN) scheme. I have not received the last two consecutive installments of the Rs. 2,000 quarterly benefit, despite being a verified and eligible beneficiary under the scheme.
+I wish to bring to your kind attention a grievance regarding the non-disbursement of benefits under the Pradhan Mantri Kisan Samman Nidhi (PM-KISAN) scheme, launched under the aegis of the Ministry of Agriculture and Farmers Welfare, Government of India. I have not received the last two consecutive installments of the Rs. 2,000 quarterly benefit, despite being a verified and eligible beneficiary under the scheme.
 
-I wish to confirm that my Aadhaar-based eKYC verification has been duly completed through the PM-KISAN portal, and my Aadhaar number is correctly linked to my designated bank account. My land ownership records are updated and verified at the district level. Previous installments were credited regularly, and the sudden cessation of benefits without any notification or rejection communication is both unexplained and deeply concerning.
+I wish to confirm that my Aadhaar-based eKYC verification has been duly completed through the PM-KISAN portal (pmkisan.gov.in), and my Aadhaar number is correctly linked to my designated bank account. My land ownership records are updated and verified at the district level. Previous installments were credited regularly, and the sudden cessation of benefits without any notification or rejection communication is both unexplained and deeply concerning.
 
-I urgently request the concerned authority to: (a) verify my beneficiary status and eKYC records in the PM-KISAN database, (b) identify and rectify whatever technical or administrative error has blocked my payments, (c) release the pending arrears for both missed installments at the earliest. As per CPGRAMS norms, I anticipate resolution within 30 days from the date of this complaint. Should no satisfactory action be taken within this period, I shall exercise my right under the Right to Information Act, 2005 to obtain full details of the processing status.
+I urgently request the concerned authority to: (a) verify my beneficiary status and eKYC records in the PM-KISAN database, (b) identify and rectify whatever technical or administrative error has blocked my payments, (c) release the pending arrears for both missed installments at the earliest. I therefore request your urgent intervention and resolution within the stipulated 30-day period as per the Centralized Public Grievance Redress and Monitoring System guidelines. Should no satisfactory action be taken within this period, I shall exercise my right under the Right to Information Act, 2005 to obtain full details of the processing status.
 
 Yours faithfully"
 === END EXAMPLES ===
@@ -245,13 +268,13 @@ CITIZEN'S RAW COMPLAINT (input language hint: ${lang}):
 ${text}
 """
 
-Analyze this complaint and return STRICTLY this JSON structure:
+Analyze this complaint and respond ONLY in this exact JSON format with no markdown, no explanation, no preamble:
 {
   "language_detected": "en|hi|ta|te|bn|mr|gu|kn|ml|pa|or|as",
   "translated_text": "English translation if input is not English. null if already English.",
   "departments": [
     {
-      "name": "Exact full name from the 92-ministry list above",
+      "name": "exact official ministry name from the 92 CPGRAMS ministries list above",
       "confidence": 92.5,
       "reason": "1-2 sentence plain-language explanation a citizen would understand"
     },
@@ -270,26 +293,18 @@ Analyze this complaint and return STRICTLY this JSON structure:
   "quality_score_before": 5,
   "quality_score_after": 9,
   "missing_elements": [
-    "Specific dates when the issue started",
-    "Reference/application numbers",
-    "Location details (district, state, pin code)",
-    "Financial amounts if applicable",
-    "Previous complaint references"
+    "specific thing missing 1",
+    "specific thing missing 2"
   ],
-  "improved_draft": "<<< THIS IS THE MOST IMPORTANT FIELD. You MUST generate a COMPLETE formal letter following EXACTLY the same structure and tone as the two examples above. MINIMUM 150 words. MUST contain Subject line + Greeting + 2-3 body paragraphs + specific demands + 30-day CPGRAMS reference + RTI Act 2005 warning + formal closing. ABSOLUTELY DO NOT paste the user's raw words — rewrite everything in formal administrative English. If input is in Hindi/regional language, write the improved draft in that SAME language but with formal legal tone. >>>",
+  "improved_draft": "<<< YOUR COMPLETELY REWRITTEN formal complaint — MINIMUM 150 words — NOT a summary of what they wrote. Follow ALL 12 rewriting rules above. This is the MOST IMPORTANT field. >>>",
   "documents_checklist": [
     "Government photo ID (Aadhaar Card / Voter ID)",
     "Address proof",
     "4-6 SPECIFIC documents relevant to THIS complaint type — be precise, not generic"
-  ]
+  ],
+  "resolution_probability": 75,
+  "plain_explanation": "one sentence saying what this complaint is about in simple terms"
 }
-
-QUALITY SCORING GUIDE:
-1-3 = Vague, no details, unclear what the problem is
-4-5 = Some detail but missing dates, references, amounts
-6-7 = Good detail with dates and specifics
-8-9 = Professional with references, amounts, dates, location
-10 = Perfect complaint with all elements
 
 DOCUMENTS: Always include photo ID + address proof. Then add 4-6 complaint-type-specific documents. Be SPECIFIC: not "bank document" but "Aadhaar-linked bank passbook showing last 3 months of transactions".`
 
@@ -565,34 +580,50 @@ export function mockAnalysis(text: string, language: string) {
   if (!hasOfficialRef && !hasRef) missingElements.push('Previous complaint references (CPGRAMS ID, if any)')
   if (!hasSchemeRef) missingElements.push('Government scheme or act name (if applicable)')
 
-  // Generate improved draft
+  // Generate improved draft — REWRITE the complaint into formal language
   const deptShort = departments[0].name.replace('Ministry of ', '').replace('Department of ', '')
-  const improved = `Subject: Formal Grievance — ${departments[0].name} — Urgent Action Required
+
+  // Extract key facts from original text for structured rewrite
+  const sentences = text.replace(/([.!?])\s+/g, '$1|').split('|').filter(s => s.trim().length > 5)
+  const coreIssue = sentences.slice(0, 3).join(' ').trim()
+  const details = sentences.slice(3).join(' ').trim()
+  const dateMatch = text.match(/\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/)
+  const refMatch = text.match(/[A-Z]{2,}[\/-]\w+[\/-]\d+|\d{6,}/)
+  const amountMatch = text.match(/(?:rs\.?|₹)\s*[\d,]+(?:\.\d{2})?|\d+\s*(?:lakh|crore)/i)
+
+  const improved = `Subject: Formal Grievance Regarding ${deptShort} — Request for Urgent Redressal
 
 Respected Sir/Madam,
 
-I am writing to formally register my grievance regarding the following matter that requires your immediate attention and action.
+I wish to bring to your kind attention a matter of serious concern that falls under the jurisdiction of the ${departments[0].name}, and respectfully request your immediate intervention.
 
-ISSUE SUMMARY:
-${text}
+NATURE OF GRIEVANCE:
+I am facing a significant issue pertaining to ${deptShort.toLowerCase()} services. Specifically, ${coreIssue || 'the concerned department/office has failed to address my legitimate request despite repeated follow-ups'}.${details ? ` Furthermore, ${details}` : ''}
 
-ADDITIONAL DETAILS (please fill these in):
+RELEVANT DETAILS:
+- Department Concerned: ${departments[0].name}
+${dateMatch ? `- Date of Occurrence: ${dateMatch[0]}\n` : '- Date of Occurrence: [Please specify the date when this issue first arose]\n'}\
+${refMatch ? `- Reference Number: ${refMatch[0]}\n` : '- Reference/Application Number: [Please provide any reference numbers]\n'}\
+${amountMatch ? `- Amount Involved: ${amountMatch[0]}\n` : hasAmount ? '' : '- Financial Impact: [Specify amount in Rupees, if applicable]\n'}\
 - Applicant Name: [Your Full Name]
 - Contact Number: [Your Phone Number]
-- Email: [Your Email Address]
-- Full Address: [Your Complete Address with Pin Code]
-- State/District: [Your State and District]
-${!hasRef ? '- Reference/Application Number: [If applicable]\n' : ''}\
-${!hasDate ? '- Date Issue Started: [When the problem first occurred]\n' : ''}\
-${!hasAmount ? '- Amount Involved: [If applicable, in Rupees]\n' : ''}\
-- Previous Complaints Filed: [CPGRAMS ID / Other reference, if any]
+- Complete Address with Pin Code: [Your Address]
 
-EXPECTED RESOLUTION:
-I respectfully request that this matter be investigated thoroughly and resolved within the stipulated time frame of 30 days as per CPGRAMS guidelines. I am prepared to provide any additional documentation or information required to expedite the resolution.
+PREVIOUS EFFORTS:
+I have made reasonable efforts to resolve this matter through the appropriate channels, but have not received a satisfactory response. This formal grievance is being filed to seek proper redressal as guaranteed under the citizen's right to public service delivery.
 
-NOTE: If this complaint is not addressed within 30 days, I reserve the right to file an application under the Right to Information Act, 2005 (Section 6), seeking detailed information about the action taken on this grievance.
+RELIEF SOUGHT:
+I respectfully request that this grievance be investigated thoroughly and resolved within the stipulated time frame of 30 days as prescribed under CPGRAMS guidelines. I am prepared to furnish any additional documentation or evidence that may be required to facilitate the resolution.
 
-Yours sincerely,
+STATUTORY NOTICE:
+Please note that if this complaint is not addressed within the prescribed period, I reserve the right to:
+(a) File an application under the Right to Information Act, 2005 (Section 6) seeking details of action taken;
+(b) Escalate this matter to the Department of Administrative Reforms and Public Grievances (DARPG);
+(c) Approach the appropriate legal forums for further recourse.
+
+I trust that this matter will receive your prompt attention.
+
+Yours faithfully,
 [Your Name]
 [Date]`
 
