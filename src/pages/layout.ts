@@ -306,41 +306,41 @@ export function layout(title: string, content: string, activePage: string = '', 
   <!-- ============================================ -->
   <!-- NAVIGATION -->
   <!-- ============================================ -->
-  <nav class="bg-gradient-to-r from-navy-900 to-navy-800 text-white backdrop-blur-md border-b border-navy-700 sticky top-0 z-50 shadow-md" role="navigation" aria-label="Main navigation">
+  <nav class="bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-b border-gray-200 dark:border-dark-700 sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Main navigation">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <a href="/" class="flex items-center gap-2.5 group">
-          <div class="w-9 h-9 bg-gradient-to-br from-saffron-500 to-navy-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow border border-navy-600">
+          <div class="w-9 h-9 bg-gradient-to-br from-saffron-500 to-navy-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
             <i class="fas fa-balance-scale text-white text-sm"></i>
           </div>
           <div>
-            <span class="text-xl font-bold text-white tracking-tight">Grievance</span><span class="text-xl font-bold text-saffron-400">IQ</span>
-            <p class="text-[10px] text-navy-200 -mt-1 hidden sm:block tracking-wide">FILE SMARTER. GET HEARD.</p>
+            <span class="text-xl font-bold text-navy-800 dark:text-white tracking-tight">Grievance</span><span class="text-xl font-bold text-saffron-500">IQ</span>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 -mt-1 hidden sm:block tracking-wide">FILE SMARTER. GET HEARD.</p>
           </div>
         </a>
         
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center gap-1">
-          <a href="/" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'home' ? 'nav-active bg-white/5' : ''}">
+          <a href="/" class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-saffron-600 dark:hover:text-white transition-colors rounded-lg hover:bg-saffron-50 dark:hover:bg-white/10 ${activePage === 'home' ? 'nav-active bg-saffron-50 dark:bg-white/5' : ''}">
             <i class="fas fa-home mr-1.5"></i><span data-i18n="nav_home">Home</span>
           </a>
-          <a href="/complaint" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'complaint' ? 'nav-active bg-white/5' : ''}">
+          <a href="/complaint" class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-saffron-600 dark:hover:text-white transition-colors rounded-lg hover:bg-saffron-50 dark:hover:bg-white/10 ${activePage === 'complaint' ? 'nav-active bg-saffron-50 dark:bg-white/5' : ''}">
             <i class="fas fa-pen-to-square mr-1.5"></i><span data-i18n="nav_complaint">File Complaint</span>
           </a>
-          <a href="/tracker" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'tracker' ? 'nav-active bg-white/5' : ''}">
+          <a href="/tracker" class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-saffron-600 dark:hover:text-white transition-colors rounded-lg hover:bg-saffron-50 dark:hover:bg-white/10 ${activePage === 'tracker' ? 'nav-active bg-saffron-50 dark:bg-white/5' : ''}">
             <i class="fas fa-magnifying-glass mr-1.5"></i><span data-i18n="nav_track">Track</span>
           </a>
-          <a href="/my-complaints" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'my-complaints' ? 'nav-active bg-white/5' : ''}">
+          <a href="/my-complaints" class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-saffron-600 dark:hover:text-white transition-colors rounded-lg hover:bg-saffron-50 dark:hover:bg-white/10 ${activePage === 'my-complaints' ? 'nav-active bg-saffron-50 dark:bg-white/5' : ''}">
             <i class="fas fa-folder-open mr-1.5"></i><span data-i18n="nav_my_complaints">My Complaints</span>
           </a>
-          <a href="/dashboard" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'dashboard' ? 'nav-active bg-white/5' : ''}">
+          <a href="/dashboard" class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-saffron-600 dark:hover:text-white transition-colors rounded-lg hover:bg-saffron-50 dark:hover:bg-white/10 ${activePage === 'dashboard' ? 'nav-active bg-saffron-50 dark:bg-white/5' : ''}">
             <i class="fas fa-chart-line mr-1.5"></i><span data-i18n="nav_dashboard">Dashboard</span>
           </a>
-          <a href="/how-it-works" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'how-it-works' ? 'nav-active bg-white/5' : ''}">
+          <a href="/how-it-works" class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-saffron-600 dark:hover:text-white transition-colors rounded-lg hover:bg-saffron-50 dark:hover:bg-white/10 ${activePage === 'how-it-works' ? 'nav-active bg-saffron-50 dark:bg-white/5' : ''}">
             <i class="fas fa-circle-info mr-1.5"></i><span data-i18n="nav_how">How It Works</span>
           </a>
-          <a href="/about" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'about' ? 'nav-active bg-white/5' : ''}">
+          <a href="/about" class="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-saffron-600 dark:hover:text-white transition-colors rounded-lg hover:bg-saffron-50 dark:hover:bg-white/10 ${activePage === 'about' ? 'nav-active bg-saffron-50 dark:bg-white/5' : ''}">
             <i class="fas fa-users mr-1.5"></i><span data-i18n="nav_about">About</span>
           </a>
         </div>
@@ -348,11 +348,11 @@ export function layout(title: string, content: string, activePage: string = '', 
         <!-- CTA + Dark Mode + Language Toggle + Auth -->
         <div class="hidden md:flex items-center gap-3">
           <!-- Dark Mode Toggle -->
-          <button onclick="toggleDarkMode()" id="darkModeBtn" class="text-xs p-2 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 transition-colors" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <button onclick="toggleDarkMode()" id="darkModeBtn" class="text-xs p-2 rounded-lg border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors" title="Toggle dark mode" aria-label="Toggle dark mode">
             <i class="fas fa-moon" id="darkModeIcon"></i>
           </button>
           <div class="relative" id="langPickerWrap">
-            <button onclick="toggleLangDropdown(event)" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 font-medium transition-colors" title="Switch language" aria-haspopup="listbox" aria-expanded="false">
+            <button onclick="toggleLangDropdown(event)" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 font-medium transition-colors" title="Switch language" aria-haspopup="listbox" aria-expanded="false">
               <i class="fas fa-globe mr-1"></i><span id="langToggleLabel">English</span> <i class="fas fa-caret-down ml-0.5 text-[10px]"></i>
             </button>
             <div id="langDropdown" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-xl shadow-xl z-50 overflow-hidden text-gray-700 dark:text-gray-200" role="listbox" aria-label="Select language">
@@ -367,7 +367,7 @@ export function layout(title: string, content: string, activePage: string = '', 
           </div>
           <!-- Notification Bell (visible when logged in) -->
           <div id="navNotifWrap" class="hidden relative">
-            <button onclick="toggleNotifPanel(event)" id="notifBellBtn" class="relative text-xs p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+            <button onclick="toggleNotifPanel(event)" id="notifBellBtn" class="relative text-xs p-2 rounded-lg border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
               <i class="fas fa-bell"></i>
               <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
             </button>
@@ -383,13 +383,13 @@ export function layout(title: string, content: string, activePage: string = '', 
           </div>
           <!-- Auth state: Guest -->
           <div id="navGuest" class="flex items-center gap-2">
-            <a href="/login" class="text-xs px-3 py-1.5 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 font-medium transition-colors">
+            <a href="/login" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 font-medium transition-colors">
               <i class="fas fa-sign-in-alt mr-1"></i>Sign In
             </a>
           </div>
           <!-- Auth state: Logged in -->
           <div id="navUser" class="hidden flex items-center gap-2">
-            <a href="/profile" class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 font-medium transition-colors">
+            <a href="/profile" class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 font-medium transition-colors">
               <i class="fas fa-user-circle text-saffron-500"></i><span id="navUserName">Account</span>
             </a>
           </div>
@@ -399,7 +399,7 @@ export function layout(title: string, content: string, activePage: string = '', 
         </div>
         
         <!-- Mobile menu button -->
-        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-white hover:bg-white/10">
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10">
           <i class="fas fa-bars text-xl" id="menuIcon"></i>
         </button>
       </div>
