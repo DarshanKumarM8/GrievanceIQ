@@ -365,46 +365,46 @@ export function complaintPage(): string {
 
         <!-- Step 7: Next Steps / File -->
         <div class="max-w-4xl mx-auto mb-6" data-animate>
-          <div class="bg-gradient-to-r from-saffron-50 to-ashoka-50 rounded-2xl border border-saffron-200 p-6">
-            <h3 class="font-bold text-gray-900 mb-4"><i class="fas fa-arrow-right-from-bracket text-saffron-600 mr-2"></i>Step 7: File Your Complaint</h3>
+          <div class="bg-gradient-to-r from-saffron-50 to-ashoka-50 dark:from-dark-800 dark:to-dark-800 dark:bg-dark-800 rounded-2xl border border-saffron-200 dark:border-dark-700 p-6">
+            <h3 class="font-bold text-gray-900 dark:text-white mb-4"><i class="fas fa-arrow-right-from-bracket text-saffron-600 mr-2"></i>Step 7: File Your Complaint</h3>
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div class="bg-white rounded-xl p-4 shadow-sm card-hover cursor-pointer" onclick="copyImproved()">
-                <div class="w-8 h-8 bg-saffron-100 rounded-lg flex items-center justify-center mb-2">
-                  <span class="text-sm font-bold text-saffron-700">1</span>
+              <div class="bg-white dark:bg-dark-700 rounded-xl p-4 shadow-sm card-hover cursor-pointer" onclick="copyImproved()">
+                <div class="w-8 h-8 bg-saffron-100 dark:bg-saffron-900/30 rounded-lg flex items-center justify-center mb-2">
+                  <span class="text-sm font-bold text-saffron-700 dark:text-saffron-400">1</span>
                 </div>
-                <h4 class="font-semibold text-sm mb-1">Copy Complaint</h4>
-                <p class="text-xs text-gray-500">Review the AI draft, edit if needed, then copy</p>
+                <h4 class="font-semibold text-sm mb-1 text-gray-900 dark:text-gray-100">Copy Complaint</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Review the AI draft, edit if needed, then copy</p>
               </div>
-              <a href="https://pgportal.gov.in" target="_blank" class="bg-white rounded-xl p-4 shadow-sm card-hover">
-                <div class="w-8 h-8 bg-saffron-100 rounded-lg flex items-center justify-center mb-2">
-                  <span class="text-sm font-bold text-saffron-700">2</span>
+              <a href="https://pgportal.gov.in" target="_blank" class="bg-white dark:bg-dark-700 rounded-xl p-4 shadow-sm card-hover">
+                <div class="w-8 h-8 bg-saffron-100 dark:bg-saffron-900/30 rounded-lg flex items-center justify-center mb-2">
+                  <span class="text-sm font-bold text-saffron-700 dark:text-saffron-400">2</span>
                 </div>
-                <h4 class="font-semibold text-sm mb-1">File on CPGRAMS <i class="fas fa-external-link text-[10px] text-gray-400"></i></h4>
-                <p class="text-xs text-gray-500">pgportal.gov.in — select the suggested department</p>
+                <h4 class="font-semibold text-sm mb-1 text-gray-900 dark:text-gray-100">File on CPGRAMS <i class="fas fa-external-link text-[10px] text-gray-400"></i></h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">pgportal.gov.in — select the suggested department</p>
               </a>
-              <a href="/tracker" class="bg-white rounded-xl p-4 shadow-sm card-hover">
-                <div class="w-8 h-8 bg-saffron-100 rounded-lg flex items-center justify-center mb-2">
-                  <span class="text-sm font-bold text-saffron-700">3</span>
+              <a href="/tracker" class="bg-white dark:bg-dark-700 rounded-xl p-4 shadow-sm card-hover">
+                <div class="w-8 h-8 bg-saffron-100 dark:bg-saffron-900/30 rounded-lg flex items-center justify-center mb-2">
+                  <span class="text-sm font-bold text-saffron-700 dark:text-saffron-400">3</span>
                 </div>
-                <h4 class="font-semibold text-sm mb-1">Track Progress</h4>
-                <p class="text-xs text-gray-500">Enter CPGRAMS ID to get Day 15/25 reminders</p>
+                <h4 class="font-semibold text-sm mb-1 text-gray-900 dark:text-gray-100">Track Progress</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Enter CPGRAMS ID to get Day 15/25 reminders</p>
               </a>
-              <a href="/rti" class="bg-white rounded-xl p-4 shadow-sm card-hover">
-                <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mb-2">
-                  <span class="text-sm font-bold text-red-700">4</span>
+              <a href="/rti" class="bg-white dark:bg-dark-700 rounded-xl p-4 shadow-sm card-hover">
+                <div class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mb-2">
+                  <span class="text-sm font-bold text-red-700 dark:text-red-400">4</span>
                 </div>
-                <h4 class="font-semibold text-sm mb-1">Escalate if Ignored</h4>
-                <p class="text-xs text-gray-500">Auto-draft RTI after 30 days</p>
+                <h4 class="font-semibold text-sm mb-1 text-gray-900 dark:text-gray-100">Escalate if Ignored</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Auto-draft RTI after 30 days</p>
               </a>
             </div>
             
             <!-- Save to My Complaints -->
-            <div class="mt-4 p-4 bg-white rounded-xl border border-ashoka-200">
+            <div class="mt-4 p-4 bg-white dark:bg-dark-700 rounded-xl border border-ashoka-200 dark:border-dark-600">
               <div class="flex items-center gap-3">
                 <i class="fas fa-bookmark text-ashoka-500"></i>
                 <div class="flex-1">
-                  <h4 class="font-semibold text-sm text-gray-900">Save to My Complaints</h4>
-                  <p class="text-xs text-gray-500">Track all your complaints in one place</p>
+                  <h4 class="font-semibold text-sm text-gray-900 dark:text-gray-100">Save to My Complaints</h4>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Track all your complaints in one place</p>
                 </div>
                 <a href="/my-complaints" class="text-xs bg-ashoka-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-ashoka-600 transition-colors">
                   <i class="fas fa-folder-open mr-1"></i>View All

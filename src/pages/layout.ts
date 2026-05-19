@@ -306,41 +306,41 @@ export function layout(title: string, content: string, activePage: string = '', 
   <!-- ============================================ -->
   <!-- NAVIGATION -->
   <!-- ============================================ -->
-  <nav class="bg-white/95 dark:bg-dark-800/97 backdrop-blur-md border-b border-gray-200 dark:border-dark-700 sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Main navigation">
+  <nav class="bg-gradient-to-r from-navy-900 to-navy-800 text-white backdrop-blur-md border-b border-navy-700 sticky top-0 z-50 shadow-md" role="navigation" aria-label="Main navigation">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <a href="/" class="flex items-center gap-2.5 group">
-          <div class="w-9 h-9 bg-gradient-to-br from-saffron-500 to-navy-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+          <div class="w-9 h-9 bg-gradient-to-br from-saffron-500 to-navy-600 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow border border-navy-600">
             <i class="fas fa-balance-scale text-white text-sm"></i>
           </div>
           <div>
-            <span class="text-xl font-bold text-navy-700 tracking-tight">Grievance</span><span class="text-xl font-bold text-saffron-500">IQ</span>
-            <p class="text-[10px] text-gray-400 -mt-1 hidden sm:block tracking-wide">FILE SMARTER. GET HEARD.</p>
+            <span class="text-xl font-bold text-white tracking-tight">Grievance</span><span class="text-xl font-bold text-saffron-400">IQ</span>
+            <p class="text-[10px] text-navy-200 -mt-1 hidden sm:block tracking-wide">FILE SMARTER. GET HEARD.</p>
           </div>
         </a>
         
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center gap-1">
-          <a href="/" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'home' ? 'nav-active' : ''}">
+          <a href="/" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'home' ? 'nav-active bg-white/5' : ''}">
             <i class="fas fa-home mr-1.5"></i><span data-i18n="nav_home">Home</span>
           </a>
-          <a href="/complaint" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'complaint' ? 'nav-active' : ''}">
+          <a href="/complaint" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'complaint' ? 'nav-active bg-white/5' : ''}">
             <i class="fas fa-pen-to-square mr-1.5"></i><span data-i18n="nav_complaint">File Complaint</span>
           </a>
-          <a href="/tracker" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'tracker' ? 'nav-active' : ''}">
+          <a href="/tracker" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'tracker' ? 'nav-active bg-white/5' : ''}">
             <i class="fas fa-magnifying-glass mr-1.5"></i><span data-i18n="nav_track">Track</span>
           </a>
-          <a href="/my-complaints" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'my-complaints' ? 'nav-active' : ''}">
+          <a href="/my-complaints" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'my-complaints' ? 'nav-active bg-white/5' : ''}">
             <i class="fas fa-folder-open mr-1.5"></i><span data-i18n="nav_my_complaints">My Complaints</span>
           </a>
-          <a href="/dashboard" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'dashboard' ? 'nav-active' : ''}">
+          <a href="/dashboard" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'dashboard' ? 'nav-active bg-white/5' : ''}">
             <i class="fas fa-chart-line mr-1.5"></i><span data-i18n="nav_dashboard">Dashboard</span>
           </a>
-          <a href="/how-it-works" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'how-it-works' ? 'nav-active' : ''}">
+          <a href="/how-it-works" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'how-it-works' ? 'nav-active bg-white/5' : ''}">
             <i class="fas fa-circle-info mr-1.5"></i><span data-i18n="nav_how">How It Works</span>
           </a>
-          <a href="/about" class="px-3 py-2 text-sm font-medium text-gray-600 hover:text-saffron-600 transition-colors rounded-lg hover:bg-saffron-50 ${activePage === 'about' ? 'nav-active' : ''}">
+          <a href="/about" class="px-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10 ${activePage === 'about' ? 'nav-active bg-white/5' : ''}">
             <i class="fas fa-users mr-1.5"></i><span data-i18n="nav_about">About</span>
           </a>
         </div>
@@ -348,15 +348,15 @@ export function layout(title: string, content: string, activePage: string = '', 
         <!-- CTA + Dark Mode + Language Toggle + Auth -->
         <div class="hidden md:flex items-center gap-3">
           <!-- Dark Mode Toggle -->
-          <button onclick="toggleDarkMode()" id="darkModeBtn" class="text-xs p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <button onclick="toggleDarkMode()" id="darkModeBtn" class="text-xs p-2 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 transition-colors" title="Toggle dark mode" aria-label="Toggle dark mode">
             <i class="fas fa-moon" id="darkModeIcon"></i>
           </button>
           <div class="relative" id="langPickerWrap">
-            <button onclick="toggleLangDropdown(event)" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors" title="Switch language" aria-haspopup="listbox" aria-expanded="false">
-              <i class="fas fa-globe mr-1"></i><span id="langToggleLabel">हिन्दी</span> <i class="fas fa-caret-down ml-0.5 text-[10px]"></i>
+            <button onclick="toggleLangDropdown(event)" id="langToggleBtn" class="text-xs px-3 py-1.5 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 font-medium transition-colors" title="Switch language" aria-haspopup="listbox" aria-expanded="false">
+              <i class="fas fa-globe mr-1"></i><span id="langToggleLabel">English</span> <i class="fas fa-caret-down ml-0.5 text-[10px]"></i>
             </button>
-            <div id="langDropdown" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-xl shadow-xl z-50 overflow-hidden" role="listbox" aria-label="Select language">
-              <button onclick="setLang('en')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇬🇧 English</span></button>
+            <div id="langDropdown" class="hidden absolute right-0 mt-1 w-40 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-xl shadow-xl z-50 overflow-hidden text-gray-700 dark:text-gray-200" role="listbox" aria-label="Select language">
+              <button onclick="setLang('en')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-700 dark:hover:text-saffron-400 transition-colors flex items-center justify-between" role="option"><span>🇬🇧 English</span></button>
               <button onclick="setLang('hi')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 हिन्दी</span></button>
               <button onclick="setLang('ta')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 தமிழ்</span></button>
               <button onclick="setLang('te')" class="w-full text-left px-3 py-2 text-xs hover:bg-saffron-50 hover:text-saffron-700 transition-colors flex items-center justify-between" role="option"><span>🇮🇳 తెలుగు</span></button>
@@ -383,13 +383,13 @@ export function layout(title: string, content: string, activePage: string = '', 
           </div>
           <!-- Auth state: Guest -->
           <div id="navGuest" class="flex items-center gap-2">
-            <a href="/login" class="text-xs px-3 py-1.5 rounded-lg border border-navy-200 text-navy-600 hover:bg-navy-50 font-medium transition-colors">
+            <a href="/login" class="text-xs px-3 py-1.5 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 font-medium transition-colors">
               <i class="fas fa-sign-in-alt mr-1"></i>Sign In
             </a>
           </div>
           <!-- Auth state: Logged in -->
           <div id="navUser" class="hidden flex items-center gap-2">
-            <a href="/profile" class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors">
+            <a href="/profile" class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-navy-700 text-gray-300 hover:bg-white/10 font-medium transition-colors">
               <i class="fas fa-user-circle text-saffron-500"></i><span id="navUserName">Account</span>
             </a>
           </div>
@@ -399,7 +399,7 @@ export function layout(title: string, content: string, activePage: string = '', 
         </div>
         
         <!-- Mobile menu button -->
-        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-white hover:bg-white/10">
           <i class="fas fa-bars text-xl" id="menuIcon"></i>
         </button>
       </div>
@@ -420,29 +420,29 @@ export function layout(title: string, content: string, activePage: string = '', 
           </button>
         </div>
         <div class="space-y-2">
-          <a href="/" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
-            <i class="fas fa-home w-5"></i> Home
+          <a href="/" class="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
+            <i class="fas fa-home w-5"></i> <span data-i18n="nav_home">Home</span>
           </a>
-          <a href="/complaint" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
-            <i class="fas fa-pen-to-square w-5"></i> File a Complaint
+          <a href="/complaint" class="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
+            <i class="fas fa-pen-to-square w-5"></i> <span data-i18n="nav_complaint">File a Complaint</span>
           </a>
-          <a href="/tracker" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
-            <i class="fas fa-magnifying-glass w-5"></i> Track Complaint
+          <a href="/tracker" class="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
+            <i class="fas fa-magnifying-glass w-5"></i> <span data-i18n="nav_track">Track Complaint</span>
           </a>
-          <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
-            <i class="fas fa-chart-line w-5"></i> Public Dashboard
+          <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
+            <i class="fas fa-chart-line w-5"></i> <span data-i18n="nav_dashboard">Public Dashboard</span>
           </a>
-          <a href="/my-complaints" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
+          <a href="/my-complaints" class="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
             <i class="fas fa-folder-open w-5"></i> <span data-i18n="nav_my_complaints">My Complaints</span>
           </a>
-          <a href="/how-it-works" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
+          <a href="/how-it-works" class="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
             <i class="fas fa-circle-info w-5"></i> <span data-i18n="nav_how">How It Works</span>
           </a>
-          <a href="/about" class="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
+          <a href="/about" class="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
             <i class="fas fa-users w-5"></i> <span data-i18n="nav_about">About Us</span>
           </a>
-          <div class="pt-4 mt-4 border-t space-y-2">
-            <button onclick="toggleDarkMode()" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-gray-700 rounded-xl hover:bg-saffron-50 hover:text-saffron-600 transition-colors">
+          <div class="pt-4 mt-4 border-t border-gray-200 dark:border-dark-700 space-y-2">
+            <button onclick="toggleDarkMode()" class="w-full flex items-center justify-center gap-2 px-4 py-3 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-saffron-50 dark:hover:bg-dark-700 hover:text-saffron-600 transition-colors">
               <i class="fas fa-moon w-5" id="mobileDarkModeIcon"></i> <span id="mobileDarkModeLabel">Dark Mode</span>
             </button>
             <div id="mobileGuest">
@@ -451,12 +451,12 @@ export function layout(title: string, content: string, activePage: string = '', 
               </a>
             </div>
             <div id="mobileUser" class="hidden space-y-2">
-              <a href="/profile" class="block text-center bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-semibold">
+              <a href="/profile" class="block text-center bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-xl font-semibold">
                 <i class="fas fa-user-circle mr-2"></i><span id="mobileUserName">My Profile</span>
               </a>
             </div>
             <a href="/complaint" class="block text-center bg-gradient-to-r from-saffron-500 to-saffron-600 text-white px-6 py-3 rounded-xl font-semibold">
-              File a Complaint <i class="fas fa-arrow-right ml-2"></i>
+              <span data-i18n="nav_file_cta">File a Complaint</span> <i class="fas fa-arrow-right ml-2"></i>
             </a>
           </div>
         </div>
