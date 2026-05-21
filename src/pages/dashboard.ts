@@ -51,11 +51,48 @@ export function dashboardPage(): string {
             <button id="backToIndiaBtn" onclick="backToIndiaMap()" class="hidden text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors dark:bg-gray-800 dark:border-gray-700">
               <i class="fas fa-arrow-left mr-1"></i><span data-i18n="dashboard_map_back">Back to India</span>
             </button>
+            <select id="stateSelect" onchange="window.handleStateChange(this.value)" class="text-xs bg-white dark:bg-dark-800 text-gray-900 dark:text-white font-medium border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-1.5 focus:outline-none">
+              <option value="ALL">All India</option>
+              <option value="AP">Andhra Pradesh</option>
+              <option value="AR">Arunachal Pradesh</option>
+              <option value="AS">Assam</option>
+              <option value="BR">Bihar</option>
+              <option value="CG">Chhattisgarh</option>
+              <option value="GA">Goa</option>
+              <option value="GJ">Gujarat</option>
+              <option value="HR">Haryana</option>
+              <option value="HP">Himachal Pradesh</option>
+              <option value="JH">Jharkhand</option>
+              <option value="KA">Karnataka</option>
+              <option value="KL">Kerala</option>
+              <option value="MP">Madhya Pradesh</option>
+              <option value="MH">Maharashtra</option>
+              <option value="MN">Manipur</option>
+              <option value="ML">Meghalaya</option>
+              <option value="MZ">Mizoram</option>
+              <option value="NL">Nagaland</option>
+              <option value="OD">Odisha</option>
+              <option value="PB">Punjab</option>
+              <option value="RJ">Rajasthan</option>
+              <option value="SK">Sikkim</option>
+              <option value="TN">Tamil Nadu</option>
+              <option value="TG">Telangana</option>
+              <option value="TR">Tripura</option>
+              <option value="UP">Uttar Pradesh</option>
+              <option value="UK">Uttarakhand</option>
+              <option value="WB">West Bengal</option>
+            </select>
             <select id="mapMetric" onchange="updateMapColors()" class="text-xs bg-white dark:bg-dark-800 text-gray-900 dark:text-white font-medium border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-1.5 focus:outline-none">
               <option value="total_complaints" data-i18n="metric_total">Total Complaints</option>
               <option value="resolution_rate" data-i18n="metric_resolution">Resolution Rate</option>
               <option value="fake_closure_rate" data-i18n="metric_fake">Fake Closure Rate</option>
               <option value="avg_resolution_days" data-i18n="metric_avg_days">Avg Resolution Days</option>
+            </select>
+            <select id="timelineSelect" class="text-xs bg-white dark:bg-dark-800 text-gray-900 dark:text-white font-medium border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-1.5 focus:outline-none">
+              <option value="1">Last 1 Month</option>
+              <option value="3">Last 3 Months</option>
+              <option value="6">Last 6 Months</option>
+              <option value="12">Last 1 Year</option>
             </select>
           </div>
         </div>
@@ -104,6 +141,18 @@ export function dashboardPage(): string {
               </tr></thead>
               <tbody id="districtBody" class="divide-y divide-gray-100"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+      <!-- MLA Accountability Modal -->
+      <div id="mlaModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000] flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div class="px-6 py-4 bg-gradient-to-r from-saffron-500 to-saffron-600 flex justify-between items-center text-white">
+            <h3 class="font-bold text-white text-lg"><i class="fas fa-users-viewfinder mr-2"></i>MLA Accountability</h3>
+            <button onclick="document.getElementById('mlaModal').classList.add('hidden')" class="text-white hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
+          </div>
+          <div class="p-6" id="mlaModalContent">
+            <div class="text-center py-6"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-sm text-gray-500">Loading MLA data...</p></div>
           </div>
         </div>
       </div>
@@ -195,67 +244,6 @@ export function dashboardPage(): string {
     </div>
   </section>
 
-  <!-- NEW: Resolution Funnel (Week 7) -->
-  <section class="py-8 sm:py-12" id="funnel" data-lazy>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-filter text-saffron-500 mr-2"></i><span data-i18n="funnel_title"><span data-i18n="funnel_title"><span data-i18n="funnel_title">Resolution Funnel &mdash; National Pipeline</span></span></span></h2>
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-        <div class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-chart-waterfall mr-1.5"></i><span data-i18n="funnel_sub"><span data-i18n="funnel_sub"><span data-i18n="funnel_sub">Complaint Journey: Filing to Resolution</span></span></span></h3>
-        </div>
-        <div class="p-6" id="funnelContainer">
-          <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading funnel data...</p></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- NEW: Complaint Heatmap Calendar (Week 7) -->
-  <section class="py-8 sm:py-12 bg-gray-50" id="heatmap" data-lazy>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-calendar-days text-saffron-500 mr-2"></i><span data-i18n="heatmap_title"><span data-i18n="heatmap_title"><span data-i18n="heatmap_title">Complaint Activity Heatmap &mdash; 12 Months</span></span></span></h2>
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-        <div class="px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 flex items-center justify-betwee text-white">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-fire mr-1.5"></i><span data-i18n="heatmap_sub"><span data-i18n="heatmap_sub"><span data-i18n="heatmap_sub">Daily Complaint Volume Heatmap</span></span></span></h3>
-          <div class="flex items-center gap-1.5" id="heatLegend">
-            <span class="text-[10px] text-white/70" data-i18n="heatmap_less" data-i18n="heatmap_less" data-i18n="heatmap_less">Less</span>
-            <span class="w-3 h-3 rounded-sm" style="background:#ecfdf5"></span>
-            <span class="w-3 h-3 rounded-sm" style="background:#6ee7b7"></span>
-            <span class="w-3 h-3 rounded-sm" style="background:#10b981"></span>
-            <span class="w-3 h-3 rounded-sm" style="background:#047857"></span>
-            <span class="w-3 h-3 rounded-sm" style="background:#064e3b"></span>
-            <span class="text-[10px] text-white/70" data-i18n="heatmap_more" data-i18n="heatmap_more" data-i18n="heatmap_more">More</span>
-          </div>
-        </div>
-        <div class="p-6 overflow-x-auto" id="heatmapContainer">
-          <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading heatmap data...</p></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- NEW: Department Network Graph (Week 7) -->
-  <section class="py-8 sm:py-12" id="network" data-lazy>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-xl sm:text-2xl font-bold text-navy-800 mb-6 dark:text-white"><i class="fas fa-diagram-project text-saffron-500 mr-2"></i><span data-i18n="network_title"><span data-i18n="network_title"><span data-i18n="network_title">Department Interaction Network</span></span></span></h2>
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-        <div class="px-5 py-3 bg-gradient-to-r from-rose-600 to-pink-700 text-white">
-          <h3 class="font-bold text-white text-sm"><i class="fas fa-share-nodes mr-1.5"></i><span data-i18n="network_sub"><span data-i18n="network_sub"><span data-i18n="network_sub">Inter-Ministry Complaint Transfer Network &mdash; Top 15</span></span></span></h3>
-        </div>
-        <div class="p-4" id="networkContainer" style="height:500px; position:relative;">
-          <div class="text-center py-10"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-xs text-gray-400">Loading network data...</p></div>
-          <canvas id="networkCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-        </div>
-        <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-3 text-[10px] text-gray-500 dark:text-gray-300">
-          <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Good satisfaction</span>
-          <span><span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1"></span>Average</span>
-          <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Flagged</span>
-          <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>High fake closure</span>
-          <span class="ml-auto">Line thickness = transfer volume</span>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- Department Scorecard -->
   <section class="py-8 sm:py-12 bg-gray-50" id="scorecard">
@@ -497,9 +485,9 @@ export function dashboardPage(): string {
           document.getElementById('districtTitle').textContent = json.data.state_name + ' — District Breakdown (' + json.data.districts.length + ' districts)';
           isDistrictView = true;
           document.getElementById('districtBody').innerHTML = json.data.districts.map((d, i) => 
-            '<tr class="hover:bg-gray-50">' +
+            '<tr class="hover:bg-gray-100 cursor-pointer transition-colors" onclick="window.loadMlaData(\\'' + d.name + '\\')">' +
             '<td class="px-4 py-2 text-xs text-gray-400">' + (i+1) + '</td>' +
-            '<td class="px-4 py-2 font-medium text-sm text-gray-900 dark:text-white">' + d.name + '</td>' +
+            '<td class="px-4 py-2 font-medium text-sm text-gray-900 dark:text-white">' + d.name + ' <i class="fas fa-chevron-right text-[10px] text-gray-300 ml-1"></i></td>' +
             '<td class="px-4 py-2 text-center text-sm font-medium">' + d.total_complaints.toLocaleString() + '</td>' +
             '<td class="px-4 py-2 text-center"><span class="text-sm font-semibold ' + (d.resolution_rate>=75?'text-ashoka-600':d.resolution_rate>=60?'text-saffron-600':'text-red-600') + '">' + d.resolution_rate + '%</span></td>' +
             '<td class="px-4 py-2 text-center"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + (d.fake_closure_rate>=15?'bg-red-100 text-red-700':d.fake_closure_rate>=10?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700') + '">' + d.fake_closure_rate + '%</span></td>' +
@@ -517,6 +505,60 @@ export function dashboardPage(): string {
       document.getElementById('backToIndiaBtn').classList.add('hidden');
       isDistrictView = false;
     }
+
+    // ============================================
+    // MLA ACCOUNTABILITY
+    // ============================================
+    window.loadMlaData = async function(districtName) {
+      const modal = document.getElementById('mlaModal');
+      modal.classList.remove('hidden');
+      const content = document.getElementById('mlaModalContent');
+      content.innerHTML = '<div class="text-center py-6"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-sm text-gray-500">Loading MLA data for ' + districtName + '...</p></div>';
+      try {
+        const res = await fetch('/api/map/district/' + encodeURIComponent(districtName));
+        const json = await res.json();
+        if (json.success && json.data.mlas) {
+          content.innerHTML = '<div class="mb-4"><h4 class="font-bold text-gray-900 dark:text-white text-lg">' + districtName + ' District</h4><p class="text-xs text-gray-500">Constituency Breakdown</p></div>' + 
+            json.data.mlas.map(mla => 
+              '<div class="bg-gray-50 rounded-xl p-4 mb-3 border border-gray-100 dark:bg-gray-700 dark:border-gray-600">' +
+                '<div class="flex justify-between items-start mb-2">' +
+                  '<div><div class="font-bold text-navy-700 dark:text-white">' + mla.constituency + '</div><div class="text-xs font-semibold text-gray-600 dark:text-gray-300">' + mla.name + ' (' + mla.party + ')</div></div>' +
+                  '<div class="text-right"><div class="text-2xl font-black ' + (mla.performance_score>=80?'text-green-600':mla.performance_score>=60?'text-saffron-600':'text-red-600') + '">' + mla.performance_score + '</div><div class="text-[10px] text-gray-400">SCORE</div></div>' +
+                '</div>' +
+                '<div class="flex items-center gap-4 mt-3 text-xs">' +
+                  '<div><span class="text-gray-500">Pending:</span> <span class="font-bold text-red-500">' + mla.pending_complaints + '</span></div>' +
+                  '<button onclick="window.viewMlaDetails(\\''+mla.name+'\\')" class="text-saffron-600 hover:text-saffron-700 font-semibold ml-auto">View Details <i class="fas fa-arrow-right text-[10px]"></i></button>' +
+                '</div>' +
+              '</div>'
+            ).join('');
+        } else {
+          content.innerHTML = '<div class="text-center py-6 text-gray-500">No MLA data found for this district.</div>';
+        }
+      } catch(e) {
+        content.innerHTML = '<div class="text-center py-6 text-red-500">Error loading data.</div>';
+      }
+    };
+
+    window.viewMlaDetails = async function(mpName) {
+      const content = document.getElementById('mlaModalContent');
+      content.innerHTML = '<div class="text-center py-6"><div class="spinner mx-auto mb-2" style="width:24px;height:24px;"></div><p class="text-sm text-gray-500">Loading details for ' + mpName + '...</p></div>';
+      try {
+        const res = await fetch('/api/map/constituency/' + encodeURIComponent(mpName));
+        const json = await res.json();
+        if (json.success) {
+          const d = json.data;
+          content.innerHTML = '<div class="mb-4"><button onclick="document.getElementById(\\'mlaModal\\').classList.add(\\'hidden\\')" class="text-xs text-gray-500 mb-2"><i class="fas fa-arrow-left mr-1"></i>Back</button><h4 class="font-bold text-gray-900 dark:text-white text-lg">' + d.mla + '</h4></div>' +
+            '<div class="grid grid-cols-2 gap-3 mb-4">' +
+              '<div class="bg-gray-50 p-3 rounded-lg"><div class="text-xs text-gray-500">Total Cases</div><div class="font-bold text-lg">' + d.total_cases + '</div></div>' +
+              '<div class="bg-gray-50 p-3 rounded-lg"><div class="text-xs text-gray-500">Resolution Rate</div><div class="font-bold text-lg ' + (d.resolution_rate>=75?'text-green-600':'text-saffron-600') + '">' + d.resolution_rate + '%</div></div>' +
+            '</div>' +
+            '<div class="bg-red-50 p-3 rounded-lg mb-4 border border-red-100"><div class="text-xs font-semibold text-red-800 mb-1">Top Issue</div><div class="text-red-600 font-medium">' + d.top_issue + '</div></div>' +
+            '<div class="bg-blue-50 p-3 rounded-lg border border-blue-100"><div class="text-xs font-semibold text-blue-800 mb-1">Recent Action</div><div class="text-blue-700 text-sm">' + d.action_taken + '</div></div>';
+        }
+      } catch(e) {
+        content.innerHTML = '<div class="text-center py-6 text-red-500">Error loading details.</div>';
+      }
+    };
 
     // ============================================
     // TIME-SERIES CHARTS (Week 5)
@@ -842,233 +884,53 @@ export function dashboardPage(): string {
     }
 
     // ============================================
-    // RESOLUTION FUNNEL (Week 7)
-    // ============================================
-    async function loadFunnel() {
-      try {
-        const res = await fetch('/api/analytics/funnel');
-        const json = await res.json();
-        if (!json.success) return;
-        const stages = json.data.stages;
-        const maxWidth = 100;
 
-        document.getElementById('funnelContainer').innerHTML = 
-          '<div class="max-w-2xl mx-auto space-y-1">' +
-          stages.map((s, i) => {
-            const width = Math.max(25, s.percent);
-            const isDropoff = s.label === 'Fake Closed';
-            return '<div class="relative group">' +
-              '<div class="flex items-center gap-3">' +
-                '<div class="w-28 text-right"><span class="text-xs font-semibold text-gray-600 dark:text-gray-300">' + s.label + '</span></div>' +
-                '<div class="flex-1">' +
-                  '<div class="relative h-10 rounded-lg overflow-hidden bg-gray-100 transition-all" style="width:' + width + '%;margin:0 auto 0 0;">' +
-                    '<div class="absolute inset-0 rounded-lg transition-all duration-700" style="background:' + s.color + ';opacity:' + (isDropoff ? '0.8' : '0.9') + '"></div>' +
-                    '<div class="absolute inset-0 flex items-center justify-center">' +
-                      '<span class="text-xs font-bold text-white drop-shadow">' + Number(s.count).toLocaleString('en-IN') + ' (' + s.percent + '%)</span>' +
-                    '</div>' +
-                  '</div>' +
-                '</div>' +
-              '</div>' +
-              (i < stages.length - 1 && !isDropoff ? '<div class="ml-32 pl-8 text-[10px] text-gray-400 py-0.5"><i class="fas fa-arrow-down mr-1"></i>-' + (stages[i].percent - stages[i+1]?.percent || 0) + '% dropoff</div>' : '') +
-            '</div>';
-          }).join('') +
-          '</div>' +
-          '<div class="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-3">' +
-          Object.entries(json.data.dropoff).map(([k, v]) => {
-            const label = k.replace(/_/g, ' → ').replace('to', '→');
-            return '<div class="text-center bg-gray-50 rounded-lg p-2"><div class="text-lg font-bold text-red-500">-' + v + '%</div><div class="text-[9px] text-gray-500 dark:text-gray-300">' + label + '</div></div>';
-          }).join('') +
-          '</div>';
-      } catch(e) { console.error('Funnel error:', e); }
-    }
 
     // ============================================
-    // HEATMAP CALENDAR (Week 7)
+    // STATE SELECTOR HANDLING
     // ============================================
-    async function loadHeatmap() {
-      try {
-        const res = await fetch('/api/analytics/heatmap');
-        const json = await res.json();
-        if (!json.success) return;
-        const data = json.data.heatmap;
-        const summary = json.data.summary;
-
-        // Group by month
-        const months = {};
-        data.forEach(d => {
-          const m = d.date.slice(0, 7); // YYYY-MM
-          if (!months[m]) months[m] = [];
-          months[m].push(d);
+    window.handleStateChange = function(stateCode) {
+      if (stateCode === 'ALL') {
+        map.setView([22.5, 82], 5);
+        geoLayer.eachLayer(layer => {
+          layer.setStyle(getStateStyle(layer.feature));
         });
-
-        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const dayNames = ['S','M','T','W','T','F','S'];
-        const maxCount = summary.max_daily;
-        const getColor = (count) => {
-          const ratio = count / maxCount;
-          if (ratio < 0.2) return '#ecfdf5';
-          if (ratio < 0.4) return '#6ee7b7';
-          if (ratio < 0.6) return '#10b981';
-          if (ratio < 0.8) return '#047857';
-          return '#064e3b';
+        backToIndiaMap();
+      } else {
+        const stateNameMap = {
+          'AP': 'Andhra Pradesh', 'AR': 'Arunachal Pradesh', 'AS': 'Assam', 'BR': 'Bihar',
+          'CG': 'Chhattisgarh', 'GA': 'Goa', 'GJ': 'Gujarat', 'HR': 'Haryana', 'HP': 'Himachal Pradesh',
+          'JH': 'Jharkhand', 'KA': 'Karnataka', 'KL': 'Kerala', 'MP': 'Madhya Pradesh', 'MH': 'Maharashtra',
+          'MN': 'Manipur', 'ML': 'Meghalaya', 'MZ': 'Mizoram', 'NL': 'Nagaland', 'OD': 'Odisha',
+          'PB': 'Punjab', 'RJ': 'Rajasthan', 'SK': 'Sikkim', 'TN': 'Tamil Nadu', 'TG': 'Telangana',
+          'TR': 'Tripura', 'UP': 'Uttar Pradesh', 'UK': 'Uttarakhand', 'WB': 'West Bengal'
         };
-
-        let html = '<div class="flex gap-4 overflow-x-auto pb-2">';
-        // Day labels
-        html += '<div class="flex flex-col gap-0.5 mt-5">' + dayNames.map(d => '<div class="w-4 h-4 text-[8px] text-gray-400 flex items-center justify-center">' + d + '</div>').join('') + '</div>';
-
-        Object.entries(months).forEach(([monthKey, days]) => {
-          const monthNum = parseInt(monthKey.split('-')[1]);
-          html += '<div class="flex flex-col items-center"><div class="text-[9px] font-semibold text-gray-500 mb-1 dark:text-gray-300">' + monthNames[monthNum - 1] + '</div>';
-          // Group days into weeks
-          const firstDow = days[0].day_of_week;
-          const grid = Array(42).fill(null);
-          days.forEach((d, i) => { grid[firstDow + i] = d; });
-          
-          html += '<div class="grid grid-cols-7 gap-0.5">';
-          for (let w = 0; w < 6; w++) {
-            for (let d = 0; d < 7; d++) {
-              const cell = grid[w * 7 + d];
-              if (cell) {
-                html += '<div class="w-4 h-4 rounded-sm cursor-pointer transition-transform hover:scale-125" style="background:' + getColor(cell.count) + '" title="' + cell.date + ': ' + Number(cell.count).toLocaleString() + ' complaints"></div>';
-              } else {
-                html += '<div class="w-4 h-4"></div>';
-              }
-            }
-          }
-          html += '</div></div>';
-        });
-        html += '</div>';
-
-        // Summary stats
-        html += '<div class="mt-4 flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-300">' +
-          '<span><strong class="text-navy-700 dark:text-white">' + summary.total_days + '</strong> days tracked</span>' +
-          '<span>Avg: <strong class="text-navy-700 dark:text-white">' + Number(summary.avg_daily).toLocaleString() + '</strong>/day</span>' +
-          '<span>Peak: <strong class="text-red-600 dark:text-red-400">' + Number(summary.max_daily).toLocaleString() + '</strong>/day</span>' +
-          '<span>Low: <strong class="text-ashoka-600 dark:text-ashoka-400">' + Number(summary.min_daily).toLocaleString() + '</strong>/day</span>' +
-          '</div>';
-
-        document.getElementById('heatmapContainer').innerHTML = html;
-      } catch(e) { console.error('Heatmap error:', e); }
-    }
-
-    // ============================================
-    // DEPARTMENT NETWORK GRAPH (Week 7)
-    // ============================================
-    async function loadNetworkGraph() {
-      try {
-        const res = await fetch('/api/analytics/network');
-        const json = await res.json();
-        const container = document.getElementById('networkContainer');
+        const sName = stateNameMap[stateCode];
+        if (!sName) return;
         
-        if (!json.success || !json.data || !json.data.nodes || json.data.nodes.length === 0) {
-            if (container) {
-                container.innerHTML = '<div class="text-center py-10 h-full flex flex-col justify-center"><i class="fas fa-diagram-project text-gray-300 dark:text-gray-600 text-3xl mb-3"></i><p class="text-sm text-gray-500 dark:text-gray-400 font-medium">No transfer network data available.</p></div>';
-            }
-            return;
-        }
-        
-        // Remove the spinner
-        const spinner = container.querySelector('.text-center');
-        if (spinner) spinner.style.display = 'none';
-
-        const { nodes, edges } = json.data;
-        const canvas = document.getElementById('networkCanvas');
-        if (!canvas || !container) return;
-
-        const rect = container.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        const ctx = canvas.getContext('2d');
-        const W = canvas.width, H = canvas.height;
-
-        // Scale node positions
-        const scale = Math.min(W / 800, H / 600);
-        nodes.forEach(n => { n.sx = n.x * scale; n.sy = n.y * scale; n.sr = Math.max(12, n.size * scale * 0.5); });
-
-        // Draw edges
-        ctx.clearRect(0, 0, W, H);
-        edges.forEach(e => {
-          const src = nodes.find(n => n.id === e.source);
-          const tgt = nodes.find(n => n.id === e.target);
-          if (!src || !tgt) return;
-          ctx.beginPath();
-          ctx.moveTo(src.sx, src.sy);
-          ctx.lineTo(tgt.sx, tgt.sy);
-          ctx.strokeStyle = 'rgba(148,163,184,0.3)';
-          ctx.lineWidth = Math.max(1, Math.min(4, e.weight / 150));
-          ctx.stroke();
-        });
-
-        // Draw nodes
-        nodes.forEach(n => {
-          // Glow
-          ctx.beginPath();
-          ctx.arc(n.sx, n.sy, n.sr + 4, 0, Math.PI * 2);
-          ctx.fillStyle = n.color + '20';
-          ctx.fill();
-          // Circle
-          ctx.beginPath();
-          ctx.arc(n.sx, n.sy, n.sr, 0, Math.PI * 2);
-          ctx.fillStyle = n.color;
-          ctx.strokeStyle = '#fff';
-          ctx.lineWidth = 2;
-          ctx.fill();
-          ctx.stroke();
-          // Label
-          ctx.fillStyle = '#1e293b';
-          ctx.font = Math.max(8, 10 * scale) + 'px Inter, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(n.label.slice(0, 15), n.sx, n.sy + n.sr + 14);
-          // Complaint count inside node
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold ' + Math.max(7, 9 * scale) + 'px Inter, sans-serif';
-          ctx.fillText(Math.round(n.complaints / 1000) + 'K', n.sx, n.sy + 3);
-        });
-
-        // Add tooltip on hover
-        let tooltip = document.createElement('div');
-        tooltip.className = 'absolute hidden bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-200 dark:border-dark-600 p-3 text-xs z-50 pointer-events-none';
-        container.appendChild(tooltip);
-
-        canvas.addEventListener('mousemove', (ev) => {
-          const r = canvas.getBoundingClientRect();
-          const mx = ev.clientX - r.left, my = ev.clientY - r.top;
-          const hovered = nodes.find(n => Math.hypot(mx - n.sx, my - n.sy) <= n.sr);
-          if (hovered) {
-            tooltip.classList.remove('hidden');
-            tooltip.style.left = Math.min(mx + 12, W - 180) + 'px';
-            tooltip.style.top = (my - 10) + 'px';
-            tooltip.innerHTML = '<div class="font-bold text-gray-800 dark:text-gray-200 mb-1">' + hovered.full_name + '</div>' +
-              '<div class="text-gray-500 dark:text-gray-300">Complaints: <strong>' + Number(hovered.complaints).toLocaleString() + '</strong></div>' +
-              '<div class="text-gray-500 dark:text-gray-300">Resolution: <strong>' + hovered.resolution_rate + '%</strong></div>' +
-              '<div class="text-gray-500 dark:text-gray-300">Fake Closure: <strong class="text-red-500">' + hovered.fake_closure + '%</strong></div>' +
-              '<div class="text-gray-500 dark:text-gray-300">Satisfaction: <strong>' + hovered.satisfaction + '%</strong></div>';
-            canvas.style.cursor = 'pointer';
+        let foundLayer = null;
+        geoLayer.eachLayer(layer => {
+          if (normalizeStateName(layer.feature.properties.name) === normalizeStateName(sName)) {
+            layer.setStyle({ opacity: 1, fillOpacity: 0.9, weight: 2, color: '#1a365d' });
+            foundLayer = layer;
           } else {
-            tooltip.classList.add('hidden');
-            canvas.style.cursor = 'default';
+            layer.setStyle({ opacity: 0.2, fillOpacity: 0.2 });
           }
         });
-      } catch(e) { console.error('Network graph error:', e); }
-    }
-
-    // ============================================
-    // LAZY LOADING — IntersectionObserver (Week 7)
-    // ============================================
-    const lazyLoaded = new Set();
-    const lazyObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !lazyLoaded.has(entry.target.id)) {
-          lazyLoaded.add(entry.target.id);
-          if (entry.target.id === 'funnel') loadFunnel();
-          if (entry.target.id === 'heatmap') loadHeatmap();
-          if (entry.target.id === 'network') loadNetworkGraph();
+        
+        if (stateCode === 'KA') {
+          map.fitBounds([[11.5, 74.0], [18.5, 78.5]]);
+        } else if (foundLayer) {
+           map.fitBounds(foundLayer.getBounds());
         }
-      });
-    }, { rootMargin: '200px' });
-
-    document.querySelectorAll('[data-lazy]').forEach(el => lazyObserver.observe(el));
+        
+        const state = normalizedStateData[normalizeStateName(sName)];
+        if (state) {
+          showStateInfo(state);
+        }
+        loadDistrictData(stateCode);
+      }
+    };
 
     loadDashboard();
   </script>

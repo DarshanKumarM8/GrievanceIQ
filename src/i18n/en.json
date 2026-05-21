@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "home": "Home",
+    "file_complaint": "File Complaint",
+    "track": "Track",
+    "my_complaints": "My Complaints",
+    "dashboard": "Dashboard",
+    "how_it_works": "How it works",
+    "about": "About",
+    "sign_in": "Sign in",
+    "file_a_complaint": "File a Complaint →"
+  },
+  "hero": {
+    "title_line1": "File Smarter.",
+    "title_line2": "Get Heard.",
+    "title_line3": "Hold Them Accountable.",
+    "subtitle": "India's first AI-powered grievance intelligence platform. File better complaints. Track resolution accountability. Make your voice heard by the right officials.",
+    "cta_primary": "File a Complaint →",
+    "cta_secondary": "View Public Dashboard",
+    "stat1": "7M+ Yearly Complaints",
+    "stat2": "92 Ministries Connected",
+    "stat3": "7 Indian Languages"
+  },
+  "dashboard": {
+    "monthly_trends": "Monthly Trends Analysis",
+    "total_complaints": "Total Complaints",
+    "resolution_rate": "Resolution Rate",
+    "fake_closure": "Fake Closure Rate",
+    "avg_days": "Avg Resolution Days"
+  },
+  "complaint_builder": {
+    "page_title": "AI Complaint Builder",
+    "step1_title": "What's the issue?",
+    "step1_subtitle": "Describe your grievance in any language. Our AI will draft a formal, high-impact government application."
+  },
+  "footer": {
+    "copyright": "© 2026 GrievanceIQ. All rights reserved."
+  }
+}

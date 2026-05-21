@@ -180,6 +180,209 @@ export function adminPage(): string {
         </div>
       </div>
 
+      <!-- RSS Feed Monitor Verification Panel -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden" id="rss-monitor-panel">
+        <div class="px-6 py-4 bg-gradient-to-r from-orange-500 to-amber-600 flex items-center gap-2">
+          <i class="fas fa-rss text-white" aria-hidden="true"></i>
+          <h2 class="font-bold text-white">RSS Feed Monitor</h2>
+          <span class="ml-2 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">Verification</span>
+          <div class="ml-auto flex items-center gap-2">
+            <button onclick="loadRSSFeed()" class="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors">
+              <i class="fas fa-sync mr-1"></i>Refresh
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <!-- Stats Row -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5" id="rss-stats-row">
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 text-center border border-gray-200">
+              <div class="text-xl font-black text-gray-800" id="rss-stat-total">—</div>
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Articles Today</div>
+            </div>
+            <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 text-center border border-emerald-200">
+              <div class="text-xl font-black text-emerald-700" id="rss-stat-high">—</div>
+              <div class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wide">HIGH Relevance</div>
+            </div>
+            <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-3 text-center border border-amber-200">
+              <div class="text-xl font-black text-amber-700" id="rss-stat-medium">—</div>
+              <div class="text-[10px] text-amber-600 font-semibold uppercase tracking-wide">MEDIUM Relevance</div>
+            </div>
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 text-center border border-blue-200">
+              <div class="text-xl font-black text-blue-700" id="rss-stat-feeds">5</div>
+              <div class="text-[10px] text-blue-600 font-semibold uppercase tracking-wide">Feeds Monitored</div>
+            </div>
+            <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 text-center border border-purple-200">
+              <div class="text-xl font-black text-purple-700" id="rss-stat-showing">—</div>
+              <div class="text-[10px] text-purple-600 font-semibold uppercase tracking-wide">Showing</div>
+            </div>
+          </div>
+
+          <!-- Filter Controls -->
+          <div class="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <div class="flex items-center gap-1.5">
+              <label class="text-[10px] text-gray-500 font-bold uppercase">Date:</label>
+              <input type="date" id="rss-filter-date" onchange="loadRSSFeed()" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none" />
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label class="text-[10px] text-gray-500 font-bold uppercase">Source:</label>
+              <select id="rss-filter-source" onchange="loadRSSFeed()" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none">
+                <option value="all">All Sources</option>
+                <option value="PIB">PIB</option>
+                <option value="PIB-DARPG">PIB-DARPG</option>
+                <option value="The Hindu">The Hindu</option>
+                <option value="Indian Express">Indian Express</option>
+                <option value="NDTV">NDTV</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label class="text-[10px] text-gray-500 font-bold uppercase">Relevance:</label>
+              <select id="rss-filter-relevance" onchange="loadRSSFeed()" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none">
+                <option value="all">All</option>
+                <option value="HIGH">HIGH</option>
+                <option value="MEDIUM">MEDIUM</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-1.5 flex-1 min-w-[150px]">
+              <label class="text-[10px] text-gray-500 font-bold uppercase">Keyword:</label>
+              <input type="text" id="rss-filter-keyword" placeholder="Filter by keyword..." oninput="debounceRSSLoad()" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white w-full focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none" />
+            </div>
+          </div>
+
+          <!-- Articles Table -->
+          <div class="overflow-x-auto rounded-xl border border-gray-200">
+            <table class="w-full text-xs" id="rss-articles-table">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="text-left py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Date</th>
+                  <th class="text-left py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Source</th>
+                  <th class="text-left py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Title</th>
+                  <th class="text-left py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Keywords</th>
+                  <th class="text-left py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Relevance</th>
+                  <th class="text-right py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Link</th>
+                </tr>
+              </thead>
+              <tbody id="rss-articles-tbody">
+                <tr>
+                  <td colspan="6" class="text-center py-10 text-gray-400">
+                    <i class="fas fa-satellite-dish text-3xl mb-3 block text-gray-300"></i>
+                    <p class="text-sm font-medium">No RSS articles loaded</p>
+                    <p class="text-[10px] mt-1">Enter your Admin Key and click Refresh, or run the RSS pipeline first.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Info Banner -->
+          <div class="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-start gap-2">
+            <i class="fas fa-info-circle text-orange-500 mt-0.5 flex-shrink-0"></i>
+            <p class="text-[10px] text-orange-700">RSS articles are fetched from 5 feeds (PIB, PIB-DARPG, The Hindu, Indian Express, NDTV) and filtered using 3-tier keyword matching. <strong>TIER 1</strong> (CPGRAMS, DARPG, RTI) &rarr; HIGH. <strong>TIER 2</strong> (PM-KISAN, EPFO, etc.) &rarr; MEDIUM. <strong>TIER 3</strong> alone (generic complaints) &rarr; skipped.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aggregator Output Verification Panel -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden" id="aggregator-panel">
+        <div class="px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-700 flex items-center gap-2">
+          <i class="fas fa-brain text-white" aria-hidden="true"></i>
+          <h2 class="font-bold text-white">Aggregator Output</h2>
+          <span class="ml-2 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">TF-IDF + Spike Detection</span>
+          <div class="ml-auto flex items-center gap-2">
+            <button onclick="loadAggregatorResults()" class="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors">
+              <i class="fas fa-sync mr-1"></i>Refresh
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <!-- Corpus Info Bar -->
+          <div class="flex flex-wrap items-center gap-3 mb-5 p-3 rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50" id="agg-corpus-bar">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-database text-purple-500"></i>
+              <span class="text-xs text-purple-800 font-semibold">Corpus:</span>
+              <span class="text-xs text-purple-600" id="agg-corpus-source">—</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fas fa-file-alt text-purple-400"></i>
+              <span class="text-xs text-purple-600" id="agg-corpus-size">— documents</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fas fa-clock text-purple-400"></i>
+              <span class="text-xs text-purple-600" id="agg-duration">—</span>
+            </div>
+            <div class="flex items-center gap-2 ml-auto">
+              <span class="text-[10px] text-purple-400" id="agg-last-run">Last run: —</span>
+            </div>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5" id="agg-stats-row">
+            <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-3 text-center border border-purple-200">
+              <div class="text-xl font-black text-purple-700" id="agg-stat-trending">—</div>
+              <div class="text-[10px] text-purple-600 font-semibold uppercase tracking-wide">Trending Updated</div>
+            </div>
+            <div class="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-3 text-center border border-red-200">
+              <div class="text-xl font-black text-red-700" id="agg-stat-fake">—</div>
+              <div class="text-[10px] text-red-600 font-semibold uppercase tracking-wide">Fake Closure Ministries</div>
+            </div>
+            <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 text-center border border-emerald-200">
+              <div class="text-xl font-black text-emerald-700" id="agg-stat-states">—</div>
+              <div class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wide">State Stats Updated</div>
+            </div>
+            <div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-3 text-center border border-amber-200">
+              <div class="text-xl font-black text-amber-700" id="agg-stat-errors">—</div>
+              <div class="text-[10px] text-amber-600 font-semibold uppercase tracking-wide">Errors</div>
+            </div>
+          </div>
+
+          <!-- Top Keywords / Spike Table -->
+          <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2"><i class="fas fa-chart-line text-purple-500 mr-1.5"></i>Top Keywords — Spike Detection</h3>
+          <div class="overflow-x-auto rounded-xl border border-gray-200 mb-4">
+            <table class="w-full text-xs" id="agg-keywords-table">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="text-left py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">#</th>
+                  <th class="text-left py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Term</th>
+                  <th class="text-right py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">This Week</th>
+                  <th class="text-right py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Last Week</th>
+                  <th class="text-right py-3 px-3 font-bold text-gray-600 uppercase text-[10px] tracking-wide">Spike Factor</th>
+                </tr>
+              </thead>
+              <tbody id="agg-keywords-tbody">
+                <tr><td colspan="5" class="text-center py-8 text-gray-400">
+                  <i class="fas fa-brain text-3xl mb-3 block text-gray-300"></i>
+                  <p class="text-sm font-medium">No aggregator data loaded</p>
+                  <p class="text-[10px] mt-1">Run the Aggregator pipeline first, then click Refresh.</p>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Fake Closure Mini-Table -->
+          <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2"><i class="fas fa-exclamation-triangle text-red-500 mr-1.5"></i>Fake Closure Rates by Ministry</h3>
+          <div class="overflow-x-auto rounded-xl border border-gray-200">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                  <th class="text-left py-2.5 px-3 font-bold text-gray-600 uppercase text-[10px]">Ministry</th>
+                  <th class="text-right py-2.5 px-3 font-bold text-gray-600 uppercase text-[10px]">Fake Closure %</th>
+                  <th class="text-right py-2.5 px-3 font-bold text-gray-600 uppercase text-[10px]">Satisfaction %</th>
+                  <th class="text-center py-2.5 px-3 font-bold text-gray-600 uppercase text-[10px]">Flag</th>
+                </tr>
+              </thead>
+              <tbody id="agg-fakeclosure-tbody">
+                <tr><td colspan="4" class="text-center py-6 text-gray-400 text-[10px]">Need 3+ feedback per ministry to compute rates</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Info Banner -->
+          <div class="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-3 flex items-start gap-2">
+            <i class="fas fa-info-circle text-purple-500 mt-0.5 flex-shrink-0"></i>
+            <p class="text-[10px] text-purple-700">The aggregator runs nightly at 2:30 AM IST. It uses TF-IDF to detect trending keywords and computes week-over-week <strong>spike factors</strong>. Spike &gt;3x = <span class="text-red-600 font-bold">critical</span>, 2-3x = <span class="text-orange-600 font-bold">high</span>, 1.5-2x = <span class="text-amber-600 font-bold">medium</span>. Corpus falls back to RSS articles if &lt;10 real complaints.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="grid lg:grid-cols-2 gap-6">
         <!-- Audit Log Viewer -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -294,7 +497,7 @@ export function adminPage(): string {
   <script>
     async function refreshAdmin() {
       document.getElementById('admin-last-refresh').textContent = 'Refreshing...';
-      await Promise.all([loadHealth(), loadAlerts(), loadAuditLogs(), loadEmailQueue(), loadDeptChart(), loadCPGRAMSStats()]);
+      await Promise.all([loadHealth(), loadAlerts(), loadAuditLogs(), loadEmailQueue(), loadDeptChart(), loadCPGRAMSStats(), loadAggregatorResults()]);
       document.getElementById('admin-last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN');
     }
 
@@ -650,8 +853,212 @@ export function adminPage(): string {
       await refreshAdmin();
     }
 
+    // --- Aggregator Output ---
+    async function loadAggregatorResults() {
+      const adminKey = getAdminKey();
+      if (!adminKey) return;
+
+      try {
+        const res = await fetch('/api/admin/aggregator/results', {
+          headers: { 'Authorization': 'Bearer ' + adminKey }
+        });
+        const json = await res.json();
+        const d = json.data || {};
+        const run = d.latest_run;
+
+        // Update stats
+        document.getElementById('agg-stat-trending').textContent = run ? (run.rows_affected || '0') : '—';
+        document.getElementById('agg-stat-fake').textContent = (d.fake_closure_ministries || []).length || '0';
+        document.getElementById('agg-stat-states').textContent = run ? '✓' : '—';
+        document.getElementById('agg-stat-errors').textContent = run ? (run.errors?.length || '0') : '—';
+
+        // Corpus info
+        if (run) {
+          var sourceLabel = run.corpus_source === 'user_complaints' ? '👤 User Complaints'
+            : run.corpus_source === 'rss_supplement' ? '📡 RSS Supplement (not enough real complaints)'
+            : run.corpus_source === 'rss_30day_fallback' ? '📡 RSS 30-day Fallback'
+            : run.corpus_source || 'Unknown';
+          document.getElementById('agg-corpus-source').textContent = sourceLabel;
+          document.getElementById('agg-corpus-size').textContent = (run.corpus_size || 0) + ' documents';
+          document.getElementById('agg-duration').textContent = (run.duration_seconds || 0) + 's';
+          try {
+            document.getElementById('agg-last-run').textContent = 'Last run: ' + new Date(run.completed_at).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+          } catch(e) { document.getElementById('agg-last-run').textContent = 'Last run: ' + (run.completed_at || '—'); }
+        }
+
+        // Keywords table
+        var keywords = (run && run.top_keywords) ? run.top_keywords : [];
+        var tbody = document.getElementById('agg-keywords-tbody');
+
+        if (keywords.length === 0 && (d.trending_issues || []).length > 0) {
+          // Fallback: show trending_issues from DB
+          keywords = (d.trending_issues || []).map(function(t) {
+            return {
+              term: t.topic_name || '',
+              count_this_week: t.complaint_count || 0,
+              count_prev_week: t.previous_week_count || 0,
+              spike_factor: t.spike_factor || 1.0
+            };
+          });
+        }
+
+        if (keywords.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">' +
+            '<i class="fas fa-brain text-3xl mb-3 block text-gray-300"></i>' +
+            '<p class="text-sm font-medium">No trending keywords detected</p>' +
+            '<p class="text-[10px] mt-1">Run the Aggregator pipeline to detect spikes.</p></td></tr>';
+        } else {
+          tbody.innerHTML = keywords.map(function(kw, idx) {
+            var sf = kw.spike_factor || 1;
+            var spikeColor = sf >= 5 ? 'border-l-4 border-l-red-500 bg-red-50/40'
+              : sf >= 3 ? 'border-l-4 border-l-orange-500 bg-orange-50/30'
+              : sf >= 2 ? 'border-l-4 border-l-amber-400 bg-amber-50/20'
+              : 'border-l-4 border-l-gray-300 bg-white';
+            var spikeBadge = sf >= 5
+              ? '<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">' + sf + 'x 🔥</span>'
+              : sf >= 3
+                ? '<span class="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold">' + sf + 'x ⚠️</span>'
+                : sf >= 2
+                  ? '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">' + sf + 'x</span>'
+                  : '<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-bold">' + sf + 'x</span>';
+            return '<tr class="' + spikeColor + ' hover:bg-gray-50/50 border-b border-gray-100 transition-colors">' +
+              '<td class="py-2.5 px-3 text-gray-400 font-mono">' + (idx + 1) + '</td>' +
+              '<td class="py-2.5 px-3 font-semibold text-gray-800">' + (kw.term || '') + '</td>' +
+              '<td class="py-2.5 px-3 text-right font-bold text-gray-700">' + (kw.count_this_week || 0) + '</td>' +
+              '<td class="py-2.5 px-3 text-right text-gray-400">' + (kw.count_prev_week || 0) + '</td>' +
+              '<td class="py-2.5 px-3 text-right">' + spikeBadge + '</td></tr>';
+          }).join('');
+        }
+
+        // Fake closure table
+        var fcTbody = document.getElementById('agg-fakeclosure-tbody');
+        var fcData = d.fake_closure_ministries || [];
+        if (fcData.length === 0) {
+          fcTbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-gray-400 text-[10px]">Need 3+ feedback per ministry to compute rates</td></tr>';
+        } else {
+          fcTbody.innerHTML = fcData.map(function(m) {
+            var fcRate = m.fake_closure_rate || 0;
+            var satRate = m.citizen_satisfaction_rate || 0;
+            var rowColor = fcRate > 30 ? 'border-l-4 border-l-red-500 bg-red-50/30' : 'border-l-4 border-l-gray-200';
+            var flagIcon = m.fake_closure_flag ? '<span class="text-red-500">🚩</span>' : '<span class="text-gray-300">—</span>';
+            var shortName = (m.ministry_name || '').replace('Ministry of ','').replace('Department of ','').substring(0, 35);
+            return '<tr class="' + rowColor + ' border-b border-gray-100 hover:bg-gray-50">' +
+              '<td class="py-2 px-3 font-medium text-gray-700">' + shortName + '</td>' +
+              '<td class="py-2 px-3 text-right font-bold ' + (fcRate > 30 ? 'text-red-600' : 'text-gray-600') + '">' + fcRate + '%</td>' +
+              '<td class="py-2 px-3 text-right text-gray-600">' + satRate + '%</td>' +
+              '<td class="py-2 px-3 text-center">' + flagIcon + '</td></tr>';
+          }).join('');
+        }
+
+      } catch (e) {
+        console.error('Aggregator results load error:', e);
+      }
+    }
+
+    // --- RSS Feed Monitor ---
+    let rssDebounceTimer = null;
+
+    function debounceRSSLoad() {
+      clearTimeout(rssDebounceTimer);
+      rssDebounceTimer = setTimeout(() => loadRSSFeed(), 400);
+    }
+
+    function initRSSFilters() {
+      const dateInput = document.getElementById('rss-filter-date');
+      if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+      }
+    }
+
+    async function loadRSSFeed() {
+      const adminKey = getAdminKey();
+      if (!adminKey) {
+        return; // Silently skip if no admin key
+      }
+
+      const date = document.getElementById('rss-filter-date')?.value || new Date().toISOString().split('T')[0];
+      const source = document.getElementById('rss-filter-source')?.value || 'all';
+      const relevance = document.getElementById('rss-filter-relevance')?.value || 'all';
+      const keyword = document.getElementById('rss-filter-keyword')?.value || '';
+
+      const params = new URLSearchParams({ date, source, relevance, limit: '50' });
+      if (keyword) params.set('keyword', keyword);
+
+      try {
+        const res = await fetch('/api/admin/rss/feed?' + params.toString(), {
+          headers: { 'Authorization': 'Bearer ' + adminKey }
+        });
+        const json = await res.json();
+
+        // Update stats
+        const stats = json.stats || {};
+        document.getElementById('rss-stat-total').textContent = stats.total || '0';
+        document.getElementById('rss-stat-high').textContent = stats.high || '0';
+        document.getElementById('rss-stat-medium').textContent = stats.medium || '0';
+        document.getElementById('rss-stat-showing').textContent = json.total || '0';
+
+        // Render table
+        const tbody = document.getElementById('rss-articles-tbody');
+        const articles = json.articles || [];
+
+        if (articles.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400">' +
+            '<i class="fas fa-satellite-dish text-3xl mb-3 block text-gray-300"></i>' +
+            '<p class="text-sm font-medium">No articles found for ' + date + '</p>' +
+            '<p class="text-[10px] mt-1">Try a different date or run the RSS pipeline.</p></td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = articles.map(function(a) {
+          const rel = a.relevance_score || 'MEDIUM';
+          const borderColor = rel === 'HIGH' ? 'border-l-4 border-l-emerald-500 bg-emerald-50/30' : 'border-l-4 border-l-amber-400 bg-amber-50/20';
+          const relBadge = rel === 'HIGH'
+            ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">HIGH</span>'
+            : '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">MEDIUM</span>';
+
+          // Parse source from source_title prefix ("PIB: headline...")
+          var title = a.source_title || '';
+          var sourceName = a.platform || 'news';
+          var displayTitle = title;
+          var colonIdx = title.indexOf(': ');
+          if (colonIdx > 0 && colonIdx < 20) {
+            sourceName = title.substring(0, colonIdx);
+            displayTitle = title.substring(colonIdx + 2);
+          }
+          // Truncate long titles
+          if (displayTitle.length > 120) displayTitle = displayTitle.substring(0, 120) + '...';
+
+          var dateStr = '';
+          try {
+            dateStr = new Date(a.captured_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+          } catch(e) { dateStr = a.captured_at || ''; }
+
+          var keywords = (a.keyword_matched || '').split(', ').map(function(kw) {
+            return '<span class="inline-block bg-navy-100 text-navy-700 px-1.5 py-0.5 rounded text-[9px] font-semibold mr-1 mb-0.5">' + kw + '</span>';
+          }).join('');
+
+          var linkBtn = a.source_url
+            ? '<a href="' + a.source_url + '" target="_blank" rel="noopener" class="text-navy-600 hover:text-navy-800"><i class="fas fa-external-link-alt"></i></a>'
+            : '—';
+
+          return '<tr class="' + borderColor + ' hover:bg-gray-50/50 border-b border-gray-100 transition-colors">' +
+            '<td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">' + dateStr + '</td>' +
+            '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-bold">' + sourceName + '</span></td>' +
+            '<td class="py-2.5 px-3 text-gray-800 font-medium max-w-xs">' + displayTitle + '</td>' +
+            '<td class="py-2.5 px-3">' + keywords + '</td>' +
+            '<td class="py-2.5 px-3">' + relBadge + '</td>' +
+            '<td class="py-2.5 px-3 text-right">' + linkBtn + '</td></tr>';
+        }).join('');
+
+      } catch (e) {
+        console.error('RSS feed load error:', e);
+      }
+    }
+
+    initRSSFilters();
     refreshAdmin();
     loadPipelineStatus();
+    loadRSSFeed();
   </script>
   `
   return layout('Admin Analytics', content, 'admin', {

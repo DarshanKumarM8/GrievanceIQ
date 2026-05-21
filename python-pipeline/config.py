@@ -26,9 +26,9 @@ DATAGOV_API_KEY = os.getenv("DATAGOV_API_KEY", "")
 # --- RSS Feed URLs ---
 RSS_FEEDS = [
     {"name": "PIB", "url": "https://pib.gov.in/RssMain.aspx"},
+    {"name": "PIB-DARPG", "url": "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3"},
     {"name": "The Hindu", "url": "https://www.thehindu.com/news/national/feeder/default.rss"},
     {"name": "Indian Express", "url": "https://indianexpress.com/feed/"},
-    {"name": "Hindustan Times", "url": "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml"},
     {"name": "NDTV", "url": "https://feeds.feedburner.com/ndtvnews-india-news"},
 ]
 
@@ -36,14 +36,29 @@ RSS_FEEDS = [
 DARPG_CENTRAL_URL = "https://darpg.gov.in/node/6003/"
 DARPG_STATE_URL = "https://darpg.gov.in/node/6004/"
 
-# --- Grievance Keywords for RSS Matching ---
-GRIEVANCE_KEYWORDS = [
-    "CPGRAMS", "grievance", "complaint portal", "PM-KISAN", "EPFO",
-    "pension delay", "ration card", "Ayushman Bharat", "passport delay",
-    "railway refund", "smart meter", "DARPG", "e-Shram",
-    "labour complaint", "RTI", "PMJAY", "PDS", "MGNREGA",
-    "PM Awas", "Jal Jeevan", "Ujjwala", "DBT"
+# --- Tiered Grievance Keywords for RSS Matching ---
+# TIER 1 (high relevance — always include)
+TIER1_KEYWORDS = [
+    'cpgrams', 'darpg', 'grievance redressal', 'complaint portal',
+    'pgportal', 'rti', 'right to information'
 ]
+
+# TIER 2 (scheme-specific — include if complaint-related context)
+TIER2_KEYWORDS = [
+    'pm-kisan', 'epfo', 'pension delay', 'ration card', 'ayushman bharat',
+    'passport delay', 'railway refund', 'mnrega payment', 'scholarship delay',
+    'aadhaar linking', 'e-shram', 'jan dhan', 'pm awas', 'pmjdy',
+    'ayushman', 'mgnrega', 'pm awas', 'jal jeevan', 'ujjwala', 'dbt'
+]
+
+# TIER 3 (general — include only if combined with TIER 2 grievance words)
+TIER3_KEYWORDS = [
+    'complaint', 'pending', 'unresolved', 'ministry', 'department delay',
+    'government failure', 'public grievance', 'citizen complaint'
+]
+
+# Legacy flat list (kept for backward compatibility with aggregator)
+GRIEVANCE_KEYWORDS = TIER1_KEYWORDS + TIER2_KEYWORDS
 
 # --- Ministry Name Mapping (for PDF parsing fuzzy match) ---
 MINISTRY_NAMES = {

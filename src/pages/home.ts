@@ -18,18 +18,18 @@ export function homePage(): string {
         <!-- Badge -->
         <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5 mb-8 animate-fade-in">
           <span class="w-2 h-2 rounded-full bg-ashoka-400 pulse-dot"></span>
-          <span class="text-white/80 text-xs font-medium tracking-wide">INDIA'S CITIZEN GRIEVANCE INTELLIGENCE PLATFORM</span>
+          <span class="text-white/80 text-xs font-medium tracking-wide" data-i18n="hero_badge">INDIA'S CITIZEN GRIEVANCE INTELLIGENCE PLATFORM</span>
         </div>
         
         <!-- Headline -->
         <h1 class="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-[1.1] tracking-tight mb-6 animate-fade-in">
-          File <span class="text-saffron-400">Smarter.</span><br>
-          Get <span class="text-white">Heard.</span><br>
-          Hold Them <span class="text-ashoka-400">Accountable.</span>
+          <span data-i18n="hero_h1_1">File</span> <span class="text-saffron-400" data-i18n="hero_h1_2">Smarter.</span><br>
+          <span data-i18n="hero_h1_3">Get</span> <span class="text-white" data-i18n="hero_h1_4">Heard.</span><br>
+          <span data-i18n="hero_h1_5">Hold Them</span> <span class="text-ashoka-400" data-i18n="hero_h1_6">Accountable.</span>
         </h1>
         
         <!-- Subtitle -->
-        <p class="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed">
+        <p class="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed" data-i18n="hero_sub">
           Type your problem in plain language. Our AI identifies the right department, 
           strengthens your complaint, and gives you the tools to follow up — including auto-drafted RTI applications.
         </p>
@@ -72,7 +72,7 @@ export function homePage(): string {
                 </div>
                 <button type="submit" id="analyzeBtn" class="bg-gradient-to-r from-saffron-500 to-saffron-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:from-saffron-600 hover:to-saffron-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                   <i class="fas fa-bolt"></i>
-                  Analyze My Complaint
+                  <span data-i18n="analyze_btn">Analyze My Complaint</span>
                 </button>
               </div>
             </div>

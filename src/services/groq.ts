@@ -4,7 +4,7 @@
 // ============================================
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const MODELS = ['llama-3.1-70b-versatile', 'llama3-70b-8192']
+const MODELS = ['mixtral-8x7b-32768', 'llama-3.1-70b-versatile']
 
 // ============================================
 // CORE API CALL WITH RETRY & MODEL FALLBACK
@@ -19,17 +19,18 @@ interface GroqOptions {
 
 async function callGroq(
   apiKey: string,
-  prompt: string,
+  prompt: string | any[],
   options: GroqOptions = {}
 ): Promise<{ text: string; model: string } | null> {
-  const { json = true, maxTokens = 4096, temperature = 0.4, retries = 2 } = options
+  const { json = true, maxTokens = 4096, temperature = 0.3, retries = 2 } = options
 
   for (const model of MODELS) {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
+        const messages = typeof prompt === 'string' ? [{ role: 'user', content: prompt }] : prompt;
         const body: any = {
           model: model,
-          messages: [{ role: 'user', content: prompt }],
+          messages: messages,
           temperature: temperature,
           max_tokens: maxTokens,
           top_p: 0.95
@@ -192,121 +193,65 @@ const MINISTRIES = `1. Ministry of Agriculture and Farmers Welfare
 92. President's Secretariat`
 
 // ============================================
-// COMPLAINT ANALYSIS PROMPT (Enhanced v3 — Senior Officer Persona)
+// COMPLAINT ANALYSIS PROMPT (Enhanced v4 — Definitive Fix)
 // ============================================
 
-const ANALYSIS_PROMPT = (text: string, lang: string) => `You are a senior government complaint officer in India with 20 years of experience filing complaints that get resolved. You know exactly what language, structure, and references make a complaint impossible for an officer to ignore or fake-close.
+const GROQ_SYSTEM_PROMPT = `
+You are a senior government complaint officer in India with 20 years of experience.
+Your ONLY job is to take a citizen's informal complaint and COMPLETELY REWRITE it 
+as a formal government grievance application.
 
-Your job is NOT to summarise what the citizen wrote.
-Your job is to COMPLETELY REWRITE their complaint as a formal government grievance application that a senior IAS officer would take seriously.
+HARD RULES — violating any of these is a failure:
 
-The citizen's text is raw, emotional, and informal.
-Your output must be formal, specific, and legally grounded.
+RULE 1: NEVER copy any sentence from the input verbatim. Every sentence must be new.
+RULE 2: The output MUST start with: "I wish to bring to your kind attention"
+RULE 3: The output MUST end with: "I therefore request your urgent intervention 
+         and resolution within the stipulated 30-day period as mandated under 
+         the Centralized Public Grievance Redress and Monitoring System guidelines."
+RULE 4: The output must be minimum 150 words regardless of input length.
+RULE 5: Reference the specific scheme/department/act by its FULL official name.
+RULE 6: Convert vague time phrases to specific: "for months" → "since approximately [month] [year]"
+RULE 7: Always write in formal English, even if input is in Hindi or mixed language.
+RULE 8: Add "despite multiple attempts to seek resolution through local offices" 
+         if the complaint mentions prior follow-ups.
+RULE 9: Include a specific section: "Impact: This delay/issue has caused [describe hardship]"
+RULE 10: The improved_draft field must be DIFFERENT from the input in EVERY sentence.
 
-REWRITING RULES — follow all of these without exception:
-1. Convert informal language to formal bureaucratic English
-2. Add the phrase "I wish to bring to your kind attention" at the start
-3. Reference the specific government scheme, act, or portal by its full official name
-4. Convert vague time references ("months ago") to approximate specific dates
-5. Add "despite repeated follow-ups" if the complaint mentions previous attempts
-6. End with "I therefore request your urgent intervention and resolution within the stipulated 30-day period as per the Centralized Public Grievance Redress and Monitoring System guidelines"
-7. The rewritten text must be at least 3x longer than the input
-8. Must contain at least one specific legal or scheme reference
-9. Must be in first person from the citizen's perspective
-10. Never copy sentences verbatim from the input — every sentence must be rewritten
-11. If input is in Hindi/regional language, write the improved_draft in that SAME language but with formal legal tone.
-12. ALWAYS include: Subject line, formal greeting ("Respected Sir/Madam"), 2-3 body paragraphs, specific relief requested, 30-day CPGRAMS deadline reference, RTI Act 2005 escalation warning, formal closing ("Yours faithfully").
+QUALITY SCORING — Score the ORIGINAL input (before rewrite) on these criteria:
++2 points: Has specific dates mentioned
++2 points: Has reference numbers (PPO, UAN, Aadhaar, application number)
++1 point: Mentions previous complaint or office visit
++1 point: Mentions specific monetary amount
++1 point: Correctly identifies the ministry/department
++1 point: Text is longer than 50 words
++2 points: Lists specific documents as evidence
+Base: 0, Max: 10
 
-QUALITY SCORING RULES — Score the ORIGINAL input (before your rewrite) on these criteria:
-- Has specific dates: +2 points
-- Has reference numbers (PPO, UAN, Aadhaar, etc): +2 points
-- Has previous complaint reference: +1 point
-- Has specific amount mentioned: +1 point
-- Has correct department identified: +1 point
-- Is longer than 50 words: +1 point
-- Has supporting document list: +2 points
-Base score: 0. Max: 10.
-
-=== FEW-SHOT EXAMPLE 1 ===
-RAW INPUT: "my pension has not come 3 months"
-
-CORRECT improved_draft OUTPUT:
-"Subject: Urgent — Non-Disbursement of Authorized Pension for Three Consecutive Months
-
-Respected Sir/Madam,
-
-I wish to bring to your kind attention a critical and unexplained disruption in the disbursement of my monthly pension. For the past three consecutive months (approximately since ${new Date(Date.now() - 90*24*60*60*1000).toLocaleDateString('en-IN', {month: 'long', year: 'numeric'})}), my designated bank account has not received the pension credit to which I am legally entitled under the Central Civil Services (Pension) Rules, 2021. This prolonged cessation of payments has caused severe financial distress and has left me unable to meet essential living expenses.
-
-I wish to state that my pension was being credited regularly in prior months without interruption, and no communication whatsoever has been received from the Accounts Office regarding any hold, suspension, or discrepancy in my records. The absence of any explanation compounds the hardship significantly.
-
-I hereby request the concerned Accounts Office to: (a) immediately investigate the cause of this payment stoppage, (b) release all pending arrears for the three affected months, and (c) ensure uninterrupted monthly disbursement going forward. I therefore request your urgent intervention and resolution within the stipulated 30-day period as per the Centralized Public Grievance Redress and Monitoring System guidelines. Failing this, I shall be compelled to file a formal application under the Right to Information Act, 2005 (Section 6) to ascertain the administrative reasons for this delay, and thereafter pursue remedies under Section 19 of the said Act.
-
-Yours faithfully"
-
-=== FEW-SHOT EXAMPLE 2 ===
-RAW INPUT: "pm kisan money not received 2 installments aadhaar linked"
-
-CORRECT improved_draft OUTPUT:
-"Subject: Non-Receipt of PM-KISAN Samman Nidhi Benefits — Two Consecutive Installments Pending Despite Valid eKYC
-
-Respected Sir/Madam,
-
-I wish to bring to your kind attention a grievance regarding the non-disbursement of benefits under the Pradhan Mantri Kisan Samman Nidhi (PM-KISAN) scheme, launched under the aegis of the Ministry of Agriculture and Farmers Welfare, Government of India. I have not received the last two consecutive installments of the Rs. 2,000 quarterly benefit, despite being a verified and eligible beneficiary under the scheme.
-
-I wish to confirm that my Aadhaar-based eKYC verification has been duly completed through the PM-KISAN portal (pmkisan.gov.in), and my Aadhaar number is correctly linked to my designated bank account. My land ownership records are updated and verified at the district level. Previous installments were credited regularly, and the sudden cessation of benefits without any notification or rejection communication is both unexplained and deeply concerning.
-
-I urgently request the concerned authority to: (a) verify my beneficiary status and eKYC records in the PM-KISAN database, (b) identify and rectify whatever technical or administrative error has blocked my payments, (c) release the pending arrears for both missed installments at the earliest. I therefore request your urgent intervention and resolution within the stipulated 30-day period as per the Centralized Public Grievance Redress and Monitoring System guidelines. Should no satisfactory action be taken within this period, I shall exercise my right under the Right to Information Act, 2005 to obtain full details of the processing status.
-
-Yours faithfully"
-=== END EXAMPLES ===
-
-COMPLETE LIST OF 92 CPGRAMS MINISTRIES/DEPARTMENTS:
-${MINISTRIES}
-
-CITIZEN'S RAW COMPLAINT (input language hint: ${lang}):
-"""
-${text}
-"""
-
-Analyze this complaint and respond ONLY in this exact JSON format with no markdown, no explanation, no preamble:
+OUTPUT FORMAT — Return ONLY valid JSON, no markdown, no explanation:
 {
-  "language_detected": "en|hi|ta|te|bn|mr|gu|kn|ml|pa|or|as",
-  "translated_text": "English translation if input is not English. null if already English.",
-  "departments": [
-    {
-      "name": "exact official ministry name from the 92 CPGRAMS ministries list above",
-      "confidence": 92.5,
-      "reason": "1-2 sentence plain-language explanation a citizen would understand"
-    },
-    {
-      "name": "Second best match from list",
-      "confidence": 71.0,
-      "reason": "Why this could also be relevant"
-    },
-    {
-      "name": "Third possible match from list",
-      "confidence": 45.0,
-      "reason": "Backup option"
-    }
-  ],
-  "department_reasoning": "2-3 sentences explaining the routing logic in simple terms.",
-  "quality_score_before": 5,
+  "department": "Full official ministry name (e.g., Department of Pension and Pensioners Welfare, Ministry of Finance)",
+  "department_confidence": 0.0 to 1.0,
+  "quality_score_before": integer 1-10 based on scoring above,
   "quality_score_after": 9,
-  "missing_elements": [
-    "specific thing missing 1",
-    "specific thing missing 2"
-  ],
-  "improved_draft": "<<< YOUR COMPLETELY REWRITTEN formal complaint — MINIMUM 150 words — NOT a summary of what they wrote. Follow ALL 12 rewriting rules above. This is the MOST IMPORTANT field. >>>",
-  "documents_checklist": [
-    "Government photo ID (Aadhaar Card / Voter ID)",
-    "Address proof",
-    "4-6 SPECIFIC documents relevant to THIS complaint type — be precise, not generic"
-  ],
-  "resolution_probability": 75,
-  "plain_explanation": "one sentence saying what this complaint is about in simple terms"
+  "improved_draft": "COMPLETELY REWRITTEN formal complaint — minimum 150 words — starting with I wish to bring",
+  "what_was_added": ["Legal reference added", "Formal salutation", "Specific timeline", "Impact statement"],
+  "missing_from_original": ["No reference number provided", "No dates mentioned"],
+  "documents_needed": ["Document 1", "Document 2", "Document 3"],
+  "resolution_probability": integer between 45 and 92,
+  "plain_explanation": "One sentence: what this complaint is about in plain terms"
 }
+`
 
-DOCUMENTS: Always include photo ID + address proof. Then add 4-6 complaint-type-specific documents. Be SPECIFIC: not "bank document" but "Aadhaar-linked bank passbook showing last 3 months of transactions".`
+const GROQ_USER_PROMPT = (text: string, lang: string) => `
+TASK: Rewrite the following citizen complaint into a formal government grievance application.
+CRITICAL: Do NOT summarise. Do NOT copy. REWRITE every sentence completely.
+The improved_draft MUST start with "I wish to bring to your kind attention"
+
+Citizen's original complaint (language hint: ${lang}):
+${text}
+
+Remember: Output ONLY the JSON object. Nothing before or after it.
+`
 
 // ============================================
 // RTI GENERATION PROMPT (Enhanced v2)
@@ -364,60 +309,94 @@ export async function analyzeWithGroq(
   text: string,
   lang: string
 ): Promise<any | null> {
-  const result = await callGroq(apiKey, ANALYSIS_PROMPT(text, lang), {
-    json: true,
-    maxTokens: 4096,
-    temperature: 0.6
-  })
+  // Retry loop for copy-check validation
+  let result;
+  let p;
+  
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const messages = [
+      { role: 'system', content: GROQ_SYSTEM_PROMPT },
+      { role: 'user', content: GROQ_USER_PROMPT(text, lang) }
+    ];
 
-  if (!result) return null
+    result = await callGroq(apiKey, messages, {
+      json: true,
+      maxTokens: 2000,
+      temperature: 0.3
+    });
+
+    if (!result) return null;
+
+    try {
+      // Clean possible markdown wrapper
+      const raw = result.text.replace(/```json|```/g, '').trim();
+      p = JSON.parse(raw);
+      
+      const originalLower = text.toLowerCase();
+      const improvedLower = (p.improved_draft || '').toLowerCase();
+      
+      // Validation: Ensure the model didn't just copy the first 50 chars
+      const firstChunk = originalLower.length > 50 ? originalLower.substring(0, 50) : originalLower;
+      if (firstChunk.length > 10 && improvedLower.includes(firstChunk)) {
+        console.warn(`[Groq] Attempt ${attempt+1}: Model copied original text. Retrying...`);
+        continue; // Retry
+      }
+      
+      // Check minimum length (target is 150, but we enforce at least 100 for safety)
+      if (improvedLower.split(/\s+/).length < 100) {
+        console.warn(`[Groq] Attempt ${attempt+1}: Improved draft too short. Retrying...`);
+        continue; // Retry
+      }
+
+      break; // Success! Passed validations.
+    } catch (e) {
+      console.error('[Groq] JSON parse failed on attempt', attempt + 1, e);
+      if (attempt === 2) return null;
+    }
+  }
+
+  if (!p) return null;
 
   try {
-    const p = JSON.parse(result.text)
-
+    // Map new JSON format to expected application format
+    
     // Validate & sanitize response
-    if (!p.departments || !Array.isArray(p.departments) || p.departments.length < 1) {
-      console.error('[Groq] Invalid departments in response')
-      return null
+    let departments = [];
+    if (p.department) {
+      departments.push({
+        name: p.department,
+        confidence: (p.department_confidence || 0.9) * 100,
+        reason: 'Identified by AI based on complaint context'
+      });
     }
-
+    
     // Ensure exactly 3 departments
-    while (p.departments.length < 3) {
-      p.departments.push({
+    while (departments.length < 3) {
+      departments.push({
         name: 'Department of Administrative Reforms',
         confidence: 20.0,
         reason: 'General administrative fallback'
-      })
-    }
-    p.departments = p.departments.slice(0, 3)
-
-    // Validate scores
-    p.quality_score_before = Math.min(10, Math.max(1, Number(p.quality_score_before) || 4))
-    p.quality_score_after = Math.min(10, Math.max(p.quality_score_before + 1, Number(p.quality_score_after) || 8))
-
-    // Validate arrays
-    if (!Array.isArray(p.missing_elements)) p.missing_elements = []
-    if (!Array.isArray(p.documents_checklist)) {
-      p.documents_checklist = ['Government photo ID (Aadhaar / Voter ID)', 'Address proof']
+      });
     }
 
-    // Ensure strings
-    if (typeof p.improved_draft !== 'string' || p.improved_draft.length < 50) {
-      p.improved_draft = null // Will trigger mock fallback for this field
-    }
-
-    if (typeof p.department_reasoning !== 'string') {
-      p.department_reasoning = `AI analysis identified ${p.departments[0].name} as the primary department with ${p.departments[0].confidence}% confidence.`
-    }
-
-    // Attach model info
-    p._ai_model = result.model
-    p._ai_source = 'groq'
-
-    return p
+    // Attach model info to the result
+    return {
+      language_detected: lang || 'en',
+      translated_text: null,
+      departments: departments,
+      department_reasoning: p.plain_explanation || 'Identified by AI model.',
+      quality_score_before: Math.min(10, Math.max(1, Number(p.quality_score_before) || 4)),
+      quality_score_after: Math.min(10, Math.max(Number(p.quality_score_before) + 1, Number(p.quality_score_after) || 8)),
+      missing_elements: Array.isArray(p.missing_from_original) ? p.missing_from_original : [],
+      improved_draft: p.improved_draft,
+      documents_checklist: Array.isArray(p.documents_needed) ? p.documents_needed : ['Government photo ID (Aadhaar / Voter ID)', 'Address proof'],
+      resolution_probability: p.resolution_probability || 75,
+      _ai_model: result?.model,
+      _ai_source: 'groq'
+    };
   } catch (e) {
-    console.error('[Groq] JSON parse failed:', e)
-    return null
+    console.error('[Groq] Mapping failed:', e);
+    return null;
   }
 }
 

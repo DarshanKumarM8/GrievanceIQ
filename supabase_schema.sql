@@ -130,8 +130,12 @@ CREATE TABLE IF NOT EXISTS social_signals (
   post_count_7d INTEGER DEFAULT 0,
   trending_direction TEXT,
   spike_detected INTEGER DEFAULT 0,
+  relevance_score TEXT DEFAULT 'MEDIUM',
+  data_source TEXT DEFAULT 'manual',
   captured_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_social_signals_url ON social_signals(source_url);
 
 -- ============================================
 -- TABLE 7: STATE_GRIEVANCE_STATS

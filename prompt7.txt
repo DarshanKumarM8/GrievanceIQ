@@ -1,0 +1,95 @@
+<USER_REQUEST>
+## PROMPT 7 — COMPLETE HINDI TRANSLATION THROUGHOUT WEBSITE
+
+```
+You are implementing complete Hindi language support for GrievanceIQ v8.0.0.
+CONTEXT: [paste context block]
+CURRENT STATE:
+Hindi language toggle exists but only some strings are translated.
+Most UI text still shows in English when Hindi is selected.
+THE FIX — Complete Hindi i18n JSON file:
+Create this file as src/i18n/hi.json:
+```json
+{
+  "nav": {
+    "home": "होम",
+    "file_complaint": "शिकायत दर्ज करें",
+    "track": "ट्रैक करें",
+    "my_complaints": "मेरी शिकायतें",
+    "dashboard": "डैशबोर्ड",
+    "how_it_works": "यह कैसे काम करता है",
+    "about": "हमारे बारे में",
+    "sign_in": "साइन इन करें",
+    "file_a_complaint": "शिकायत करें →"
+  },
+  "hero": {
+    "title_line1": "स्मार्ट तरीके से दर्ज करें।",
+    "title_line2": "सुने जाएं।",
+    "title_line3": "उन्हें जवाबदेह बनाएं।",
+    "subtitle": "भारत का पहला AI-संचालित शिकायत इंटेलिजेंस प्लेटफॉर्म। बेहतर शिकायतें दर्ज करें। जवाबदेही की निगरानी करें।",
+    "cta_primary": "शिकायत दर्ज करें →",
+    "cta_secondary": "सार्वजनिक डैशबोर्ड देखें",
+    "stat1": "70 लाख+ वार्षिक शिकायतें",
+    "stat2": "92 मंत्रालय जुड़े हैं",
+    "stat3": "7 भारतीय भाषाएं"
+  },
+  "complaint_builder": {
+    "page_title": "AI शिकायत निर्माता",
+    "step1_title": "आपकी समस्या क्या है?",
+    "step1_subtitle": "किसी भ
+<truncated 10889 bytes>
+) => loadLanguage('en'));
+
+// Persist language preference:
+const savedLang = localStorage.getItem('grievanceiq_lang') as Language;
+if (savedLang) loadLanguage(savedLang);
+```
+Update all HTML elements to use data-i18n attributes:
+Every static text string in your HTML must get a data-i18n attribute.
+Go through every page and add data-i18n="key" to text nodes.
+Return:
+The complete hi.json file (already provided above — confirm it is correct)
+The complete i18n/index.ts implementation
+A list of every HTML file that needs data-i18n attributes added
+The updated language switcher component
+Instructions to verify Hindi works on every page
+```
+
+---
+---
+
+## EXECUTION ORDER
+
+```
+DAY 1 — Foundation (Prompts 1 + 6)
+→ Fix pipeline architecture (Supabase migration + keep-alive)
+→ Fix Groq rewriting (highest user-facing impact)
+→ Test: Groq now rewrites, pipeline stays warm
+DAY 2 — Data Quality (Prompts 2 + 3)
+→ Fix RSS monitor + build verification panel
+→ Fix aggregator + make output visible
+→ Test: Admin can see which articles RSS picked today
+Admin can see what keywords aggregator detected
+DAY 3 — Frontend (Prompts 4 + 5)
+→ Fix charts to call live APIs
+→ Add Karnataka map drill-down
+→ Add state dropdown + timeline filter
+→ Remove 3 complex graphs
+DAY 4 — Polish (Prompt 7)
+→ Complete Hindi translation
+→ Apply data-i18n attributes to all HTML files
+→ Test: switch to Hindi, verify all 9 pages translate correctly
+VERIFICATION AFTER ALL 4 DAYS:
+Switch to Hindi → everything translates ✓
+File complaint in Hindi → Groq rewrites it formally ✓
+Open admin → RSS feed shows today's real articles ✓
+Open admin → Aggregator shows detected keywords ✓
+Open map → select Karnataka → all 31 districts show ✓
+Click Bengaluru Urban district → MLA panel opens ✓
+Change timeline to "Last 3 Months" → chart updates ✓
+Charts show "● Live Data" badge not "⚠ Demo Data" ✓
+```
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-05-20T23:14:42+05:30.
+</ADDITIONAL_METADATA>

@@ -27,8 +27,8 @@ apiRoutes.get('/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'GrievanceIQ',
-    version: '7.0.1',
-    week: 7,
+    version: '8.0.0',
+    week: 8,
     ai_engine: hasGroqKey ? 'groq-llama-3 (with fallback)' : 'mock-keyword-classifier-v2',
     ai_status: hasGroqKey ? 'active' : 'fallback-only',
     features: [
@@ -96,7 +96,10 @@ apiRoutes.get('/health', (c) => {
       'similar_complaints_ai',
       'lazy_load_intersect',
       'prefetch_critical',
-      'performance_optimized'
+      'performance_optimized',
+      'rss_feed_verification',
+      'pipeline_live_status',
+      'rss_3tier_keyword_matching'
     ]
   })
 })
@@ -235,21 +238,92 @@ apiRoutes.get('/admin/audit-logs', async (c) => {
 })
 
 // ============================================
-// ADMIN DASHBOARD — Pipeline Status
+// ADMIN DASHBOARD — Pipeline Status (real DB query is at bottom of file)
 // ============================================
-apiRoutes.get('/admin/pipeline/status', async (c) => {
+// NOTE: Mock removed — real pipeline_runs query is registered below
+
+// ============================================
+// ADMIN DASHBOARD — RSS Feed Verification Panel
+// ============================================
+apiRoutes.get('/admin/rss/feed', async (c) => {
+  const authHeader = c.req.header('Authorization') || ''
+  const adminKey = c.env.ADMIN_SECRET_KEY
+  if (!adminKey || !authHeader.startsWith('Bearer ') || authHeader.slice(7) !== adminKey) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401)
+  }
+
+  const db = c.env.DB
+  const date = c.req.query('date') || new Date().toISOString().split('T')[0]
+  const source = c.req.query('source') || 'all'
+  const relevance = c.req.query('relevance') || 'all'
+  const keyword = c.req.query('keyword') || ''
+  const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100)
+
   try {
-    const mockStatus = {
-      latest: [
-        { job_name: 'darpg_fetch', status: 'success', last_run: new Date(Date.now() - 86400000).toISOString(), rows_affected: 92 },
-        { job_name: 'rss_monitor', status: 'success', last_run: new Date(Date.now() - 3600000).toISOString(), rows_affected: 14 },
-        { job_name: 'aggregator', status: 'pending', last_run: new Date(Date.now() - 172800000).toISOString(), rows_affected: null },
-        { job_name: 'datagov_fetch', status: 'failed', last_run: new Date(Date.now() - 259200000).toISOString(), rows_affected: 0 }
-      ]
+    // Build dynamic query
+    let conditions: string[] = ["(data_source = 'rss' OR platform = 'news')"]
+    let params: any[] = []
+
+    // Date filter
+    conditions.push("DATE(captured_at) = ?")
+    params.push(date)
+
+    // Source filter — source name is stored as prefix in source_title (e.g. "PIB: headline...")
+    // Also check platform column for future compatibility
+    if (source !== 'all') {
+      conditions.push("(source_title LIKE ? OR platform = ?)")
+      params.push(source + ':%', source)
     }
-    return c.json({ success: true, data: mockStatus })
+
+    // Relevance filter
+    if (relevance !== 'all') {
+      conditions.push("relevance_score = ?")
+      params.push(relevance)
+    }
+
+    // Keyword search in source_title or keyword_matched
+    if (keyword) {
+      conditions.push("(source_title LIKE ? OR keyword_matched LIKE ?)")
+      params.push('%' + keyword + '%', '%' + keyword + '%')
+    }
+
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+    const sql = `SELECT id, platform, keyword_matched, source_url, source_title, relevance_score, data_source, captured_at FROM social_signals ${whereClause} ORDER BY captured_at DESC LIMIT ?`
+    params.push(limit)
+
+    const articles = await db.prepare(sql).bind(...params).all()
+
+    // Stats for the date
+    const statsParams = [date]
+    const totalResult = await db.prepare(
+      "SELECT COUNT(*) as total FROM social_signals WHERE (data_source = 'rss' OR platform = 'news') AND DATE(captured_at) = ?"
+    ).bind(date).first()
+    const highResult = await db.prepare(
+      "SELECT COUNT(*) as count FROM social_signals WHERE (data_source = 'rss' OR platform = 'news') AND DATE(captured_at) = ? AND relevance_score = 'HIGH'"
+    ).bind(date).first()
+    const mediumResult = await db.prepare(
+      "SELECT COUNT(*) as count FROM social_signals WHERE (data_source = 'rss' OR platform = 'news') AND DATE(captured_at) = ? AND relevance_score = 'MEDIUM'"
+    ).bind(date).first()
+
+    return c.json({
+      success: true,
+      date,
+      stats: {
+        total: (totalResult?.total as number) || 0,
+        high: (highResult?.count as number) || 0,
+        medium: (mediumResult?.count as number) || 0,
+      },
+      total: (articles.results || []).length,
+      articles: articles.results || []
+    })
   } catch (e: any) {
-    return c.json({ success: true, data: { latest: [] } })
+    return c.json({
+      success: true,
+      date,
+      stats: { total: 0, high: 0, medium: 0 },
+      total: 0,
+      articles: []
+    })
   }
 })
 
@@ -1061,46 +1135,63 @@ apiRoutes.get('/states/:code/districts', async (c) => {
     const state = await db.prepare('SELECT * FROM state_grievance_stats WHERE state_code = ?').bind(code).first()
     if (!state) return c.json({ success: false, error: 'State not found' }, 404)
 
-    // Simulated district-level data based on state totals
-    const districtNames: Record<string, string[]> = {
-      'UP': ['Lucknow', 'Varanasi', 'Kanpur', 'Agra', 'Prayagraj', 'Noida', 'Ghaziabad', 'Meerut', 'Gorakhpur', 'Bareilly'],
-      'MH': ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Nashik', 'Aurangabad', 'Kolhapur', 'Solapur', 'Amravati', 'Ratnagiri'],
-      'RJ': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Ajmer', 'Bikaner', 'Bharatpur', 'Alwar', 'Sikar', 'Bhilwara'],
-      'TN': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli', 'Tirunelveli', 'Vellore', 'Erode', 'Thanjavur', 'Dindigul'],
-      'KA': ['Bengaluru', 'Mysuru', 'Hubli-Dharwad', 'Mangaluru', 'Belagavi', 'Gulbarga', 'Davanagere', 'Bellary', 'Shimoga', 'Tumkur'],
-      'GJ': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Junagadh', 'Gandhinagar', 'Jamnagar', 'Anand', 'Mehsana'],
-      'WB': ['Kolkata', 'Howrah', 'North 24 Parganas', 'South 24 Parganas', 'Hooghly', 'Burdwan', 'Nadia', 'Murshidabad', 'Darjeeling', 'Malda'],
-      'MP': ['Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas', 'Satna', 'Ratlam', 'Rewa'],
-      'BR': ['Patna', 'Gaya', 'Muzaffarpur', 'Bhagalpur', 'Darbhanga', 'Purnia', 'Arrah', 'Begusarai', 'Katihar', 'Munger'],
-      'AP': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Tirupati', 'Rajahmundry', 'Kakinada', 'Anantapur', 'Eluru'],
-      'TG': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Ramagundam', 'Khammam', 'Mahbubnagar', 'Nalgonda', 'Adilabad', 'Suryapet'],
-      'KL': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kannur', 'Kollam', 'Alappuzha', 'Palakkad', 'Malappuram', 'Kottayam'],
-      'DL': ['New Delhi', 'South Delhi', 'North Delhi', 'East Delhi', 'West Delhi', 'Central Delhi', 'South West Delhi', 'North West Delhi', 'North East Delhi', 'Shahdara'],
-      'HR': ['Gurugram', 'Faridabad', 'Ambala', 'Karnal', 'Hisar', 'Panipat', 'Sonipat', 'Rohtak', 'Bhiwani', 'Sirsa'],
-      'PB': ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali', 'Pathankot', 'Hoshiarpur', 'Moga', 'Firozpur']
-    }
+    // Check for real data in district_stats table
+    const districtData = await db.prepare('SELECT * FROM district_stats WHERE state_name = ? ORDER BY complaint_count DESC').bind(state.state_name).all()
+    let districts;
 
-    const districts = (districtNames[code] || ['District 1', 'District 2', 'District 3', 'District 4', 'District 5', 'District 6', 'District 7', 'District 8']).map((name, i) => {
-      const totalState = state.total_complaints as number
-      // Distribution: first district gets most, descending
-      const share = (10 - i) / 55 // Sum of 1..10 = 55
-      const total = Math.round(totalState * share * (0.85 + Math.random() * 0.3))
-      const resRate = Math.round(((state.resolution_rate as number) + (Math.random() * 10 - 5)) * 10) / 10
-      const fakeRate = Math.round(((state.fake_closure_rate as number) + (Math.random() * 6 - 3)) * 10) / 10
-      const satRate = Math.round(((state.citizen_satisfaction_rate as number) + (Math.random() * 8 - 4)) * 10) / 10
-      const avgDays = Math.round(((state.avg_resolution_days as number) + (Math.random() * 10 - 5)) * 10) / 10
-
-      return {
-        name,
+    if (districtData.results.length > 0) {
+      districts = districtData.results.map((d: any, i) => ({
+        name: d.district_name,
         rank: i + 1,
-        total_complaints: total,
-        resolution_rate: Math.min(95, Math.max(40, resRate)),
-        fake_closure_rate: Math.min(30, Math.max(2, fakeRate)),
-        citizen_satisfaction_rate: Math.min(80, Math.max(25, satRate)),
-        avg_resolution_days: Math.max(10, avgDays),
+        total_complaints: d.complaint_count,
+        resolution_rate: d.complaint_count > 0 ? Math.round((d.resolved_count / d.complaint_count) * 100) : 0,
+        fake_closure_rate: d.resolved_count > 0 ? Math.round((d.fake_closure_count / d.resolved_count) * 100) : 0,
+        citizen_satisfaction_rate: Math.min(80, Math.max(25, 50 + (Math.random() * 20 - 10))), // Simulated for now
+        avg_resolution_days: Math.round(d.avg_resolution_days || 15),
         trend: Math.random() > 0.5 ? 'rising' : 'falling'
+      }));
+    } else {
+      // Simulated district-level data fallback
+      const districtNames: Record<string, string[]> = {
+        'UP': ['Lucknow', 'Varanasi', 'Kanpur', 'Agra', 'Prayagraj', 'Noida', 'Ghaziabad', 'Meerut', 'Gorakhpur', 'Bareilly'],
+        'MH': ['Mumbai', 'Pune', 'Nagpur', 'Thane', 'Nashik', 'Aurangabad', 'Kolhapur', 'Solapur', 'Amravati', 'Ratnagiri'],
+        'RJ': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Ajmer', 'Bikaner', 'Bharatpur', 'Alwar', 'Sikar', 'Bhilwara'],
+        'TN': ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli', 'Tirunelveli', 'Vellore', 'Erode', 'Thanjavur', 'Dindigul'],
+        'KA': ['Bengaluru Urban', 'Belagavi', 'Mysuru', 'Tumakuru', 'Kalaburagi', 'Ballari', 'Vijayapura', 'Dakshina Kannada', 'Bengaluru Rural', 'Shivamogga', 'Dharwad', 'Mandya', 'Hassan', 'Raichur', 'Chitradurga', 'Udupi', 'Bidar', 'Koppal', 'Uttara Kannada', 'Davanagere', 'Chikkaballapur', 'Bagalkot', 'Yadgir', 'Kolar', 'Chamarajanagar', 'Haveri', 'Gadag', 'Ramanagara', 'Kodagu', 'Chikkamagaluru', 'Vijayanagara'],
+        'GJ': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Junagadh', 'Gandhinagar', 'Jamnagar', 'Anand', 'Mehsana'],
+        'WB': ['Kolkata', 'Howrah', 'North 24 Parganas', 'South 24 Parganas', 'Hooghly', 'Burdwan', 'Nadia', 'Murshidabad', 'Darjeeling', 'Malda'],
+        'MP': ['Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas', 'Satna', 'Ratlam', 'Rewa'],
+        'BR': ['Patna', 'Gaya', 'Muzaffarpur', 'Bhagalpur', 'Darbhanga', 'Purnia', 'Arrah', 'Begusarai', 'Katihar', 'Munger'],
+        'AP': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Tirupati', 'Rajahmundry', 'Kakinada', 'Anantapur', 'Eluru'],
+        'TG': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Ramagundam', 'Khammam', 'Mahbubnagar', 'Nalgonda', 'Adilabad', 'Suryapet'],
+        'KL': ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kannur', 'Kollam', 'Alappuzha', 'Palakkad', 'Malappuram', 'Kottayam'],
+        'DL': ['New Delhi', 'South Delhi', 'North Delhi', 'East Delhi', 'West Delhi', 'Central Delhi', 'South West Delhi', 'North West Delhi', 'North East Delhi', 'Shahdara'],
+        'HR': ['Gurugram', 'Faridabad', 'Ambala', 'Karnal', 'Hisar', 'Panipat', 'Sonipat', 'Rohtak', 'Bhiwani', 'Sirsa'],
+        'PB': ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali', 'Pathankot', 'Hoshiarpur', 'Moga', 'Firozpur']
       }
-    })
+
+      const allDists = districtNames[code] || ['District 1', 'District 2', 'District 3', 'District 4', 'District 5'];
+      const totalState = state.total_complaints as number;
+      districts = allDists.map((name, i) => {
+        const share = (allDists.length - i) / (allDists.length * (allDists.length + 1) / 2)
+        const total = Math.round(totalState * share * (0.85 + Math.random() * 0.3))
+        const resRate = Math.round(((state.resolution_rate as number) + (Math.random() * 10 - 5)) * 10) / 10
+        const fakeRate = Math.round(((state.fake_closure_rate as number) + (Math.random() * 6 - 3)) * 10) / 10
+        const satRate = Math.round(((state.citizen_satisfaction_rate as number) + (Math.random() * 8 - 4)) * 10) / 10
+        const avgDays = Math.round(((state.avg_resolution_days as number) + (Math.random() * 10 - 5)) * 10) / 10
+
+        return {
+          name,
+          rank: i + 1,
+          total_complaints: total,
+          resolution_rate: Math.min(95, Math.max(40, resRate)),
+          fake_closure_rate: Math.min(30, Math.max(2, fakeRate)),
+          citizen_satisfaction_rate: Math.min(80, Math.max(25, satRate)),
+          avg_resolution_days: Math.max(10, avgDays),
+          trend: Math.random() > 0.5 ? 'rising' : 'falling'
+        }
+      });
+    }
 
     return c.json({
       success: true,
@@ -1118,9 +1209,57 @@ apiRoutes.get('/states/:code/districts', async (c) => {
       }
     })
   } catch (e: any) {
-    // Graceful fallback: return empty network object if DB fails so frontend handles it cleanly
     return c.json({ success: true, data: { nodes: [], edges: [], meta: { total_nodes: 0, total_edges: 0 } } })
   }
+})
+
+// ============================================
+// MLA / CONSTITUENCY DRILL-DOWN (New Map Endpoints)
+// ============================================
+
+apiRoutes.get('/map/state/:stateName', async (c) => {
+  const stateName = decodeURIComponent(c.req.param('stateName'))
+  const db = c.env.DB
+  try {
+    const state = await db.prepare('SELECT * FROM state_grievance_stats WHERE LOWER(state_name) = ?').bind(stateName.toLowerCase()).first()
+    if (!state) return c.json({ success: false, error: 'State not found' }, 404)
+    const districtData = await db.prepare('SELECT * FROM district_stats WHERE state_name = ? ORDER BY complaint_count DESC').bind(state.state_name).all()
+    return c.json({ success: true, data: { state, districts: districtData.results } })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+apiRoutes.get('/map/district/:districtName', async (c) => {
+  const districtName = decodeURIComponent(c.req.param('districtName'))
+  const db = c.env.DB
+  try {
+    const district = await db.prepare('SELECT * FROM district_stats WHERE LOWER(district_name) = ?').bind(districtName.toLowerCase()).first()
+    if (!district) return c.json({ success: false, error: 'District not found' }, 404)
+    // Return mock constituency data for this district since we don't have a table for it yet
+    const mlas = [
+      { name: 'Siddaramaiah', constituency: 'Varuna', party: 'INC', performance_score: 78, pending_complaints: 120 },
+      { name: 'B. S. Yediyurappa', constituency: 'Shikaripura', party: 'BJP', performance_score: 82, pending_complaints: 80 }
+    ]
+    return c.json({ success: true, data: { district, mlas } })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+apiRoutes.get('/map/constituency/:mpName', async (c) => {
+  const mpName = decodeURIComponent(c.req.param('mpName'))
+  // Mock endpoint for MLA accountability
+  return c.json({
+    success: true,
+    data: {
+      mla: mpName,
+      total_cases: Math.floor(Math.random() * 5000),
+      resolution_rate: 60 + Math.floor(Math.random() * 30),
+      top_issue: 'Infrastructure',
+      action_taken: 'Review meeting held on ' + new Date().toISOString().split('T')[0]
+    }
+  })
 })
 
 // ============================================
@@ -1353,6 +1492,65 @@ apiRoutes.get('/admin/pipeline/verify', async (c) => {
     return c.json({
       success: true,
       data: { ministries_live: 0, signals_today: 0, trends_live: 0, history_months: 0, report_month: 'Unknown', is_ready: false }
+    })
+  }
+})
+
+// ============================================
+// ADMIN DASHBOARD — Aggregator Results Verification Panel
+// ============================================
+apiRoutes.get('/admin/aggregator/results', async (c) => {
+  const authHeader = c.req.header('Authorization') || ''
+  const adminKey = c.env.ADMIN_SECRET_KEY
+  if (!adminKey || !authHeader.startsWith('Bearer ') || authHeader.slice(7) !== adminKey) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401)
+  }
+
+  const db = c.env.DB
+  try {
+    // Get latest aggregator run with details
+    const latestRun = await db.prepare(
+      "SELECT * FROM pipeline_runs WHERE job_name = 'aggregator' ORDER BY created_at DESC LIMIT 1"
+    ).first()
+
+    // Get current trending issues
+    const trending = await db.prepare(
+      "SELECT topic_name, topic_keywords, complaint_count, previous_week_count, spike_factor, severity, is_flagged, week_start, updated_at FROM trending_issues ORDER BY spike_factor DESC LIMIT 10"
+    ).all()
+
+    // Get fake closure stats per ministry
+    const fakeClosure = await db.prepare(
+      "SELECT ministry_name, fake_closure_rate, citizen_satisfaction_rate, fake_closure_flag FROM ministry_stats WHERE fake_closure_rate IS NOT NULL AND fake_closure_rate > 0 ORDER BY fake_closure_rate DESC LIMIT 10"
+    ).all()
+
+    // Parse details JSON from latest run
+    let runDetails: any = {}
+    if (latestRun?.details) {
+      try { runDetails = JSON.parse(latestRun.details as string) } catch { runDetails = {} }
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        latest_run: latestRun ? {
+          status: latestRun.status,
+          completed_at: latestRun.completed_at,
+          rows_affected: latestRun.rows_affected,
+          triggered_by: latestRun.triggered_by,
+          corpus_source: runDetails.corpus_source || 'unknown',
+          corpus_size: runDetails.corpus_size || 0,
+          duration_seconds: runDetails.duration_seconds || 0,
+          top_keywords: runDetails.top_keywords || [],
+          errors: runDetails.errors || [],
+        } : null,
+        trending_issues: trending.results || [],
+        fake_closure_ministries: fakeClosure.results || [],
+      }
+    })
+  } catch (e: any) {
+    return c.json({
+      success: true,
+      data: { latest_run: null, trending_issues: [], fake_closure_ministries: [] }
     })
   }
 })
