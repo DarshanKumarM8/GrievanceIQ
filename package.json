@@ -8,7 +8,7 @@
     "preview": "wrangler pages dev dist --d1=grievanceiq-production --local --ip 0.0.0.0 --port 3000",
     "deploy": "npm run build && wrangler pages deploy dist --project-name grievanceiq",
     "db:migrate:local": "wrangler d1 migrations apply grievanceiq-production --local",
-    "db:seed": "wrangler d1 execute grievanceiq-production --local --file=./seed.sql",
+    "db:seed": "wrangler d1 execute grievanceiq-production --local --file=./scripts/sql/seed.sql",
     "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
     "db:console": "wrangler d1 execute grievanceiq-production --local",
     "db:init-live": "node scripts/init-live-db.js"

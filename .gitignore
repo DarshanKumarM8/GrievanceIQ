@@ -29,15 +29,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# python pipeline
+# python
 python-pipeline/.env
-python-pipeline/__pycache__/
-python-pipeline/services/__pycache__/
 python-pipeline/venv/
 python-pipeline/.venv/
+__pycache__/
 *.pyc
 
 # misc
 .DS_Store
-venv/
 out.txt
