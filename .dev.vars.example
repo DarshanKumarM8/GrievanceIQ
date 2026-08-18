@@ -1,0 +1,20 @@
+# GrievanceIQ — Cloudflare Worker Local Environment Configuration
+# Copy this file to .dev.vars and fill in your keys
+
+# AI Inference Engine
+GROQ_API_KEY=gsk_your_groq_api_key_here
+
+# Internal Microservice Secret (shared with python-pipeline)
+INTERNAL_API_KEY=dev-internal-secret-key
+
+# Administrative Secret Key
+ADMIN_SECRET_KEY=dev-admin-secret-key
+
+# Optional: Open Government Data (data.gov.in) API key
+DATAGOV_API_KEY=your_datagov_api_key_here
+
+# Python Pipeline Compute Backend URL
+PIPELINE_SERVICE_URL=http://localhost:8000
+
+# Optional: Resend API Key for Email OTP dispatch
+RESEND_API_KEY=
